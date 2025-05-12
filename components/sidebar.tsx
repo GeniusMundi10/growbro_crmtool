@@ -35,7 +35,7 @@ const menuItems = [
     path: "/dashboard", 
     hasSubmenu: true,
     submenuItems: [
-      { name: "Create New AI", icon: <PlusCircle className="h-4 w-4" />, path: "/dashboard/create" }
+      { name: "Create New AI", icon: <PlusCircle className="h-4 w-4" />, path: "/dashboard" }
     ]
   },
   { name: "Analytics", icon: <BarChart3 className="h-5 w-5" />, path: "/analytics" },
