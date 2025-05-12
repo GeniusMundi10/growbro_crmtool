@@ -21,8 +21,29 @@ import { Calendar, Clock, MessageSquare, User, Users } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
-import { getCurrentUser, getAnalytics } from "@/lib/supabase"
+// Remove direct Supabase imports
+// import { getCurrentUser, getAnalytics } from "@/lib/supabase"
 import type { Analytics } from "@/lib/supabase"
+
+// Mock functions to replace Supabase calls
+const mockUser = { id: "demo-user-123" };
+
+const mockGetCurrentUser = async () => {
+  return mockUser;
+};
+
+const mockGetAnalytics = async (userId: string, period: "day" | "week" | "month"): Promise<Analytics> => {
+  return {
+    id: "mock-analytics-id",
+    user_id: userId,
+    total_conversations: 87,
+    total_messages: 563,
+    total_leads: 42,
+    avg_conversation_length: 12,
+    data_period: period,
+    created_at: new Date().toISOString()
+  };
+};
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
@@ -72,7 +93,8 @@ export default function AnalyticsPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const currentUser = await getCurrentUser()
+        // Use mock function instead of real Supabase call
+        const currentUser = await mockGetCurrentUser()
         if (!currentUser) {
           setLoading(false)
           return
@@ -80,7 +102,8 @@ export default function AnalyticsPage() {
         
         setUser(currentUser)
         
-        const fetchedAnalytics = await getAnalytics(currentUser.id, period)
+        // Use mock function instead of real Supabase call
+        const fetchedAnalytics = await mockGetAnalytics(currentUser.id, period)
         if (fetchedAnalytics) {
           setAnalytics(fetchedAnalytics)
         }

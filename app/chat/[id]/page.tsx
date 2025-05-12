@@ -6,8 +6,20 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Send, Paperclip, Mic } from "lucide-react"
-import { getChatHistory } from "@/lib/supabase"
 import { useChat } from "ai/react"
+
+// Mock function to replace Supabase call
+const mockGetChatHistory = async () => {
+  return [
+    {
+      id: "mock-message-1",
+      conversation_id: "conversation-123",
+      role: "assistant",
+      content: "Hello! How can I help you today?",
+      created_at: new Date().toISOString()
+    }
+  ];
+};
 
 export default function ChatPage() {
   const { id } = useParams()
@@ -34,7 +46,8 @@ export default function ChatPage() {
     // Load chat history
     const loadChatHistory = async () => {
       setIsLoading(true)
-      const history = await getChatHistory(conversationId)
+      // Use mock function instead of real Supabase call
+      const history = await mockGetChatHistory()
       // In a real app, you would set these as initialMessages for useChat
       setIsLoading(false)
     }

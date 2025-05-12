@@ -41,8 +41,58 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow } from "date-fns"
 import Header from "@/components/header"
-import { getCurrentUser, getLeads, createLead } from "@/lib/supabase"
+// Remove direct Supabase imports
+// import { getCurrentUser, getLeads, createLead } from "@/lib/supabase"
 import type { Lead } from "@/lib/supabase"
+
+// Mock data and functions to replace Supabase calls
+const mockUser = { id: "demo-user-123" };
+
+const mockLeads: Lead[] = [
+  {
+    id: "mock-lead-1",
+    user_id: "demo-user-123",
+    name: "John Doe",
+    email: "john@example.com",
+    phone: "555-111-2222",
+    company: "Acme Inc",
+    source: "Website",
+    status: "new",
+    notes: "Interested in our services",
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+  },
+  {
+    id: "mock-lead-2",
+    user_id: "demo-user-123",
+    name: "Jane Smith",
+    email: "jane@example.com",
+    phone: "555-333-4444",
+    company: "XYZ Corp",
+    source: "Referral",
+    status: "contacted",
+    notes: "Follow up next week",
+    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+  }
+];
+
+const mockGetCurrentUser = async () => {
+  return mockUser;
+};
+
+const mockGetLeads = async () => {
+  return mockLeads;
+};
+
+const mockCreateLead = async (leadData: Omit<Lead, "id" | "created_at" | "updated_at">) => {
+  return {
+    id: `mock-lead-${Date.now()}`,
+    ...leadData,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+};
 
 export default function SalesLeadsPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
@@ -63,7 +113,8 @@ export default function SalesLeadsPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const currentUser = await getCurrentUser()
+        // Use mock functions instead of real Supabase calls
+        const currentUser = await mockGetCurrentUser()
         if (!currentUser) {
           toast.error("User not authenticated")
           return
@@ -71,7 +122,7 @@ export default function SalesLeadsPage() {
         
         setUser(currentUser)
         
-        const fetchedLeads = await getLeads(currentUser.id)
+        const fetchedLeads = await mockGetLeads()
         setLeads(fetchedLeads)
       } catch (error) {
         console.error("Error loading data:", error)
@@ -99,7 +150,8 @@ export default function SalesLeadsPage() {
         return
       }
       
-      const result = await createLead({
+      // Use mock function instead of real Supabase call
+      const result = await mockCreateLead({
         user_id: user.id,
         name: newLead.name,
         email: newLead.email,
@@ -135,7 +187,8 @@ export default function SalesLeadsPage() {
     
     setLoading(true)
     try {
-      const fetchedLeads = await getLeads(user.id)
+      // Use mock function instead of real Supabase call
+      const fetchedLeads = await mockGetLeads()
       setLeads(fetchedLeads)
       toast.success("Leads refreshed")
     } catch (error) {

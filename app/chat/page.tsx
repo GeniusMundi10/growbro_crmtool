@@ -9,8 +9,46 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { getCurrentUser, getBusinessInfo, saveMessage, getChatHistory } from "@/lib/supabase"
+// Remove direct Supabase imports
+// import { getCurrentUser, getBusinessInfo, saveMessage, getChatHistory } from "@/lib/supabase"
 import type { ChatMessage, BusinessInfo } from "@/lib/supabase"
+
+// Mock data and functions to replace Supabase calls
+const mockUser = { id: "demo-user-123" };
+
+const mockBusinessInfo = {
+  id: "mock-business-info-id",
+  user_id: "demo-user-123",
+  ai_name: "GrowBro Assistant",
+  company_name: "GrowBro Technologies",
+  website: "https://example.com",
+  email: "contact@example.com",
+  calendar_link: "https://calendar.example.com",
+  phone_number: "555-123-4567",
+  agent_type: "information-education",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
+
+const mockGetCurrentUser = async () => {
+  return mockUser;
+};
+
+const mockGetBusinessInfo = async () => {
+  return mockBusinessInfo;
+};
+
+const mockGetChatHistory = async () => {
+  return [
+    {
+      id: "welcome",
+      conversation_id: "conversation-123",
+      role: "assistant" as const,
+      content: `Hello! I'm the AI assistant for ${mockBusinessInfo.company_name}. How can I help you today?`,
+      created_at: new Date().toISOString()
+    }
+  ];
+};
 
 // OpenAI API will be simulated for demo purposes
 const simulateAIResponse = async (message: string, businessInfo: Partial<BusinessInfo>) => {
@@ -49,7 +87,8 @@ export default function ChatPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const currentUser = await getCurrentUser()
+        // Use mock functions instead of real Supabase calls
+        const currentUser = await mockGetCurrentUser()
         if (!currentUser) {
           toast.error("User not authenticated")
           return
@@ -57,13 +96,13 @@ export default function ChatPage() {
         
         setUser(currentUser)
         
-        const info = await getBusinessInfo(currentUser.id)
+        const info = await mockGetBusinessInfo()
         if (info) {
           setBusinessInfo(info)
         }
         
         if (conversationId !== "new") {
-          const chatHistory = await getChatHistory(conversationId)
+          const chatHistory = await mockGetChatHistory()
           setMessages(chatHistory)
         } else {
           // If it's a new conversation, add a welcome message
@@ -112,8 +151,7 @@ export default function ChatPage() {
       setMessages(prevMessages => [...prevMessages, userMessage])
       setInputMessage("")
       
-      // Save message to Supabase in a real implementation
-      // await saveMessage(userMessage)
+      // No need to save to Supabase in demo
       
       // Simulate AI response
       const aiResponse = await simulateAIResponse(inputMessage, businessInfo)
@@ -129,8 +167,7 @@ export default function ChatPage() {
       
       setMessages(prevMessages => [...prevMessages, assistantMessage])
       
-      // Save assistant message to Supabase in a real implementation
-      // await saveMessage(assistantMessage)
+      // No need to save to Supabase in demo
       
     } catch (error) {
       console.error("Error sending message:", error)
