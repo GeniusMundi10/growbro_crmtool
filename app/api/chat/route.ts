@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai"
 import { streamText } from "ai"
 import { NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+// import { supabase } from "@/lib/supabase"
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
@@ -10,8 +10,12 @@ export async function POST(req: Request) {
   try {
     const { messages, conversationId, userId } = await req.json()
 
-    // Get business info for context
-    const { data: businessInfo } = await supabase.from("business_info").select("*").eq("user_id", userId).single()
+    // Use mock business info instead of querying Supabase
+    const businessInfo = {
+      company_name: "GrowBro.ai",
+      ai_name: "GrowBro Assistant",
+      agent_type: "customer-support"
+    }
 
     // Create system message with business context
     const systemMessage = `You are an AI assistant for ${businessInfo?.company_name || "GrowBro.ai"}. 
@@ -26,23 +30,31 @@ export async function POST(req: Request) {
       system: systemMessage,
     })
 
-    // Save message to database (in background)
+    // Mock saving message to database (commented out)
     const latestUserMessage = messages[messages.length - 1]
     if (latestUserMessage.role === "user") {
-      await supabase.from("chat_messages").insert({
-        conversation_id: conversationId,
-        role: "user",
-        content: latestUserMessage.content,
-      })
+      // Commented out database operations
+      // await supabase.from("chat_messages").insert({
+      //   conversation_id: conversationId,
+      //   role: "user",
+      //   content: latestUserMessage.content,
+      // })
+      
+      // Log instead of saving to database
+      console.log("Would save user message:", latestUserMessage.content);
     }
 
-    // When the stream completes, save the assistant's response
+    // When the stream completes, mock saving the assistant's response
     result.text.then(async (assistantResponse) => {
-      await supabase.from("chat_messages").insert({
-        conversation_id: conversationId,
-        role: "assistant",
-        content: assistantResponse,
-      })
+      // Commented out database operations
+      // await supabase.from("chat_messages").insert({
+      //   conversation_id: conversationId,
+      //   role: "assistant",
+      //   content: assistantResponse,
+      // })
+      
+      // Log instead of saving to database
+      console.log("Would save assistant response:", assistantResponse.substring(0, 50) + "...");
     })
 
     return result.toDataStreamResponse()
