@@ -11,8 +11,8 @@ export default function EmbedCode() {
   const [copiedHtml, setCopiedHtml] = useState(false)
   const [copiedFrame, setCopiedFrame] = useState(false)
 
-  const htmlCode = `<script defer src="https://chat.vengoai.app/vengoai-chatbot-bundle.js" data-id=""></script>`
-  const iframeCode = `<iframe src="https://chat.vengoai.app/?agentId=" width="450px" height="650px"></iframe>`
+  const htmlCode = `<script defer src="https://chat.growbro.ai/growbroai-chatbot-bundle.js" data-id=""></script>`
+  const iframeCode = `<iframe src="https://chat.growbro.ai/?agentId=" width="450px" height="650px"></iframe>`
 
   const handleCopyHtml = () => {
     navigator.clipboard.writeText(htmlCode)
