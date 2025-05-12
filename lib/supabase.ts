@@ -1,10 +1,10 @@
-import { createClient } from "@supabase/supabase-js"
+// import { createClient } from "@supabase/supabase-js"
 
 // Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+// const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Database types
 export type User = {
@@ -110,14 +110,15 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function getBusinessInfo(userId: string): Promise<BusinessInfo | null> {
   // For demo purposes, return mock data if real data isn't available
   try {
-    const { data, error } = await supabase.from("business_info").select("*").eq("user_id", userId).single()
+    // const { data, error } = await supabase.from("business_info").select("*").eq("user_id", userId).single()
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return null
+    // }
 
-    return data
+    // return data
+    return null;
   } catch (error) {
     // Return mock data for demo without logging the error
     return {
@@ -138,14 +139,15 @@ export async function getBusinessInfo(userId: string): Promise<BusinessInfo | nu
 
 export async function updateBusinessInfo(businessInfo: Partial<BusinessInfo>): Promise<boolean> {
   try {
-    const { error } = await supabase.from("business_info").update(businessInfo).eq("id", businessInfo.id)
+    // const { error } = await supabase.from("business_info").update(businessInfo).eq("id", businessInfo.id)
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return false
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return false
+    // }
 
-    return true
+    // return true
+    return true;
   } catch (error) {
     // For demo purposes, return success without logging
     return true
@@ -154,18 +156,19 @@ export async function updateBusinessInfo(businessInfo: Partial<BusinessInfo>): P
 
 export async function createBusinessInfo(userId: string, businessInfo: Partial<BusinessInfo>): Promise<BusinessInfo | null> {
   try {
-    const { data, error } = await supabase
-      .from("business_info")
-      .insert([{ user_id: userId, ...businessInfo }])
-      .select()
-      .single()
+    // const { data, error } = await supabase
+    //   .from("business_info")
+    //   .insert([{ user_id: userId, ...businessInfo }])
+    //   .select()
+    //   .single()
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return null
+    // }
 
-    return data
+    // return data
+    return null;
   } catch (error) {
     // Return mock data for demo without logging
     return {
@@ -186,18 +189,19 @@ export async function createBusinessInfo(userId: string, businessInfo: Partial<B
 
 export async function getLeads(userId: string): Promise<Lead[]> {
   try {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+    // const { data, error } = await supabase
+    //   .from("leads")
+    //   .select("*")
+    //   .eq("user_id", userId)
+    //   .order("created_at", { ascending: false })
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return []
+    // }
 
-    return data || []
+    // return data || []
+    return [];
   } catch (error) {
     // Return mock data for demo without logging
     return [
@@ -233,18 +237,19 @@ export async function getLeads(userId: string): Promise<Lead[]> {
 
 export async function createLead(lead: Omit<Lead, "id" | "created_at" | "updated_at">): Promise<Lead | null> {
   try {
-    const { data, error } = await supabase
-      .from("leads")
-      .insert([lead])
-      .select()
-      .single()
+    // const { data, error } = await supabase
+    //   .from("leads")
+    //   .insert([lead])
+    //   .select()
+    //   .single()
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return null
+    // }
 
-    return data
+    // return data
+    return null;
   } catch (error) {
     // Return mock data for demo without logging
     return {
@@ -258,18 +263,19 @@ export async function createLead(lead: Omit<Lead, "id" | "created_at" | "updated
 
 export async function getConversations(userId: string): Promise<Conversation[]> {
   try {
-    const { data, error } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+    // const { data, error } = await supabase
+    //   .from("conversations")
+    //   .select("*")
+    //   .eq("user_id", userId)
+    //   .order("created_at", { ascending: false })
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return []
+    // }
 
-    return data || []
+    // return data || []
+    return [];
   } catch (error) {
     // Return mock data for demo without logging
     return [
@@ -298,18 +304,19 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
 export async function getChatHistory(conversationId: string): Promise<ChatMessage[]> {
   try {
-    const { data, error } = await supabase
-      .from("chat_messages")
-      .select("*")
-      .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true })
+    // const { data, error } = await supabase
+    //   .from("chat_messages")
+    //   .select("*")
+    //   .eq("conversation_id", conversationId)
+    //   .order("created_at", { ascending: true })
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return []
+    // }
 
-    return data || []
+    // return data || []
+    return [];
   } catch (error) {
     // Return mock data for demo without logging
     return [
@@ -340,18 +347,19 @@ export async function getChatHistory(conversationId: string): Promise<ChatMessag
 
 export async function saveMessage(message: Omit<ChatMessage, "id" | "created_at">): Promise<ChatMessage | null> {
   try {
-    const { data, error } = await supabase
-      .from("chat_messages")
-      .insert([message])
-      .select()
-      .single()
+    // const { data, error } = await supabase
+    //   .from("chat_messages")
+    //   .insert([message])
+    //   .select()
+    //   .single()
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return null
+    // }
 
-    return data
+    // return data
+    return null;
   } catch (error) {
     // Return a mock message for demo
     return {
@@ -364,19 +372,20 @@ export async function saveMessage(message: Omit<ChatMessage, "id" | "created_at"
 
 export async function getAnalytics(userId: string, period: "day" | "week" | "month" = "week"): Promise<Analytics | null> {
   try {
-    const { data, error } = await supabase
-      .from("analytics")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("data_period", period)
-      .single()
+    // const { data, error } = await supabase
+    //   .from("analytics")
+    //   .select("*")
+    //   .eq("user_id", userId)
+    //   .eq("data_period", period)
+    //   .single()
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return null
+    // }
 
-    return data
+    // return data
+    return null;
   } catch (error) {
     // Return mock analytics data instead of showing an error
     return {
@@ -394,18 +403,19 @@ export async function getAnalytics(userId: string, period: "day" | "week" | "mon
 
 export async function getTeamMembers(userId: string): Promise<TeamMember[]> {
   try {
-    const { data, error } = await supabase
-      .from("team_members")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+    // const { data, error } = await supabase
+    //   .from("team_members")
+    //   .select("*")
+    //   .eq("user_id", userId)
+    //   .order("created_at", { ascending: false })
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return []
+    // }
 
-    return data || []
+    // return data || []
+    return [];
   } catch (error) {
     // Return mock team members for demo
     return [
@@ -431,18 +441,19 @@ export async function getTeamMembers(userId: string): Promise<TeamMember[]> {
 
 export async function addTeamMember(userId: string, memberEmail: string, role: "admin" | "member" | "viewer"): Promise<TeamMember | null> {
   try {
-    const { data, error } = await supabase
-      .from("team_members")
-      .insert([{ user_id: userId, member_email: memberEmail, role, status: "invited" }])
-      .select()
-      .single()
+    // const { data, error } = await supabase
+    //   .from("team_members")
+    //   .insert([{ user_id: userId, member_email: memberEmail, role, status: "invited" }])
+    //   .select()
+    //   .single()
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
+    // if (error) {
+    //   // Don't log the error to console to avoid the error message
+    //   return null
+    // }
 
-    return data
+    // return data
+    return null;
   } catch (error) {
     // Return a mock team member for demo
     return {
