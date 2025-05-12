@@ -4,7 +4,7 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Send } from "lucide-react"
@@ -71,7 +71,8 @@ const simulateAIResponse = async (message: string, businessInfo: Partial<Busines
   return responses[Math.floor(Math.random() * responses.length)]
 }
 
-export default function ChatPage() {
+// Create a separate client component to use useSearchParams
+function ChatPageClient() {
   const searchParams = useSearchParams()
   const conversationId = searchParams.get("id") || "new"
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -311,5 +312,14 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+// Wrap the client component in a Suspense boundary
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Loading chat interface...</div>}>
+      <ChatPageClient />
+    </Suspense>
   )
 } 
