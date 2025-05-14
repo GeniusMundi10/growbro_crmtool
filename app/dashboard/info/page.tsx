@@ -7,7 +7,7 @@ import DashboardTabs from "@/components/dashboard-tabs"
 import BusinessInfoForm from "./business-info-form"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/context/UserContext"
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState } from "react"
 import { getBusinessInfo } from "@/lib/supabase"
 import { toast } from "sonner"
 
@@ -37,7 +37,7 @@ const itemVariants = {
   }
 }
 
-function BusinessInfoContent() {
+export default function BusinessInfoPage() {
   const router = useRouter();
   const { user, loading } = useUser();
   const searchParams = useSearchParams();
@@ -138,17 +138,5 @@ function BusinessInfoContent() {
         </motion.div>
       </motion.div>
     </div>
-  )
-}
-
-export default function BusinessInfoPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-600"></div>
-      </div>
-    }>
-      <BusinessInfoContent />
-    </Suspense>
   )
 }
