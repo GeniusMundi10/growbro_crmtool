@@ -6,6 +6,7 @@ import Sidebar from "@/components/sidebar"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "sonner"
 import { cn } from "@/lib/utils"
+import { UserProvider } from "@/context/UserContext"
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -40,13 +41,15 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <div className="flex h-screen overflow-hidden bg-gray-50">
-            <Sidebar />
-            <main className="flex-1 overflow-auto ml-[70px] md:ml-[280px] transition-all duration-300">
-              {children}
-            </main>
-          </div>
-          <Toaster position="top-right" richColors expand closeButton />
+          <UserProvider>
+            <div className="flex h-screen overflow-hidden bg-gray-50">
+              <Sidebar />
+              <main className="flex-1 overflow-auto ml-[70px] md:ml-[280px] transition-all duration-300">
+                {children}
+              </main>
+            </div>
+            <Toaster position="top-right" richColors expand closeButton />
+          </UserProvider>
         </ThemeProvider>
       </body>
     </html>

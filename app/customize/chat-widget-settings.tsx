@@ -1,14 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "sonner"
+import { getBusinessInfo, updateBusinessInfo, getUserAIs } from "@/lib/supabase"
+import type { BusinessInfo } from "@/lib/supabase"
+import { useUser } from "@/context/UserContext"
 
 export default function ChatWidgetSettings() {
-  const [selectedAI, setSelectedAI] = useState("")
+  const { user } = useUser()
+  const searchParams = useSearchParams()
+  const aiId = searchParams.get('aiId')
+  const [selectedAI, setSelectedAI] = useState(aiId || "")
+  const [aiOptions, setAIOptions] = useState<{ value: string, label: string }[]>([])
   const [widgetSettings, setWidgetSettings] = useState({
     headingTitleColor: "#FFFFFF",
     headingBackgroundColor: "#4285F4",
@@ -20,6 +29,63 @@ export default function ChatWidgetSettings() {
     sendButtonColor: "#4285F4",
     startMinimized: false,
   })
+  const [saving, setSaving] = useState(false)
+  const [currentAI, setCurrentAI] = useState<BusinessInfo | null>(null)
+
+  useEffect(() => {
+    if (user) {
+      loadUserAIs()
+      if (aiId) {
+        loadAISettings(aiId)
+      }
+    }
+  }, [user, aiId])
+
+  const loadUserAIs = async () => {
+    try {
+      const ais = await getUserAIs(user?.id || "")
+      if (ais && ais.length > 0) {
+        const options = ais.map(ai => ({
+          value: ai.id,
+          label: ai.ai_name
+        }))
+        setAIOptions(options)
+      }
+    } catch (error) {
+      console.error("Error loading user AIs:", error)
+    }
+  }
+
+  const loadAISettings = async (id: string) => {
+    try {
+      const ai: BusinessInfo | null = await getBusinessInfo(id)
+      if (ai) {
+        setCurrentAI(ai)
+        setSelectedAI(ai.id)
+        // Load saved branding settings if they exist
+        setWidgetSettings({
+          headingTitleColor: ai.heading_title_color || "#FFFFFF",
+          headingBackgroundColor: ai.heading_background_color || "#4285F4",
+          aiMessageColor: ai.ai_message_color || "#000000",
+          aiMessageBackgroundColor: ai.ai_message_background_color || "#F1F1F1",
+          userMessageColor: ai.user_message_color || "#FFFFFF",
+          userMessageBackgroundColor: ai.user_message_background_color || "#4285F4",
+          widgetColor: ai.widget_color || "#4285F4",
+          sendButtonColor: ai.send_button_color || "#4285F4",
+          startMinimized: ai.start_minimized || false,
+        })
+      }
+    } catch (error) {
+      console.error("Error loading AI settings:", error)
+    }
+  }
+
+  const handleAIChange = (value: string) => {
+    setSelectedAI(value)
+    if (value) {
+      loadAISettings(value)
+    }
+  }
 
   const handleColorChange = (setting: string, value: string) => {
     setWidgetSettings((prev) => ({ ...prev, [setting]: value }))
@@ -29,6 +95,42 @@ export default function ChatWidgetSettings() {
     setWidgetSettings((prev) => ({ ...prev, startMinimized: checked }))
   }
 
+  const handleSaveSettings = async () => {
+    if (!selectedAI || !currentAI) {
+      toast.error("Please select an AI first")
+      return
+    }
+
+    setSaving(true)
+    try {
+      // Map the local state to the database field names
+      const brandingData = {
+        id: selectedAI,
+        heading_title_color: widgetSettings.headingTitleColor,
+        heading_background_color: widgetSettings.headingBackgroundColor,
+        ai_message_color: widgetSettings.aiMessageColor,
+        ai_message_background_color: widgetSettings.aiMessageBackgroundColor,
+        user_message_color: widgetSettings.userMessageColor,
+        user_message_background_color: widgetSettings.userMessageBackgroundColor,
+        widget_color: widgetSettings.widgetColor,
+        send_button_color: widgetSettings.sendButtonColor,
+        start_minimized: widgetSettings.startMinimized,
+      }
+
+      const success = await updateBusinessInfo(brandingData)
+      if (success) {
+        toast.success("Widget settings saved successfully")
+      } else {
+        toast.error("Failed to save widget settings")
+      }
+    } catch (error) {
+      console.error("Error saving widget settings:", error)
+      toast.error("An error occurred while saving")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div className="bg-white rounded-lg p-6 shadow-sm border">
@@ -36,13 +138,14 @@ export default function ChatWidgetSettings() {
 
         <div className="mb-6">
           <Label htmlFor="select-ai">Select AI:</Label>
-          <Select value={selectedAI} onValueChange={setSelectedAI}>
+          <Select value={selectedAI} onValueChange={handleAIChange}>
             <SelectTrigger id="select-ai" className="mt-1">
               <SelectValue placeholder="Select AI" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ai1">AI Assistant 1</SelectItem>
-              <SelectItem value="ai2">AI Assistant 2</SelectItem>
+              {aiOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -211,7 +314,13 @@ export default function ChatWidgetSettings() {
         </div>
 
         <div className="mt-8">
-          <Button className="bg-green-600 hover:bg-green-700 text-white">Update Widget</Button>
+          <Button 
+            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={saving || !selectedAI}
+            onClick={handleSaveSettings}
+          >
+            {saving ? "Saving..." : "Update Widget"}
+          </Button>
         </div>
       </div>
 
@@ -226,7 +335,7 @@ export default function ChatWidgetSettings() {
               color: widgetSettings.headingTitleColor,
             }}
           >
-            Business Name
+            {currentAI?.company_name || "Business Name"}
           </div>
 
           <div className="p-4 bg-gray-50 h-80">

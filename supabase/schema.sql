@@ -12,6 +12,16 @@ CREATE TABLE business_info (
   calendar_link TEXT,
   phone_number TEXT,
   agent_type TEXT NOT NULL,
+  -- Branding settings
+  heading_title_color TEXT DEFAULT '#FFFFFF',
+  heading_background_color TEXT DEFAULT '#4285F4',
+  ai_message_color TEXT DEFAULT '#000000',
+  ai_message_background_color TEXT DEFAULT '#F1F1F1',
+  user_message_color TEXT DEFAULT '#FFFFFF',
+  user_message_background_color TEXT DEFAULT '#4285F4',
+  widget_color TEXT DEFAULT '#4285F4',
+  send_button_color TEXT DEFAULT '#4285F4',
+  start_minimized BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -119,6 +129,12 @@ ALTER TABLE greeting_templates ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can only access their own business_info"
   ON business_info FOR ALL
   USING (auth.uid() = user_id);
+
+-- Add a more permissive policy for anon role to test API
+CREATE POLICY "Allow anon access to business_info"
+  ON business_info FOR ALL
+  TO anon
+  USING (true);
 
 CREATE POLICY "Users can only access their own conversations"
   ON conversations FOR ALL

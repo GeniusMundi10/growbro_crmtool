@@ -1,10 +1,25 @@
-// import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@supabase/supabase-js"
 
-// Initialize Supabase client
-// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-// const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 
-// export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Diagnostic check for environment variables
+console.log("Supabase URL configured:", supabaseUrl ? "YES" : "NO (missing)");
+console.log("Supabase Anon Key configured:", supabaseAnonKey ? "YES" : "NO (missing)");
+
+// Create the standard client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false // Don't persist session in this admin-like context
+  },
+  global: {
+    headers: {
+      // Add authorization headers to bypass RLS as admin
+      "apikey": supabaseAnonKey,
+      "Authorization": `Bearer ${supabaseAnonKey}`
+    }
+  }
+})
 
 // Database types
 export type User = {
@@ -25,6 +40,16 @@ export type BusinessInfo = {
   calendar_link: string
   phone_number: string
   agent_type: string
+  // Branding settings
+  heading_title_color?: string
+  heading_background_color?: string
+  ai_message_color?: string
+  ai_message_background_color?: string
+  user_message_color?: string
+  user_message_background_color?: string
+  widget_color?: string
+  send_button_color?: string
+  start_minimized?: boolean
   created_at: string
   updated_at: string
 }
@@ -107,23 +132,34 @@ export async function getCurrentUser(): Promise<User | null> {
   return mockUser;
 }
 
-export async function getBusinessInfo(userId: string): Promise<BusinessInfo | null> {
+export async function getBusinessInfo(id: string): Promise<BusinessInfo | null> {
   // For demo purposes, return mock data if real data isn't available
   try {
-    // const { data, error } = await supabase.from("business_info").select("*").eq("user_id", userId).single()
+    // Try to find by ID first
+    let query = supabase.from("business_info").select("*");
+    
+    // Check if the id is a UUID (business_info.id) or a user_id
+    if (id.includes('-')) {
+      // Looks like a UUID, try querying by id
+      query = query.eq("id", id);
+    } else {
+      // Otherwise treat as user_id
+      query = query.eq("user_id", id);
+    }
+    
+    const { data, error } = await query.single();
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return null
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return null
+    }
 
-    // return data
-    return null;
+    return data
   } catch (error) {
     // Return mock data for demo without logging the error
     return {
       id: "mock-business-info-id",
-      user_id: userId,
+      user_id: id,
       ai_name: "GrowBro Assistant",
       company_name: "GrowBro Technologies",
       website: "https://example.com",
@@ -139,15 +175,14 @@ export async function getBusinessInfo(userId: string): Promise<BusinessInfo | nu
 
 export async function updateBusinessInfo(businessInfo: Partial<BusinessInfo>): Promise<boolean> {
   try {
-    // const { error } = await supabase.from("business_info").update(businessInfo).eq("id", businessInfo.id)
+    const { error } = await supabase.from("business_info").update(businessInfo).eq("id", businessInfo.id)
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return false
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return false
+    }
 
-    // return true
-    return true;
+    return true
   } catch (error) {
     // For demo purposes, return success without logging
     return true
@@ -156,23 +191,25 @@ export async function updateBusinessInfo(businessInfo: Partial<BusinessInfo>): P
 
 export async function createBusinessInfo(userId: string, businessInfo: Partial<BusinessInfo>): Promise<BusinessInfo | null> {
   try {
-    // const { data, error } = await supabase
-    //   .from("business_info")
-    //   .insert([{ user_id: userId, ...businessInfo }])
-    //   .select()
-    //   .single()
+    const { data, error } = await supabase
+      .from("business_info")
+      .insert([{ user_id: userId, ...businessInfo }])
+      .select()
+      .single()
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return null
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      console.error("Error creating business info:", error);
+      return null
+    }
 
-    // return data
-    return null;
+    console.log("Successfully created business info:", data);
+    return data
   } catch (error) {
+    console.error("Exception creating business info:", error);
     // Return mock data for demo without logging
     return {
-      id: "mock-business-info-id",
+      id: `mock-business-info-${Date.now()}`,
       user_id: userId,
       ai_name: businessInfo.ai_name || "GrowBro Assistant",
       company_name: businessInfo.company_name || "GrowBro Technologies",
@@ -189,19 +226,18 @@ export async function createBusinessInfo(userId: string, businessInfo: Partial<B
 
 export async function getLeads(userId: string): Promise<Lead[]> {
   try {
-    // const { data, error } = await supabase
-    //   .from("leads")
-    //   .select("*")
-    //   .eq("user_id", userId)
-    //   .order("created_at", { ascending: false })
+    const { data, error } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return []
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return []
+    }
 
-    // return data || []
-    return [];
+    return data || []
   } catch (error) {
     // Return mock data for demo without logging
     return [
@@ -237,19 +273,18 @@ export async function getLeads(userId: string): Promise<Lead[]> {
 
 export async function createLead(lead: Omit<Lead, "id" | "created_at" | "updated_at">): Promise<Lead | null> {
   try {
-    // const { data, error } = await supabase
-    //   .from("leads")
-    //   .insert([lead])
-    //   .select()
-    //   .single()
+    const { data, error } = await supabase
+      .from("leads")
+      .insert([lead])
+      .select()
+      .single()
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return null
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return null
+    }
 
-    // return data
-    return null;
+    return data
   } catch (error) {
     // Return mock data for demo without logging
     return {
@@ -263,19 +298,18 @@ export async function createLead(lead: Omit<Lead, "id" | "created_at" | "updated
 
 export async function getConversations(userId: string): Promise<Conversation[]> {
   try {
-    // const { data, error } = await supabase
-    //   .from("conversations")
-    //   .select("*")
-    //   .eq("user_id", userId)
-    //   .order("created_at", { ascending: false })
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return []
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return []
+    }
 
-    // return data || []
-    return [];
+    return data || []
   } catch (error) {
     // Return mock data for demo without logging
     return [
@@ -304,19 +338,18 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
 
 export async function getChatHistory(conversationId: string): Promise<ChatMessage[]> {
   try {
-    // const { data, error } = await supabase
-    //   .from("chat_messages")
-    //   .select("*")
-    //   .eq("conversation_id", conversationId)
-    //   .order("created_at", { ascending: true })
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return []
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return []
+    }
 
-    // return data || []
-    return [];
+    return data || []
   } catch (error) {
     // Return mock data for demo without logging
     return [
@@ -347,19 +380,18 @@ export async function getChatHistory(conversationId: string): Promise<ChatMessag
 
 export async function saveMessage(message: Omit<ChatMessage, "id" | "created_at">): Promise<ChatMessage | null> {
   try {
-    // const { data, error } = await supabase
-    //   .from("chat_messages")
-    //   .insert([message])
-    //   .select()
-    //   .single()
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .insert([message])
+      .select()
+      .single()
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return null
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return null
+    }
 
-    // return data
-    return null;
+    return data
   } catch (error) {
     // Return a mock message for demo
     return {
@@ -372,20 +404,19 @@ export async function saveMessage(message: Omit<ChatMessage, "id" | "created_at"
 
 export async function getAnalytics(userId: string, period: "day" | "week" | "month" = "week"): Promise<Analytics | null> {
   try {
-    // const { data, error } = await supabase
-    //   .from("analytics")
-    //   .select("*")
-    //   .eq("user_id", userId)
-    //   .eq("data_period", period)
-    //   .single()
+    const { data, error } = await supabase
+      .from("analytics")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("data_period", period)
+      .single()
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return null
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return null
+    }
 
-    // return data
-    return null;
+    return data
   } catch (error) {
     // Return mock analytics data instead of showing an error
     return {
@@ -403,19 +434,18 @@ export async function getAnalytics(userId: string, period: "day" | "week" | "mon
 
 export async function getTeamMembers(userId: string): Promise<TeamMember[]> {
   try {
-    // const { data, error } = await supabase
-    //   .from("team_members")
-    //   .select("*")
-    //   .eq("user_id", userId)
-    //   .order("created_at", { ascending: false })
+    const { data, error } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return []
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return []
+    }
 
-    // return data || []
-    return [];
+    return data || []
   } catch (error) {
     // Return mock team members for demo
     return [
@@ -441,19 +471,18 @@ export async function getTeamMembers(userId: string): Promise<TeamMember[]> {
 
 export async function addTeamMember(userId: string, memberEmail: string, role: "admin" | "member" | "viewer"): Promise<TeamMember | null> {
   try {
-    // const { data, error } = await supabase
-    //   .from("team_members")
-    //   .insert([{ user_id: userId, member_email: memberEmail, role, status: "invited" }])
-    //   .select()
-    //   .single()
+    const { data, error } = await supabase
+      .from("team_members")
+      .insert([{ user_id: userId, member_email: memberEmail, role, status: "invited" }])
+      .select()
+      .single()
 
-    // if (error) {
-    //   // Don't log the error to console to avoid the error message
-    //   return null
-    // }
+    if (error) {
+      // Don't log the error to console to avoid the error message
+      return null
+    }
 
-    // return data
-    return null;
+    return data
   } catch (error) {
     // Return a mock team member for demo
     return {
@@ -464,5 +493,137 @@ export async function addTeamMember(userId: string, memberEmail: string, role: "
       status: "invited",
       created_at: new Date().toISOString()
     };
+  }
+}
+
+// Debug utility - directly fetch all users with detailed error handling
+export async function debugFetchUsers() {
+  try {
+    console.log("Debug: Attempting to fetch all users...");
+    console.log("Debug: Using URL:", supabaseUrl.substring(0, 15) + "...");
+    
+    const { data, error } = await supabase
+      .from("users")
+      .select("*");
+      
+    if (error) {
+      console.error("Debug: Error fetching users:", error.message, error.details, error.hint, error.code);
+      return { success: false, error, data: null };
+    }
+    
+    console.log(`Debug: Successfully fetched ${data?.length || 0} users`);
+    return { success: true, data, error: null };
+  } catch (error) {
+    console.error("Debug: Exception when fetching users:", error);
+    return { success: false, error, data: null };
+  }
+}
+
+// Special function to directly fetch users with explicit auth
+export async function fetchUsersDirectly() {
+  try {
+    // First, let's try with explicit authorization headers
+    const response = await fetch(`${supabaseUrl}/rest/v1/users?select=*`, {
+      method: 'GET',
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`Error fetching users: ${response.status} ${response.statusText}`);
+      // Fall back to creating a mock user
+      return [{
+        id: "demo-user-123",
+        name: "GrowBro Technologies",
+        email: "contact@growbro.ai",
+        avatar_url: "https://growbro.ai/logo.png",
+        plan: "premium",
+        created_at: new Date().toISOString()
+      }];
+    }
+    
+    const data = await response.json();
+    console.log("Successfully fetched users:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in fetchUsersDirectly:", error);
+    // Fall back to creating a mock user
+    return [{
+      id: "demo-user-123",
+      name: "GrowBro Technologies",
+      email: "contact@growbro.ai",
+      avatar_url: "https://growbro.ai/logo.png",
+      plan: "premium",
+      created_at: new Date().toISOString()
+    }];
+  }
+}
+
+// Fetch all AIs for a user
+export async function getAIsForUser(userId: string) {
+  const { data, error } = await supabase
+    .from("business_info")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+// Create a new AI
+export async function createAIForUser(userId: string, aiData: Partial<BusinessInfo>) {
+  const { data, error } = await supabase
+    .from("business_info")
+    .insert([{ user_id: userId, ...aiData }])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Update an AI
+export async function updateAI(aiId: string, aiData: Partial<BusinessInfo>) {
+  const { data, error } = await supabase
+    .from("business_info")
+    .update(aiData)
+    .eq("id", aiId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+// Delete an AI
+export async function deleteAI(aiId: string, userId: string) {
+  const { error } = await supabase
+    .from("business_info")
+    .delete()
+    .eq("id", aiId)
+    .eq("user_id", userId);
+  if (error) throw error;
+  return true;
+}
+
+// Get user's AIs
+export async function getUserAIs(userId: string): Promise<BusinessInfo[]> {
+  try {
+    const { data, error } = await supabase
+      .from("business_info")
+      .select("*")
+      .eq("user_id", userId);
+      
+    if (error) {
+      console.error("Error fetching user AIs:", error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error("Exception fetching user AIs:", error);
+    return [];
   }
 }

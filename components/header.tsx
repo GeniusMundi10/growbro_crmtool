@@ -24,6 +24,7 @@ import {
   Clock,
   Menu,
 } from "lucide-react"
+import { fetchUsersDirectly } from "@/lib/supabase"
 
 interface HeaderProps {
   title: string
@@ -39,6 +40,9 @@ export default function Header({ title }: HeaderProps) {
     { id: 5, content: "Task completed: Update contact list", unread: false, time: "2 days ago", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
   ])
   
+  const [user, setUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  
   const userFullName = "GrowBro User"
   const userInitials = "GB"
   
@@ -53,6 +57,15 @@ export default function Header({ title }: HeaderProps) {
     window.addEventListener('resize', checkIsMobile)
     return () => window.removeEventListener('resize', checkIsMobile)
   }, [])
+
+  useEffect(() => {
+    async function fetchUser() {
+      const users = await fetchUsersDirectly();
+      if (users && users.length > 0) setUser(users[0]);
+      setLoadingUser(false);
+    }
+    fetchUser();
+  }, []);
 
   return (
     <motion.header
@@ -78,12 +91,12 @@ export default function Header({ title }: HeaderProps) {
           )}
           <h1 className="text-xl font-bold text-slate-800 flex items-center">
             {title}
-            {title === "Dashboard" && (
+            {title === "Dashboard" && user && (
               <Badge 
                 variant="outline" 
                 className="ml-3 bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-normal"
               >
-                Premium Plan
+                {user.plan ? `${user.plan.charAt(0).toUpperCase() + user.plan.slice(1)} Plan` : "Plan"}
               </Badge>
             )}
           </h1>
@@ -216,9 +229,13 @@ export default function Header({ title }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full overflow-hidden border border-slate-200">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-emerald-50 text-emerald-700">
-                    {userInitials}
-                  </AvatarFallback>
+                  {user && user.avatar_url ? (
+                    <AvatarImage src={user.avatar_url} alt={user.name} />
+                  ) : (
+                    <AvatarFallback className="bg-emerald-50 text-emerald-700">
+                      {user && user.name ? user.name.split(" ").map((n: string) => n[0]).join("") : "U"}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -226,13 +243,17 @@ export default function Header({ title }: HeaderProps) {
               <div className="bg-gradient-to-r from-emerald-700 to-green-600 p-4 text-white">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border-2 border-white/20">
-                    <AvatarFallback className="bg-white/10 text-white">
-                      {userInitials}
-                    </AvatarFallback>
+                    {user && user.avatar_url ? (
+                      <AvatarImage src={user.avatar_url} alt={user.name} />
+                    ) : (
+                      <AvatarFallback className="bg-white/10 text-white">
+                        {user && user.name ? user.name.split(" ").map((n: string) => n[0]).join("") : "U"}
+                      </AvatarFallback>
+                    )}
                   </Avatar>
                   <div>
-                    <p className="font-medium">{userFullName}</p>
-                    <p className="text-xs text-emerald-100">user@example.com</p>
+                    <p className="font-medium">{user ? user.name : "Loading..."}</p>
+                    <p className="text-xs text-emerald-100">{user ? user.email : ""}</p>
                   </div>
                 </div>
               </div>

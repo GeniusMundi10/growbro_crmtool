@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   BarChart3,
@@ -27,17 +27,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { supabase, debugFetchUsers, fetchUsersDirectly, getAIsForUser } from "@/lib/supabase"
+import { useUser } from "@/context/UserContext"
+import React from "react"
 
 const menuItems = [
-  { 
-    name: "Manage AI", 
-    icon: <MessageSquare className="h-5 w-5" />, 
-    path: "/dashboard", 
-    hasSubmenu: true,
-    submenuItems: [
-      { name: "Create New AI", icon: <PlusCircle className="h-4 w-4" />, path: "/dashboard" }
-    ]
-  },
   { name: "Analytics", icon: <BarChart3 className="h-5 w-5" />, path: "/analytics" },
   { name: "Customize", icon: <Settings className="h-5 w-5" />, path: "/customize" },
   { name: "Get AI Code & Test AI", icon: <FileText className="h-5 w-5" />, path: "/ai-code" },
@@ -59,6 +53,10 @@ export default function Sidebar() {
   const [mounted, setMounted] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const { user, loading: loadingUserContext } = useUser();
+  const [aiList, setAIList] = useState<any[]>([])
+  const [loadingAIs, setLoadingAIs] = useState(true)
+  const router = useRouter();
   
   // Handle window resize to collapse sidebar on mobile
   useEffect(() => {
@@ -93,6 +91,53 @@ export default function Sidebar() {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [expanded])
+
+  // Fix the fetchUserAIs function reference and dependencies
+  const fetchUserAIs = React.useCallback(async () => {
+    if (!user?.id) return;
+    setLoadingAIs(true);
+    try {
+      const ais = await getAIsForUser(user.id);
+      setAIList(ais || []);
+    } catch (e) {
+      setAIList([]);
+    } finally {
+      setLoadingAIs(false);
+    }
+  }, [user]);
+
+  // Check for window to handle SSR and for refresh flag in session storage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Check session storage flag
+      const shouldRefresh = sessionStorage.getItem('refreshAIList');
+      if (shouldRefresh === 'true') {
+        // Clear the flag
+        sessionStorage.removeItem('refreshAIList');
+        // Refresh the AI list
+        fetchUserAIs();
+      }
+      
+      // Add event listener for custom refresh event
+      const handleRefreshEvent = () => {
+        fetchUserAIs();
+      };
+      
+      window.addEventListener('refreshAIList', handleRefreshEvent);
+      
+      // Cleanup
+      return () => {
+        window.removeEventListener('refreshAIList', handleRefreshEvent);
+      };
+    }
+  }, [pathname, fetchUserAIs]); // Re-run when pathname changes (after navigation)
+
+  // Initial fetch of AIs when user is loaded
+  useEffect(() => {
+    if (user) {
+      fetchUserAIs();
+    }
+  }, [user, fetchUserAIs]);
 
   if (!mounted) return null
 
@@ -158,12 +203,86 @@ export default function Sidebar() {
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             <nav className="space-y-1.5">
+              <div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={cn(
+                        "flex items-center rounded-lg px-3 py-3 text-sm transition-colors cursor-pointer",
+                        manageAIExpanded ? "bg-white/20 font-medium" : "hover:bg-white/10",
+                        !expanded && !isHovering && "justify-center"
+                      )}
+                      onClick={() => setManageAIExpanded(!manageAIExpanded)}
+                    >
+                      <span className="flex items-center">
+                        <MessageSquare className="h-5 w-5" />
+                      </span>
+                      {(expanded || isHovering) && (
+                        <div className="ml-3 flex w-full justify-between items-center">
+                          <span>Manage AI</span>
+                          <motion.div animate={{ rotate: manageAIExpanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                            <ChevronRight className="h-4 w-4" />
+                          </motion.div>
+                        </div>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  {!expanded && !isHovering && (
+                    <TooltipContent side="right" className="border-none bg-gray-900 text-white">
+                      Manage AI
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+                <AnimatePresence>
+                  {manageAIExpanded && (expanded || isHovering) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="ml-7 mt-1 mb-1 overflow-hidden"
+                    >
+                      <div className="py-2 text-sm text-green-100 flex items-center justify-between">
+                        <span>All AIs</span>
+                        <Link href="/dashboard/info?new=true" legacyBehavior>
+                          <a className="flex items-center text-green-200 px-2 py-1 rounded hover:bg-white/10 text-sm">
+                            <PlusCircle className="h-4 w-4 mr-1" /> New
+                          </a>
+                        </Link>
+                      </div>
+                      {loadingAIs ? (
+                        <div className="text-xs text-gray-200 px-2 py-1">Loading...</div>
+                      ) : aiList.length === 0 ? (
+                        <div className="text-xs text-gray-200 px-2 py-1">No AIs found</div>
+                      ) : (
+                        aiList.map(ai => (
+                          <Link
+                            key={ai.id}
+                            href={`/dashboard/info?aiId=${ai.id}`}
+                            className="flex items-center rounded-md py-2 px-3 text-sm text-green-100 hover:bg-white/10 hover:text-white"
+                          >
+                            <span className="mr-2">🤖</span>
+                            <span>{ai.ai_name || "Untitled AI"}</span>
+                          </Link>
+                        ))
+                      )}
+                      <Link
+                        href="/dashboard/info?new=true"
+                        className="flex items-center rounded-md py-2 px-3 mt-2 text-sm text-green-100 hover:bg-white/10 hover:text-white border border-dashed border-green-200/30"
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        <span>Create New AI</span>
+                      </Link>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               {menuItems.map((item) => (
                 <div key={item.name}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link
-                        href={item.hasSubmenu ? "#" : item.path}
+                        href={item.path}
                         className={cn(
                           "flex items-center rounded-lg px-3 py-3 text-sm transition-colors",
                           pathname === item.path || 
@@ -172,12 +291,6 @@ export default function Sidebar() {
                             "hover:bg-white/10",
                           !expanded && !isHovering && "justify-center",
                         )}
-                        onClick={(e) => {
-                          if (item.hasSubmenu) {
-                            e.preventDefault()
-                            setManageAIExpanded(!manageAIExpanded)
-                          }
-                        }}
                       >
                         <motion.div
                           className={cn(
@@ -190,14 +303,6 @@ export default function Sidebar() {
                           {(expanded || isHovering) && (
                             <div className="ml-3 flex w-full justify-between items-center">
                               <span>{item.name}</span>
-                              {item.hasSubmenu && (
-                                <motion.div
-                                  animate={{ rotate: manageAIExpanded ? 90 : 0 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  <ChevronRight className="h-4 w-4" />
-                                </motion.div>
-                              )}
                             </div>
                           )}
                         </motion.div>
@@ -209,32 +314,6 @@ export default function Sidebar() {
                       </TooltipContent>
                     )}
                   </Tooltip>
-
-                  <AnimatePresence>
-                    {item.hasSubmenu && manageAIExpanded && (expanded || isHovering) && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="ml-7 mt-1 mb-1 overflow-hidden"
-                      >
-                        <div className="py-2 text-sm text-green-100">
-                          GrowBro AI
-                        </div>
-                        {item.submenuItems?.map((subItem) => (
-                          <Link
-                            key={subItem.name}
-                            href={subItem.path}
-                            className="flex items-center rounded-md py-2 px-3 text-sm text-green-100 hover:bg-white/10 hover:text-white"
-                          >
-                            {subItem.icon && <span className="mr-2">{subItem.icon}</span>}
-                            <span>{subItem.name}</span>
-                          </Link>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               ))}
             </nav>
@@ -248,17 +327,29 @@ export default function Sidebar() {
               "flex items-center rounded-lg p-2 hover:bg-white/10",
               !expanded && !isHovering && "justify-center"
             )}>
-              <Avatar className="h-9 w-9 ring-2 ring-white/20">
-                <AvatarFallback className="bg-white/10 text-white">
-                  GB
-                </AvatarFallback>
-              </Avatar>
-              
-              {(expanded || isHovering) && (
-                <div className="ml-3 overflow-hidden">
-                  <p className="text-sm font-medium leading-tight">GrowBro User</p>
-                  <p className="truncate text-xs text-gray-300">user@example.com</p>
-                </div>
+              {loadingUserContext ? (
+                <div className="text-xs text-gray-300">Loading...</div>
+              ) : user ? (
+                <>
+                  <Avatar className="h-9 w-9 ring-2 ring-white/20">
+                    {user.avatar_url ? (
+                      <AvatarImage src={user.avatar_url} alt={user.name} />
+                    ) : (
+                      <AvatarFallback className="bg-white/10 text-white">
+                        {user.name?.[0]?.toUpperCase() || "U"}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  {(expanded || isHovering) && (
+                    <div className="ml-3 overflow-hidden">
+                      <p className="text-sm font-medium leading-tight">{user.name}</p>
+                      <p className="truncate text-xs text-gray-300">{user.email}</p>
+                      <p className="truncate text-xs text-green-200">{user.plan?.toUpperCase()}</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-xs text-red-300">No user found</div>
               )}
             </div>
           </motion.div>

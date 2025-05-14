@@ -54,7 +54,7 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
         "$0.35 per additional voice minute",
         "4 AI Agents",
         "Unlimited Sales Leads",
-        "Remove Vengo watermark",
+        "Remove Growbro watermark",
       ],
       popular: true,
     },
@@ -69,7 +69,7 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
         "$0.34 per additional voice minute",
         "7 AI Agents",
         "Unlimited Sales Leads",
-        "Remove Vengo watermark",
+        "Remove Growbro watermark",
       ],
     },
     {
@@ -83,7 +83,7 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
         "$0.32 per additional voice minute",
         "10 AI Agents",
         "Unlimited Sales Leads",
-        "Remove Vengo watermark",
+        "Remove Growbro watermark",
       ],
     },
   ]
