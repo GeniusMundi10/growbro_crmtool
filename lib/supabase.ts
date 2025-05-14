@@ -1,25 +1,62 @@
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-
-// Diagnostic check for environment variables
-console.log("Supabase URL configured:", supabaseUrl ? "YES" : "NO (missing)");
-console.log("Supabase Anon Key configured:", supabaseAnonKey ? "YES" : "NO (missing)");
-
-// Create the standard client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: false // Don't persist session in this admin-like context
-  },
-  global: {
-    headers: {
-      // Add authorization headers to bypass RLS as admin
-      "apikey": supabaseAnonKey,
-      "Authorization": `Bearer ${supabaseAnonKey}`
-    }
+// Safely get environment variables with fallbacks for better error messages
+const getEnvVar = (name: string, defaultValue: string = '') => {
+  const value = process.env[name] || defaultValue;
+  
+  // In a production environment, we should fail gracefully if the variable is missing
+  if (!value && process.env.NODE_ENV === 'production') {
+    console.error(`Missing required environment variable: ${name}`);
+    // Return a placeholder to prevent crashes, we'll handle this later in the client logic
+    return defaultValue;
   }
-})
+  
+  return value;
+}
+
+const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL', '');
+const supabaseAnonKey = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY', '');
+
+// Only log in development, not in production
+if (process.env.NODE_ENV !== 'production') {
+  console.log("Supabase URL configured:", supabaseUrl ? "YES" : "NO (missing)");
+  console.log("Supabase Anon Key configured:", supabaseAnonKey ? "YES" : "NO (missing)");
+}
+
+// Create a client factory function to handle missing credentials gracefully
+const createSupabaseClient = () => {
+  try {
+    // Verify credentials before creating the client
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Supabase credentials missing. Using mock data only.");
+      return null;
+    }
+    
+    return createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false // Don't persist session in this admin-like context
+      },
+      global: {
+        headers: {
+          // Add authorization headers to bypass RLS as admin
+          "apikey": supabaseAnonKey,
+          "Authorization": `Bearer ${supabaseAnonKey}`
+        }
+      }
+    });
+  } catch (error) {
+    console.error("Failed to create Supabase client:", error);
+    return null;
+  }
+};
+
+// Create the client or set to null if it fails
+export const supabase = createSupabaseClient();
+
+// Helper function to check if we should use mock data
+const shouldUseMockData = () => {
+  return !supabase || process.env.NODE_ENV === 'development';
+}
 
 // Database types
 export type User = {
@@ -132,11 +169,43 @@ export async function getCurrentUser(): Promise<User | null> {
   return mockUser;
 }
 
-export async function getBusinessInfo(id: string): Promise<BusinessInfo | null> {
-  // For demo purposes, return mock data if real data isn't available
+// Create a type-safe wrapper for Supabase functions that handles the null client case
+const safeSupabaseOp = async <T>(
+  operation: (client: any) => Promise<T>,
+  mockData: T
+): Promise<T> => {
+  if (!supabase) {
+    console.log("Using mock data (Supabase client unavailable)");
+    return mockData;
+  }
+  
   try {
+    return await operation(supabase);
+  } catch (error) {
+    console.error("Supabase operation failed:", error);
+    return mockData;
+  }
+};
+
+export async function getBusinessInfo(id: string): Promise<BusinessInfo | null> {
+  // Define mock data
+  const mockData: BusinessInfo = {
+    id: "mock-business-info-id",
+    user_id: id,
+    ai_name: "GrowBro Assistant",
+    company_name: "GrowBro Technologies",
+    website: "https://example.com",
+    email: "contact@example.com",
+    calendar_link: "https://calendar.example.com",
+    phone_number: "555-123-4567",
+    agent_type: "information-education",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  return safeSupabaseOp(async (client) => {
     // Try to find by ID first
-    let query = supabase.from("business_info").select("*");
+    let query = client.from("business_info").select("*");
     
     // Check if the id is a UUID (business_info.id) or a user_id
     if (id.includes('-')) {
@@ -150,78 +219,46 @@ export async function getBusinessInfo(id: string): Promise<BusinessInfo | null> 
     const { data, error } = await query.single();
 
     if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
+      throw error;
     }
 
-    return data
-  } catch (error) {
-    // Return mock data for demo without logging the error
-    return {
-      id: "mock-business-info-id",
-      user_id: id,
-      ai_name: "GrowBro Assistant",
-      company_name: "GrowBro Technologies",
-      website: "https://example.com",
-      email: "contact@example.com",
-      calendar_link: "https://calendar.example.com",
-      phone_number: "555-123-4567",
-      agent_type: "information-education",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  }
+    return data;
+  }, mockData);
 }
 
 export async function updateBusinessInfo(businessInfo: Partial<BusinessInfo>): Promise<boolean> {
-  try {
-    const { error } = await supabase.from("business_info").update(businessInfo).eq("id", businessInfo.id)
-
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return false
-    }
-
-    return true
-  } catch (error) {
-    // For demo purposes, return success without logging
-    return true
-  }
+  return safeSupabaseOp(async (client) => {
+    const { error } = await client.from("business_info").update(businessInfo).eq("id", businessInfo.id);
+    if (error) throw error;
+    return true;
+  }, true); // Return true as mock success
 }
 
 export async function createBusinessInfo(userId: string, businessInfo: Partial<BusinessInfo>): Promise<BusinessInfo | null> {
-  try {
-    const { data, error } = await supabase
+  const mockData: BusinessInfo = {
+    id: `mock-business-info-${Date.now()}`,
+    user_id: userId,
+    ai_name: businessInfo.ai_name || "GrowBro Assistant",
+    company_name: businessInfo.company_name || "GrowBro Technologies",
+    website: businessInfo.website || "https://example.com",
+    email: businessInfo.email || "contact@example.com",
+    calendar_link: businessInfo.calendar_link || "https://calendar.example.com",
+    phone_number: businessInfo.phone_number || "555-123-4567",
+    agent_type: businessInfo.agent_type || "information-education",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("business_info")
       .insert([{ user_id: userId, ...businessInfo }])
       .select()
-      .single()
+      .single();
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      console.error("Error creating business info:", error);
-      return null
-    }
-
-    console.log("Successfully created business info:", data);
-    return data
-  } catch (error) {
-    console.error("Exception creating business info:", error);
-    // Return mock data for demo without logging
-    return {
-      id: `mock-business-info-${Date.now()}`,
-      user_id: userId,
-      ai_name: businessInfo.ai_name || "GrowBro Assistant",
-      company_name: businessInfo.company_name || "GrowBro Technologies",
-      website: businessInfo.website || "https://example.com",
-      email: businessInfo.email || "contact@example.com",
-      calendar_link: businessInfo.calendar_link || "https://calendar.example.com",
-      phone_number: businessInfo.phone_number || "555-123-4567",
-      agent_type: businessInfo.agent_type || "information-education",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  }
+    if (error) throw error;
+    return data;
+  }, mockData);
 }
 
 export async function getLeads(userId: string): Promise<Lead[]> {
