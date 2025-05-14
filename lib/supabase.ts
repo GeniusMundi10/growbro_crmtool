@@ -262,298 +262,258 @@ export async function createBusinessInfo(userId: string, businessInfo: Partial<B
 }
 
 export async function getLeads(userId: string): Promise<Lead[]> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: Lead[] = [
+    {
+      id: "mock-lead-1",
+      user_id: userId,
+      name: "John Doe",
+      email: "john@example.com",
+      phone: "555-111-2222",
+      company: "Acme Inc",
+      source: "Website",
+      status: "new",
+      notes: "Interested in our services",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: "mock-lead-2",
+      user_id: userId,
+      name: "Jane Smith",
+      email: "jane@example.com",
+      phone: "555-333-4444",
+      company: "XYZ Corp",
+      source: "Referral",
+      status: "contacted",
+      notes: "Follow up next week",
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      updated_at: new Date(Date.now() - 86400000).toISOString()
+    }
+  ];
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("leads")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false });
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    // Return mock data for demo without logging
-    return [
-      {
-        id: "mock-lead-1",
-        user_id: userId,
-        name: "John Doe",
-        email: "john@example.com",
-        phone: "555-111-2222",
-        company: "Acme Inc",
-        source: "Website",
-        status: "new",
-        notes: "Interested in our services",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: "mock-lead-2",
-        user_id: userId,
-        name: "Jane Smith",
-        email: "jane@example.com",
-        phone: "555-333-4444",
-        company: "XYZ Corp",
-        source: "Referral",
-        status: "contacted",
-        notes: "Follow up next week",
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-        updated_at: new Date(Date.now() - 86400000).toISOString()
-      }
-    ];
-  }
+    if (error) throw error;
+    return data || [];
+  }, mockData);
 }
 
 export async function createLead(lead: Omit<Lead, "id" | "created_at" | "updated_at">): Promise<Lead | null> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: Lead = {
+    id: "mock-lead-new",
+    ...lead,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("leads")
       .insert([lead])
       .select()
-      .single()
+      .single();
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
-
-    return data
-  } catch (error) {
-    // Return mock data for demo without logging
-    return {
-      id: "mock-lead-new",
-      ...lead,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  }
+    if (error) throw error;
+    return data;
+  }, mockData);
 }
 
 export async function getConversations(userId: string): Promise<Conversation[]> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: Conversation[] = [
+    {
+      id: "mock-convo-1",
+      user_id: userId,
+      visitor_name: "Sam Wilson",
+      visitor_email: "sam@example.com",
+      visitor_phone: "555-987-6543",
+      status: "active",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    },
+    {
+      id: "mock-convo-2",
+      user_id: userId,
+      visitor_name: "Alex Johnson",
+      visitor_email: "alex@example.com",
+      status: "ended",
+      created_at: new Date(Date.now() - 172800000).toISOString(),
+      updated_at: new Date(Date.now() - 172800000).toISOString()
+    }
+  ];
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("conversations")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false });
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    // Return mock data for demo without logging
-    return [
-      {
-        id: "mock-convo-1",
-        user_id: userId,
-        visitor_name: "Sam Wilson",
-        visitor_email: "sam@example.com",
-        visitor_phone: "555-987-6543",
-        status: "active",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: "mock-convo-2",
-        user_id: userId,
-        visitor_name: "Alex Johnson",
-        visitor_email: "alex@example.com",
-        status: "ended",
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        updated_at: new Date(Date.now() - 172800000).toISOString()
-      }
-    ];
-  }
+    if (error) throw error;
+    return data || [];
+  }, mockData);
 }
 
 export async function getChatHistory(conversationId: string): Promise<ChatMessage[]> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: ChatMessage[] = [
+    {
+      id: "mock-msg-1",
+      conversation_id: conversationId,
+      role: "user",
+      content: "Hello, I'm interested in your services.",
+      created_at: new Date(Date.now() - 3600000).toISOString()
+    },
+    {
+      id: "mock-msg-2",
+      conversation_id: conversationId,
+      role: "assistant",
+      content: "Hi there! Thanks for reaching out. How can I help you today?",
+      created_at: new Date(Date.now() - 3590000).toISOString()
+    },
+    {
+      id: "mock-msg-3",
+      conversation_id: conversationId,
+      role: "user",
+      content: "I'd like to learn more about your pricing.",
+      created_at: new Date(Date.now() - 3580000).toISOString()
+    }
+  ];
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("chat_messages")
       .select("*")
       .eq("conversation_id", conversationId)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: true });
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    // Return mock data for demo without logging
-    return [
-      {
-        id: "mock-msg-1",
-        conversation_id: conversationId,
-        role: "user",
-        content: "Hello, I'm interested in your services.",
-        created_at: new Date(Date.now() - 3600000).toISOString()
-      },
-      {
-        id: "mock-msg-2",
-        conversation_id: conversationId,
-        role: "assistant",
-        content: "Hi there! Thanks for reaching out. How can I help you today?",
-        created_at: new Date(Date.now() - 3590000).toISOString()
-      },
-      {
-        id: "mock-msg-3",
-        conversation_id: conversationId,
-        role: "user",
-        content: "I'd like to learn more about your pricing.",
-        created_at: new Date(Date.now() - 3580000).toISOString()
-      }
-    ];
-  }
+    if (error) throw error;
+    return data || [];
+  }, mockData);
 }
 
 export async function saveMessage(message: Omit<ChatMessage, "id" | "created_at">): Promise<ChatMessage | null> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: ChatMessage = {
+    id: `mock-msg-${Date.now()}`,
+    ...message,
+    created_at: new Date().toISOString()
+  };
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("chat_messages")
       .insert([message])
       .select()
-      .single()
+      .single();
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
-
-    return data
-  } catch (error) {
-    // Return a mock message for demo
-    return {
-      id: `mock-msg-${Date.now()}`,
-      ...message,
-      created_at: new Date().toISOString()
-    };
-  }
+    if (error) throw error;
+    return data;
+  }, mockData);
 }
 
 export async function getAnalytics(userId: string, period: "day" | "week" | "month" = "week"): Promise<Analytics | null> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: Analytics = {
+    id: "mock-analytics-id",
+    user_id: userId,
+    total_conversations: 87,
+    total_messages: 563,
+    total_leads: 42,
+    avg_conversation_length: 12,
+    data_period: period,
+    created_at: new Date().toISOString()
+  };
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("analytics")
       .select("*")
       .eq("user_id", userId)
       .eq("data_period", period)
-      .single()
+      .single();
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
-
-    return data
-  } catch (error) {
-    // Return mock analytics data instead of showing an error
-    return {
-      id: "mock-analytics-id",
-      user_id: userId,
-      total_conversations: 87,
-      total_messages: 563,
-      total_leads: 42,
-      avg_conversation_length: 12,
-      data_period: period,
-      created_at: new Date().toISOString()
-    };
-  }
+    if (error) throw error;
+    return data;
+  }, mockData);
 }
 
 export async function getTeamMembers(userId: string): Promise<TeamMember[]> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: TeamMember[] = [
+    {
+      id: "mock-team-1",
+      user_id: userId,
+      member_email: "team1@example.com",
+      role: "admin",
+      status: "active",
+      created_at: new Date().toISOString()
+    },
+    {
+      id: "mock-team-2",
+      user_id: userId,
+      member_email: "team2@example.com",
+      role: "member",
+      status: "active",
+      created_at: new Date().toISOString()
+    }
+  ];
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("team_members")
       .select("*")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false });
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return []
-    }
-
-    return data || []
-  } catch (error) {
-    // Return mock team members for demo
-    return [
-      {
-        id: "mock-team-1",
-        user_id: userId,
-        member_email: "team1@example.com",
-        role: "admin",
-        status: "active",
-        created_at: new Date().toISOString()
-      },
-      {
-        id: "mock-team-2",
-        user_id: userId,
-        member_email: "team2@example.com",
-        role: "member",
-        status: "active",
-        created_at: new Date().toISOString()
-      }
-    ];
-  }
+    if (error) throw error;
+    return data || [];
+  }, mockData);
 }
 
 export async function addTeamMember(userId: string, memberEmail: string, role: "admin" | "member" | "viewer"): Promise<TeamMember | null> {
-  try {
-    const { data, error } = await supabase
+  // Define mock data
+  const mockData: TeamMember = {
+    id: `mock-team-${Date.now()}`,
+    user_id: userId,
+    member_email: memberEmail,
+    role,
+    status: "invited",
+    created_at: new Date().toISOString()
+  };
+
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("team_members")
       .insert([{ user_id: userId, member_email: memberEmail, role, status: "invited" }])
       .select()
-      .single()
+      .single();
 
-    if (error) {
-      // Don't log the error to console to avoid the error message
-      return null
-    }
-
-    return data
-  } catch (error) {
-    // Return a mock team member for demo
-    return {
-      id: `mock-team-${Date.now()}`,
-      user_id: userId,
-      member_email: memberEmail,
-      role,
-      status: "invited",
-      created_at: new Date().toISOString()
-    };
-  }
+    if (error) throw error;
+    return data;
+  }, mockData);
 }
 
 // Debug utility - directly fetch all users with detailed error handling
 export async function debugFetchUsers() {
-  try {
+  return safeSupabaseOp(async (client) => {
     console.log("Debug: Attempting to fetch all users...");
     console.log("Debug: Using URL:", supabaseUrl.substring(0, 15) + "...");
     
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("users")
       .select("*");
       
-    if (error) {
-      console.error("Debug: Error fetching users:", error.message, error.details, error.hint, error.code);
-      return { success: false, error, data: null };
-    }
-    
-    console.log(`Debug: Successfully fetched ${data?.length || 0} users`);
+    if (error) throw error;
     return { success: true, data, error: null };
-  } catch (error) {
-    console.error("Debug: Exception when fetching users:", error);
-    return { success: false, error, data: null };
-  }
+  }, { success: false, data: null, error: null });
 }
 
 // Special function to directly fetch users with explicit auth
@@ -602,65 +562,78 @@ export async function fetchUsersDirectly() {
 
 // Fetch all AIs for a user
 export async function getAIsForUser(userId: string) {
-  const { data, error } = await supabase
-    .from("business_info")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data;
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
+      .from("business_info")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+      
+    if (error) throw error;
+    return data || [];
+  }, []);
 }
 
 // Create a new AI
 export async function createAIForUser(userId: string, aiData: Partial<BusinessInfo>) {
-  const { data, error } = await supabase
-    .from("business_info")
-    .insert([{ user_id: userId, ...aiData }])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
+      .from("business_info")
+      .insert([{ user_id: userId, ...aiData }])
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  }, {
+    id: `mock-ai-${Date.now()}`,
+    user_id: userId,
+    ai_name: aiData.ai_name || "AI Assistant",
+    company_name: aiData.company_name || "Company",
+    agent_type: aiData.agent_type || "information-education",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  });
 }
 
 // Update an AI
 export async function updateAI(aiId: string, aiData: Partial<BusinessInfo>) {
-  const { data, error } = await supabase
-    .from("business_info")
-    .update(aiData)
-    .eq("id", aiId)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
+      .from("business_info")
+      .update(aiData)
+      .eq("id", aiId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  }, { ...aiData, id: aiId, updated_at: new Date().toISOString() });
 }
 
 // Delete an AI
 export async function deleteAI(aiId: string, userId: string) {
-  const { error } = await supabase
-    .from("business_info")
-    .delete()
-    .eq("id", aiId)
-    .eq("user_id", userId);
-  if (error) throw error;
-  return true;
+  return safeSupabaseOp(async (client) => {
+    const { error } = await client
+      .from("business_info")
+      .delete()
+      .eq("id", aiId)
+      .eq("user_id", userId);
+      
+    if (error) throw error;
+    return true;
+  }, true);
 }
 
 // Get user's AIs
 export async function getUserAIs(userId: string): Promise<BusinessInfo[]> {
-  try {
-    const { data, error } = await supabase
+  return safeSupabaseOp(async (client) => {
+    const { data, error } = await client
       .from("business_info")
       .select("*")
       .eq("user_id", userId);
       
-    if (error) {
-      console.error("Error fetching user AIs:", error);
-      return [];
-    }
-    
+    if (error) throw error;
     return data || [];
-  } catch (error) {
-    console.error("Exception fetching user AIs:", error);
-    return [];
-  }
+  }, []);
 }
