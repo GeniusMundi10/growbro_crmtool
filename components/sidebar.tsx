@@ -242,14 +242,7 @@ export default function Sidebar() {
                       transition={{ duration: 0.2 }}
                       className="ml-7 mt-1 mb-1 overflow-hidden"
                     >
-                      <div className="py-2 text-sm text-green-100 flex items-center justify-between">
-                        <span>All AIs</span>
-                        <Link href="/dashboard/info?new=true" legacyBehavior>
-                          <a className="flex items-center text-green-200 px-2 py-1 rounded hover:bg-white/10 text-sm">
-                            <PlusCircle className="h-4 w-4 mr-1" /> New
-                          </a>
-                        </Link>
-                      </div>
+                      <div className="py-2 text-sm text-green-100 flex items-center">All AIs</div>
                       {loadingAIs ? (
                         <div className="text-xs text-gray-200 px-2 py-1">Loading...</div>
                       ) : aiList.length === 0 ? (

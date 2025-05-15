@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { useSearchParams } from "next/navigation"
 
 interface DashboardTabsProps {
   activeTab: string
@@ -21,16 +22,18 @@ const tabs = [
 ]
 
 export default function DashboardTabs({ activeTab }: DashboardTabsProps) {
+  const searchParams = useSearchParams();
+  const aiId = searchParams.get('aiId');
   return (
     <div className="relative mb-4">
       <div className="flex overflow-x-auto scrollbar-hide gap-1 rounded-lg border bg-white p-1 shadow-sm">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
-          
+          const href = aiId ? `/dashboard/${tab.id}?aiId=${aiId}` : `/dashboard/${tab.id}`;
           return (
             <Link
               key={tab.id}
-              href={`/dashboard/${tab.id}`}
+              href={href}
               className={cn(
                 "relative inline-flex min-w-max items-center whitespace-nowrap px-4 py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 "rounded-md"

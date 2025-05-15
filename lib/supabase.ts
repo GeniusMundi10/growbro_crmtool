@@ -22,6 +22,15 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 })
 
 // Database types
+export type LeadCapture = {
+  id: string;
+  ai_id: string;
+  user_id: string;
+  form_config: any;
+  created_at: string;
+  updated_at: string;
+};
+
 export type User = {
   id: string
   email: string
@@ -127,6 +136,36 @@ const mockUser: User = {
 };
 
 // Database functions
+
+// Lead Capture CRUD operations
+export async function getLeadCapture(aiId: string): Promise<LeadCapture | null> {
+  const { data, error } = await supabase
+    .from('lead_capture')
+    .select('*')
+    .eq('ai_id', aiId)
+    .single();
+  if (error) return null;
+  return data as LeadCapture;
+}
+
+export async function createLeadCapture(aiId: string, { user_id, form_config }: { user_id: string, form_config: any }): Promise<LeadCapture | null> {
+  const { data, error } = await supabase
+    .from('lead_capture')
+    .insert([{ ai_id: aiId, user_id, form_config }])
+    .select()
+    .single();
+  if (error) return null;
+  return data as LeadCapture;
+}
+
+export async function updateLeadCapture({ id, form_config }: { id: string, form_config: any }): Promise<boolean> {
+  const { error } = await supabase
+    .from('lead_capture')
+    .update({ form_config })
+    .eq('id', id);
+  return !error;
+}
+
 export async function getCurrentUser(): Promise<User | null> {
   // Return mock user instead of authenticating
   return mockUser;

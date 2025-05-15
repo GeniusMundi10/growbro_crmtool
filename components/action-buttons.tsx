@@ -9,6 +9,7 @@ interface ActionButtonsProps {
   onSave?: () => void
   onCustomize?: () => void
   onTest?: () => void
+  saving?: boolean
 }
 
 export default function ActionButtons({
@@ -18,12 +19,23 @@ export default function ActionButtons({
   onSave,
   onCustomize,
   onTest,
+  saving = false,
 }: ActionButtonsProps) {
   return (
     <div className="flex justify-end mt-8 space-x-4">
       {showSave && (
-        <Button onClick={onSave} className="bg-green-600 hover:bg-green-700 text-white">
-          Save Changes
+        <Button onClick={onSave} className="bg-green-600 hover:bg-green-700 text-white" disabled={saving}>
+          {saving ? (
+            <span>
+              <svg className="inline mr-2 w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+              Saving...
+            </span>
+          ) : (
+            "Save Changes"
+          )}
         </Button>
       )}
       {showCustomize && (
