@@ -22,6 +22,28 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 })
 
 // Database types
+export type AIVoice = {
+  id: string;
+  ai_id: string;
+  user_id: string;
+  voice_gender: string;
+  language: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AIPhoto = {
+  id: string;
+  ai_id: string;
+  user_id: string;
+  url: string;
+  file_path?: string;
+  selected?: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type LeadCapture = {
   id: string;
   ai_id: string;
@@ -138,6 +160,113 @@ const mockUser: User = {
 // Database functions
 
 // Lead Capture CRUD operations
+
+// AI Voice CRUD operations
+export async function getAIVoice(aiId: string): Promise<AIVoice | null> {
+  const { data, error } = await supabase
+    .from('ai_voice')
+    .select('*')
+    .eq('ai_id', aiId)
+    .single();
+  if (error) return null;
+  return data as AIVoice;
+}
+
+export async function upsertAIVoice(
+  aiId: string,
+  userId: string,
+  voice_gender: string,
+  language: string,
+  enabled: boolean
+): Promise<AIVoice | null> {
+  const { data, error } = await supabase
+    .from('ai_voice')
+    .upsert([
+      { ai_id: aiId, user_id: userId, voice_gender, language, enabled }
+    ], { onConflict: 'ai_id' })
+    .select()
+    .single();
+  if (error) return null;
+  return data as AIVoice;
+}
+
+export async function deleteAIVoice(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('ai_voice')
+    .delete()
+    .eq('id', id);
+  return !error;
+}
+
+// AI Photo CRUD operations
+export async function getAIPhoto(aiId: string): Promise<AIPhoto | null> {
+  // Get the currently selected photo (if any)
+  const { data, error } = await supabase
+    .from('ai_photo')
+    .select('*')
+    .eq('ai_id', aiId)
+    .eq('selected', true)
+    .single();
+  if (error) return null;
+  return data as AIPhoto;
+}
+
+export async function getAIPhotos(aiId: string): Promise<AIPhoto[]> {
+  const { data, error } = await supabase
+    .from('ai_photo')
+    .select('*')
+    .eq('ai_id', aiId)
+    .order('created_at', { ascending: false });
+  if (error) return [];
+  return data as AIPhoto[];
+}
+
+export async function selectAIPhoto(photoId: string, aiId: string): Promise<boolean> {
+  // Set selected=true for photoId, false for others of same aiId
+  const { error: clearError } = await supabase
+    .from('ai_photo')
+    .update({ selected: false })
+    .eq('ai_id', aiId);
+  if (clearError) return false;
+  const { error: setError } = await supabase
+    .from('ai_photo')
+    .update({ selected: true })
+    .eq('id', photoId);
+  return !setError;
+}
+
+
+export async function upsertAIPhoto(aiId: string, userId: string, url: string, file_path?: string): Promise<AIPhoto | null> {
+  // Insert a new photo (do not upsert on ai_id, allow multiple)
+  const { data, error } = await supabase
+    .from('ai_photo')
+    .insert([{ ai_id: aiId, user_id: userId, url, file_path, selected: false }])
+    .select()
+    .single();
+  if (error) return null;
+  return data as AIPhoto;
+}
+
+export async function deleteAIPhoto(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('ai_photo')
+    .delete()
+    .eq('id', id);
+  return !error;
+}
+
+// Upload photo to Supabase Storage and return the public URL
+export async function uploadAIPhotoToStorage(aiId: string, file: File): Promise<{ url: string, file_path: string } | null> {
+  const filePath = `${aiId}/${Date.now()}_${file.name}`;
+  const { data, error } = await supabase.storage
+    .from('ai-photos')
+    .upload(filePath, file, { upsert: true });
+  if (error) return null;
+  const { data: urlData } = supabase.storage.from('ai-photos').getPublicUrl(filePath);
+  const publicUrl = urlData.publicUrl;
+  return { url: publicUrl, file_path: filePath };
+}
+
 export async function getLeadCapture(aiId: string): Promise<LeadCapture | null> {
   const { data, error } = await supabase
     .from('lead_capture')

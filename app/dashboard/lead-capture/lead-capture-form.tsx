@@ -179,7 +179,15 @@ export default function LeadCaptureForm() {
         </p>
       </div>
 
-      <ActionButtons showSave={true} onSave={saveSettings} saving={saving} />
+      <ActionButtons
+        showSave={true}
+        onSave={saveSettings}
+        saving={saving}
+        showCustomize={true}
+        onCustomize={() => {
+          if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+        }}
+      />
     </div>
   );
 }
