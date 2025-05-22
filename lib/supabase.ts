@@ -22,6 +22,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 })
 
 // Database types
+export type AIWebsite = {
+  id: string;
+  ai_id: string;
+  user_id: string;
+  label: string;
+  url: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AIVoice = {
   id: string;
   ai_id: string;
@@ -161,7 +171,127 @@ const mockUser: User = {
 
 // Lead Capture CRUD operations
 
+// AI Photo CRUD operations
+
 // AI Voice CRUD operations
+
+// AI Website CRUD operations
+export async function getAIWebsites(aiId: string): Promise<AIWebsite[]> {
+  const { data, error } = await supabase
+    .from('ai_website')
+    .select('*')
+    .eq('ai_id', aiId)
+    .order('created_at', { ascending: true });
+  if (error) return [];
+  return data as AIWebsite[];
+}
+
+export async function upsertAIWebsites(
+  aiId: string,
+  userId: string,
+  websites: { label: string; url: string; id?: string }[]
+): Promise<AIWebsite[]> {
+  // Remove empty URLs
+  const filtered = websites.filter(w => w.url && w.label);
+  if (filtered.length === 0) return [];
+  // Upsert all (if id present, update; else insert)
+  const { data, error } = await supabase
+    .from('ai_website')
+    // Use composite unique constraint for upsert, allowing multiple website links per user/ai_id (one per label)
+    .upsert(
+      filtered.map(w => ({
+        ai_id: aiId,
+        user_id: userId,
+        label: w.label,
+        url: w.url
+      })),
+      { onConflict: 'user_id,ai_id,label' }
+    )
+    .select();
+  if (error) {
+    console.error('Supabase upsert error:', error);
+    return [];
+  }
+  return data as AIWebsite[];
+}
+
+export async function deleteAIWebsite(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('ai_website')
+    .delete()
+    .eq('id', id);
+  return !error;
+}
+
+// Delete a website entry by user_id, ai_id, and label (composite key)
+export async function deleteAIWebsiteByLabel(userId: string, aiId: string, label: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('ai_website')
+    .delete()
+    .eq('user_id', userId)
+    .eq('ai_id', aiId)
+    .eq('label', label);
+  return !error;
+}
+
+// AI File CRUD operations
+export type AIFile = {
+  id: string;
+  ai_id: string;
+  user_id: string;
+  url: string;
+  file_path: string;
+  file_name: string;
+  file_type?: string;
+  file_size?: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function uploadAIFileToStorage(aiId: string, file: File): Promise<{ url: string; file_path: string } | null> {
+  // Use aiId as folder for organization
+  const filePath = `${aiId}/${Date.now()}_${file.name}`;
+  const { data, error } = await supabase.storage.from('ai-files').upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: false,
+  });
+  if (error) return null;
+  const { data: urlData } = supabase.storage.from('ai-files').getPublicUrl(filePath);
+  const url = urlData.publicUrl;
+  return { url, file_path: filePath };
+}
+
+export async function upsertAIFile(aiId: string, userId: string, fileMeta: { url: string; file_path: string; file_name: string; file_type?: string; file_size?: number }): Promise<AIFile | null> {
+  const { data, error } = await supabase
+    .from('ai_file')
+    .insert([{ ai_id: aiId, user_id: userId, ...fileMeta }])
+    .select()
+    .single();
+  if (error) return null;
+  return data as AIFile;
+}
+
+export async function getAIFiles(aiId: string): Promise<AIFile[]> {
+  const { data, error } = await supabase
+    .from('ai_file')
+    .select('*')
+    .eq('ai_id', aiId)
+    .order('created_at', { ascending: true });
+  if (error) return [];
+  return data as AIFile[];
+}
+
+export async function deleteAIFile(id: string, file_path: string): Promise<boolean> {
+  // Delete from storage first
+  const { error: storageError } = await supabase.storage.from('ai-files').remove([file_path]);
+  // Always attempt DB delete, even if storage fails
+  const { error } = await supabase
+    .from('ai_file')
+    .delete()
+    .eq('id', id);
+  return !error;
+}
+
 export async function getAIVoice(aiId: string): Promise<AIVoice | null> {
   const { data, error } = await supabase
     .from('ai_voice')
@@ -183,10 +313,13 @@ export async function upsertAIVoice(
     .from('ai_voice')
     .upsert([
       { ai_id: aiId, user_id: userId, voice_gender, language, enabled }
-    ], { onConflict: 'ai_id' })
+    ], { onConflict: 'ai_id' }) // camelCase, not snake_case
     .select()
     .single();
-  if (error) return null;
+  if (error) {
+    console.error('Supabase upsert error:', error);
+    return null;
+  }
   return data as AIVoice;
 }
 
@@ -198,7 +331,6 @@ export async function deleteAIVoice(id: string): Promise<boolean> {
   return !error;
 }
 
-// AI Photo CRUD operations
 export async function getAIPhoto(aiId: string): Promise<AIPhoto | null> {
   // Get the currently selected photo (if any)
   const { data, error } = await supabase

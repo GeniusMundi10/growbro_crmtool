@@ -444,7 +444,9 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                 onClick={() => {
                   if (activeSection === "ai") setActiveSection("company")
                   else if (activeSection === "company") setActiveSection("contact") 
-                  else handleRedirectToCustomize()
+                  else {
+  if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+}
                 }}
               >
                 {activeSection === "contact" ? "Customize AI" : "Next"}

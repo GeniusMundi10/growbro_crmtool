@@ -1,6 +1,6 @@
 import Header from "@/components/header"
 import DashboardTabs from "@/components/dashboard-tabs"
-import FilesUploadForm from "./files-upload-form"
+import FilesForm from "./files-form"
 
 export default function FilesPage() {
   return (
@@ -9,7 +9,7 @@ export default function FilesPage() {
       <div className="container mx-auto px-4 py-6">
         <DashboardTabs activeTab="files" />
         <div className="mt-8">
-          <FilesUploadForm />
+          <FilesForm />
         </div>
       </div>
     </div>
