@@ -228,7 +228,12 @@ export default function WebsitesForm() {
         </Button>
       </div>
 
-      <ActionButtons showSave={true} onSave={handleSave} saving={saving} />
+      <ActionButtons 
+  showCustomize={true}
+  onCustomize={() => {
+    if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+  }}
+showSave={true} onSave={handleSave} saving={saving} />
     </div>
   );
 }

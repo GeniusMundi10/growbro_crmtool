@@ -157,7 +157,12 @@ export default function FilesForm() {
           </div>
         </div>
       )}
-      <ActionButtons showSave={false} saving={uploading} />
+      <ActionButtons 
+  showCustomize={true}
+  onCustomize={() => {
+    if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+  }}
+showSave={false} saving={uploading} />
     </div>
   );
 }

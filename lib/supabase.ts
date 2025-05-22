@@ -292,6 +292,155 @@ export async function deleteAIFile(id: string, file_path: string): Promise<boole
   return !error;
 }
 
+// Resource Link CSV CRUD operations
+export type AIResourceLinkCSV = {
+  id: string;
+  ai_id: string;
+  user_id: string;
+  url: string;
+  file_path: string;
+  file_name: string;
+  file_type?: string;
+  file_size?: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function uploadResourceLinkCSVToStorage(aiId: string, userId: string, file: File): Promise<{ url: string; file_path: string } | null> {
+  // Only one CSV per user/ai: use a deterministic path
+  const filePath = `${aiId}/${userId}/resource-links.csv`;
+  // Remove any previous file at this path
+  await supabase.storage.from('ai-resources').remove([filePath]);
+  const { data, error } = await supabase.storage.from('ai-resources').upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: true,
+    contentType: file.type || 'text/csv',
+  });
+  if (error) return null;
+  const { data: urlData } = supabase.storage.from('ai-resources').getPublicUrl(filePath);
+  const url = urlData.publicUrl;
+  return { url, file_path: filePath };
+}
+
+export async function upsertResourceLinkCSV(aiId: string, userId: string, fileMeta: { url: string; file_path: string; file_name: string; file_type?: string; file_size?: number }): Promise<AIResourceLinkCSV | null> {
+  // Upsert by user_id+ai_id unique
+  const { data, error } = await supabase
+    .from('ai_resource_link_file')
+    .upsert([{ ai_id: aiId, user_id: userId, ...fileMeta }], { onConflict: 'user_id,ai_id' })
+    .select()
+    .single();
+  if (error) return null;
+  return data as AIResourceLinkCSV;
+}
+
+export async function getResourceLinkCSV(aiId: string, userId: string): Promise<AIResourceLinkCSV | null> {
+  const { data, error } = await supabase
+    .from('ai_resource_link_file')
+    .select('*')
+    .eq('ai_id', aiId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) return null;
+  return data as AIResourceLinkCSV;
+}
+
+export async function deleteResourceLinkCSV(id: string, file_path: string): Promise<boolean> {
+  await supabase.storage.from('ai-resources').remove([file_path]);
+  const { error } = await supabase
+    .from('ai_resource_link_file')
+    .delete()
+    .eq('id', id);
+  return !error;
+}
+
+// AI Services CRUD operations
+export type AIServices = {
+  id: string;
+  user_id: string;
+  ai_id: string;
+  business_services: string | null;
+  differentiation: string | null;
+  profitable_line_items: string | null;
+  best_sales_lines: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getAIServices(aiId: string, userId: string): Promise<AIServices | null> {
+  const { data, error } = await supabase
+    .from('ai_services')
+    .select('*')
+    .eq('ai_id', aiId)
+    .eq('user_id', userId)
+    .single();
+  if (error) return null;
+  return data as AIServices;
+}
+
+export async function upsertAIServices(
+  aiId: string,
+  userId: string,
+  values: {
+    business_services?: string;
+    differentiation?: string;
+    profitable_line_items?: string;
+    best_sales_lines?: string;
+  }
+): Promise<AIServices | null> {
+  const { data, error } = await supabase
+    .from('ai_services')
+    .upsert([{ ai_id: aiId, user_id: userId, ...values }], { onConflict: 'user_id,ai_id' })
+    .select()
+    .single();
+  if (error) return null;
+  return data as AIServices;
+}
+
+// AI Greeting CRUD operations
+export type AIGreeting = {
+  id: string;
+  ai_id: string;
+  user_id: string;
+  label: string;
+  message: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function getAIGreetings(aiId: string): Promise<AIGreeting[]> {
+  const { data, error } = await supabase
+    .from('ai_greeting')
+    .select('*')
+    .eq('ai_id', aiId)
+    .order('created_at', { ascending: true });
+  if (error) return [];
+  return data as AIGreeting[];
+}
+
+export async function upsertAIGreetings(aiId: string, userId: string, greetings: { label: string; message: string }[]): Promise<boolean> {
+  // Upsert by user_id, ai_id, label
+  const { error } = await supabase
+    .from('ai_greeting')
+    .upsert(greetings.map(g => ({
+      ai_id: aiId,
+      user_id: userId,
+      label: g.label,
+      message: g.message
+    })), { onConflict: 'user_id,ai_id,label' });
+  return !error;
+}
+
+export async function deleteAIGreetingByLabel(userId: string, aiId: string, label: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('ai_greeting')
+    .delete()
+    .eq('user_id', userId)
+    .eq('ai_id', aiId)
+    .eq('label', label);
+  return !error;
+}
+
+
 export async function getAIVoice(aiId: string): Promise<AIVoice | null> {
   const { data, error } = await supabase
     .from('ai_voice')
