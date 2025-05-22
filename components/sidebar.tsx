@@ -27,9 +27,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { supabase, debugFetchUsers, fetchUsersDirectly, getAIsForUser } from "@/lib/supabase"
+import { supabase, debugFetchUsers, fetchUsersDirectly, getAIsForUser, deleteAIAndData } from "@/lib/supabase"
 import { useUser } from "@/context/UserContext"
 import React from "react"
+import { toast } from "sonner"
 
 const menuItems = [
   { name: "Analytics", icon: <BarChart3 className="h-5 w-5" />, path: "/analytics" },
@@ -45,6 +46,9 @@ const menuItems = [
 ]
 
 export default function Sidebar() {
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; ai: any } | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<any>(null);
+
   const pathname = usePathname()
   const [expanded, setExpanded] = useState(true)
   const [manageAIExpanded, setManageAIExpanded] = useState(
@@ -153,24 +157,71 @@ export default function Sidebar() {
     : (isHovering ? "hovering" : "collapsed");
 
   return (
-    <motion.div
+    <div
       ref={sidebarRef}
       className={cn(
         "fixed top-0 left-0 z-40 h-screen bg-gradient-to-b from-emerald-900 to-green-700 text-white shadow-lg transition-colors",
+        expanded ? "w-[280px]" : (isHovering ? "w-[280px]" : "w-[70px]")
       )}
-      initial={false}
-      animate={currentVariant}
-      variants={sidebarVariants}
-      onHoverStart={() => !expanded && setIsHovering(true)}
-      onHoverEnd={() => setIsHovering(false)}
-    >
+      onMouseEnter={() => !expanded && setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+>
+      {/* Context menu for AI delete, rendered at root level for correct positioning */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white text-gray-900 rounded shadow-md border p-2 min-w-[120px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={e => e.stopPropagation()}
+          onMouseLeave={() => setContextMenu(null)}
+        >
+          <button
+            className="w-full text-left px-2 py-1 hover:bg-red-50 hover:text-red-600 rounded"
+            onClick={() => {
+              setShowDeleteConfirm(contextMenu.ai);
+              setContextMenu(null);
+            }}
+          >Delete</button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog (root level, not inside AI list) */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded shadow-lg p-6 min-w-[320px] max-w-[90vw]">
+            <h2 className="font-bold text-lg mb-2 text-gray-900">Delete AI?</h2>
+            <p className="mb-4 text-gray-700">Are you sure you want to delete <b>{showDeleteConfirm.ai_name || 'this AI'}</b> and all its data? This action cannot be undone.</p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800"
+                onClick={() => setShowDeleteConfirm(null)}
+              >Cancel</button>
+              <button
+                className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white"
+                onClick={async () => {
+                  if (!user?.id) return;
+                  const ok = await deleteAIAndData(showDeleteConfirm.id, user.id);
+                  if (ok) {
+                    setAIList(list => list.filter(ai => ai.id !== showDeleteConfirm.id));
+                    toast.success('AI and all data deleted');
+                  } else {
+                    toast.error('Failed to delete AI');
+                  }
+                  setShowDeleteConfirm(null);
+                }}
+              >Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <TooltipProvider delayDuration={0}>
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between p-6">
-            <motion.div 
-              className="flex items-center"
-              animate={{ opacity: expanded || isHovering ? 1 : 0 }}
-              transition={{ duration: 0.2 }}
+            <div 
+              className={cn(
+                "flex items-center transition-opacity duration-200",
+                expanded || isHovering ? "opacity-100" : "opacity-60"
+              )}
             >
               <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
                 <span className="text-xl font-bold text-white">G</span>
@@ -180,7 +231,7 @@ export default function Sidebar() {
                   <h1 className="text-xl font-bold">growbro.ai</h1>
                 </Link>
               )}
-            </motion.div>
+            </div>
             
             <Button
               variant="ghost"
@@ -188,21 +239,19 @@ export default function Sidebar() {
               className="rounded-full text-white hover:bg-white/10 focus:outline-none"
               onClick={() => setExpanded(!expanded)}
             >
-              <motion.div
-                animate={{ rotate: expanded ? 0 : 180 }}
-                transition={{ duration: 0.3 }}
-              >
+              <span className={expanded ? "transition-transform duration-300" : "rotate-180 transition-transform duration-300"}>
                 {expanded ? (
                   <ChevronRight className="h-5 w-5" />
                 ) : (
                   <Menu className="h-5 w-5" />
                 )}
-              </motion.div>
+              </span>
             </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             <nav className="space-y-1.5">
+              {/* Manage AI section */}
               <div>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -220,9 +269,9 @@ export default function Sidebar() {
                       {(expanded || isHovering) && (
                         <div className="ml-3 flex w-full justify-between items-center">
                           <span>Manage AI</span>
-                          <motion.div animate={{ rotate: manageAIExpanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                          <span className={manageAIExpanded ? "rotate-90 transition-transform duration-200" : "transition-transform duration-200"}>
                             <ChevronRight className="h-4 w-4" />
-                          </motion.div>
+                          </span>
                         </div>
                       )}
                     </div>
@@ -233,43 +282,39 @@ export default function Sidebar() {
                     </TooltipContent>
                   )}
                 </Tooltip>
-                <AnimatePresence>
-                  {manageAIExpanded && (expanded || isHovering) && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="ml-7 mt-1 mb-1 overflow-hidden"
-                    >
-                      <div className="py-2 text-sm text-green-100 flex items-center">All AIs</div>
-                      {loadingAIs ? (
-                        <div className="text-xs text-gray-200 px-2 py-1">Loading...</div>
-                      ) : aiList.length === 0 ? (
-                        <div className="text-xs text-gray-200 px-2 py-1">No AIs found</div>
-                      ) : (
-                        aiList.map(ai => (
+                {manageAIExpanded && (expanded || isHovering) && (
+                  <div className="ml-7 mt-1 mb-1 overflow-hidden transition-all duration-200">
+                    <div className="py-2 text-sm text-green-100 flex items-center">All AIs</div>
+                    {loadingAIs ? (
+                      <div className="text-xs text-gray-200 px-2 py-1">Loading...</div>
+                    ) : aiList.length === 0 ? (
+                      <div className="text-xs text-gray-200 px-2 py-1">No AIs found</div>
+                    ) : (
+                      aiList.map(ai => (
+                        <div
+                          key={ai.id}
+                          onContextMenu={e => {
+                            e.preventDefault();
+                            setContextMenu({ x: e.clientX, y: e.clientY, ai });
+                          }}
+                          className="relative"
+                        >
                           <Link
-                            key={ai.id}
                             href={`/dashboard/info?aiId=${ai.id}`}
                             className="flex items-center rounded-md py-2 px-3 text-sm text-green-100 hover:bg-white/10 hover:text-white"
                           >
                             <span className="mr-2">🤖</span>
                             <span>{ai.ai_name || "Untitled AI"}</span>
                           </Link>
-                        ))
-                      )}
-                      <Link
-                        href="/dashboard/info?new=true"
-                        className="flex items-center rounded-md py-2 px-3 mt-2 text-sm text-green-100 hover:bg-white/10 hover:text-white border border-dashed border-green-200/30"
-                      >
-                        <PlusCircle className="h-4 w-4 mr-2" />
-                        <span>Create New AI</span>
-                      </Link>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                          
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
+
+              {/* Main menu items */}
               {menuItems.map((item) => (
                 <div key={item.name}>
                   <Tooltip>
@@ -278,14 +323,14 @@ export default function Sidebar() {
                         href={item.path}
                         className={cn(
                           "flex items-center rounded-lg px-3 py-3 text-sm transition-colors",
-                          pathname === item.path || 
-                          (pathname.startsWith(item.path + "/") && item.path !== "/") ? 
-                            "bg-white/20 font-medium" : 
-                            "hover:bg-white/10",
+                          pathname === item.path ||
+                            (pathname.startsWith(item.path + "/") && item.path !== "/")
+                            ? "bg-white/20 font-medium"
+                            : "hover:bg-white/10",
                           !expanded && !isHovering && "justify-center",
                         )}
                       >
-                        <motion.div
+                        <div
                           className={cn(
                             "flex items-center",
                             !expanded && !isHovering && "justify-center",
@@ -298,7 +343,7 @@ export default function Sidebar() {
                               <span>{item.name}</span>
                             </div>
                           )}
-                        </motion.div>
+                        </div>
                       </Link>
                     </TooltipTrigger>
                     {!expanded && !isHovering && (
@@ -312,10 +357,8 @@ export default function Sidebar() {
             </nav>
           </div>
 
-          <motion.div 
-            className="mt-auto p-4 border-t border-white/10"
-            animate={{ opacity: expanded || isHovering ? 1 : 0.7 }}
-          >
+          {/* User info section at the bottom */}
+          <div className="mt-auto p-4 border-t border-white/10">
             <div className={cn(
               "flex items-center rounded-lg p-2 hover:bg-white/10",
               !expanded && !isHovering && "justify-center"
@@ -345,9 +388,9 @@ export default function Sidebar() {
                 <div className="text-xs text-red-300">No user found</div>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
       </TooltipProvider>
-    </motion.div>
+    </div>
   )
 }

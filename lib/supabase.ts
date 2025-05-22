@@ -353,6 +353,43 @@ export async function deleteResourceLinkCSV(id: string, file_path: string): Prom
   return !error;
 }
 
+// Delete all AI data for user/ai
+export async function deleteAIAndData(aiId: string, userId: string): Promise<boolean> {
+  const tables = [
+    // INFO
+    'business_info',
+    // LEAD CAPTURE
+    'lead_capture',
+    // PHOTO
+    'ai_photo',
+    // VOICE
+    'ai_voice',
+    // WEBSITES
+    'ai_website',
+    // FILES
+    'ai_file',
+    // RESOURCE LINKS
+    'ai_resource_link_file',
+    // GREETINGS
+    'ai_greeting',
+    // SERVICES
+    'ai_services',
+  ];
+  let allOk = true;
+  for (const table of tables) {
+    let query = supabase.from(table).delete().eq('user_id', userId);
+    // business_info uses 'id', others use 'ai_id'
+    if (table === 'business_info') {
+      query = query.eq('id', aiId);
+    } else {
+      query = query.eq('ai_id', aiId);
+    }
+    const { error } = await query;
+    if (error) allOk = false;
+  }
+  return allOk;
+}
+
 // AI Services CRUD operations
 export type AIServices = {
   id: string;
