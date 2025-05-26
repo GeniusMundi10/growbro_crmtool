@@ -314,6 +314,19 @@ export default function Sidebar() {
                 )}
               </div>
 
+              {/* Add New AI button */}
+              <div className="flex justify-center my-2">
+                <Button
+                  variant="ghost"
+                  className="w-full flex items-center justify-center text-green-200 border border-green-500 hover:bg-green-800/80 hover:text-white"
+                  onClick={() => router.push('/dashboard/info?new=true')}
+                  aria-label="Add New AI"
+                >
+                  <PlusCircle className="h-5 w-5 mr-2" />
+                  {(expanded || isHovering) && <span>Add New AI</span>}
+                </Button>
+              </div>
+
               {/* Main menu items */}
               {menuItems.map((item) => (
                 <div key={item.name}>

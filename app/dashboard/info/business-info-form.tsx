@@ -161,7 +161,11 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
             sessionStorage.setItem('refreshAIList', 'true');
             window.dispatchEvent(new CustomEvent('refreshAIList'));
           }
-          
+          // Redirect to the new AI's info page so aiId is in the URL
+          if (result?.id) {
+            router.push(`/dashboard/info?aiId=${result.id}`);
+            return; // Prevent further execution so we don't move to next section with wrong context
+          }
           // Move to next section after saving
           if (activeSection === "ai") {
             setActiveSection("company");
