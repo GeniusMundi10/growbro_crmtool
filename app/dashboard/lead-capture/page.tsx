@@ -1,6 +1,11 @@
+"use client";
+
+export const dynamic = "force-dynamic";
+
 import Header from "@/components/header"
 import DashboardTabs from "@/components/dashboard-tabs"
 import LeadCaptureForm from "./lead-capture-form"
+import React, { Suspense } from "react";
 
 export default function LeadCapturePage() {
   return (
@@ -9,7 +14,9 @@ export default function LeadCapturePage() {
       <div className="container mx-auto px-4 py-6">
         <DashboardTabs activeTab="lead-capture" />
         <div className="mt-8">
-          <LeadCaptureForm />
+          <Suspense fallback={<div>Loading Lead Capture...</div>}>
+            <LeadCaptureForm />
+          </Suspense>
         </div>
       </div>
     </div>

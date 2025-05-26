@@ -1,7 +1,9 @@
+"use client";
+
 import Header from "@/components/header"
 import DashboardTabs from "@/components/dashboard-tabs"
 import PhotoUploadForm from "./photo-upload-form"
-
+import React, { Suspense } from "react";
 import PhotoForm from "./photo-form";
 
 export default function PhotoPage() {

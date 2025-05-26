@@ -1,5 +1,7 @@
 "use client"
 
+export const dynamic = "force-dynamic";
+
 import { motion } from "framer-motion"
 import { useSearchParams } from "next/navigation"
 import Header from "@/components/header"

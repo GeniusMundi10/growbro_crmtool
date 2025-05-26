@@ -1,6 +1,11 @@
+"use client";
+
+export const dynamic = "force-dynamic";
+
 import Header from "@/components/header"
 import DashboardTabs from "@/components/dashboard-tabs"
 import WebsitesForm from "./websites-form"
+import React, { Suspense } from "react";
 
 export default function WebsitesPage() {
   return (

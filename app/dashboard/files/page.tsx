@@ -1,6 +1,11 @@
+"use client";
+
+export const dynamic = "force-dynamic";
+
 import Header from "@/components/header"
 import DashboardTabs from "@/components/dashboard-tabs"
 import FilesForm from "./files-form"
+import React, { Suspense } from "react";
 
 export default function FilesPage() {
   return (
