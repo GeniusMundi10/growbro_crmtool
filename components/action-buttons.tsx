@@ -1,6 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 
 interface ActionButtonsProps {
   showSave?: boolean
@@ -10,6 +12,7 @@ interface ActionButtonsProps {
   onCustomize?: () => void
   onTest?: () => void
   saving?: boolean
+  aiIdOverride?: string  // Optional override for aiId if not using the URL param
 }
 
 export default function ActionButtons({
@@ -20,7 +23,27 @@ export default function ActionButtons({
   onCustomize,
   onTest,
   saving = false,
+  aiIdOverride,
 }: ActionButtonsProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlAiId = searchParams.get('aiId')
+  
+  // Use override if provided, otherwise use URL param
+  const currentAiId = aiIdOverride || urlAiId
+  
+  // Handle redirecting to AI Code page with correct aiId
+  const handleTestAI = () => {
+    if (onTest) {
+      // Use custom handler if provided
+      onTest()
+    } else if (currentAiId) {
+      // Otherwise redirect to AI Code page with aiId
+      router.push(`/ai-code?aiId=${currentAiId}`)
+    } else {
+      console.error("No AI ID available for Test AI button")
+    }
+  }
   return (
     <div className="flex justify-end mt-8 space-x-4">
       {showSave && (
@@ -44,7 +67,11 @@ export default function ActionButtons({
         </Button>
       )}
       {showTest && (
-        <Button onClick={onTest} className="bg-blue-500 text-white hover:bg-blue-600">
+        <Button 
+          onClick={handleTestAI} 
+          className="bg-blue-500 text-white hover:bg-blue-600"
+          disabled={!currentAiId && !onTest}
+        >
           Test AI
         </Button>
       )}

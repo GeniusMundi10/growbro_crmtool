@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +24,17 @@ import {
   CheckCircle,
   Clock,
   Menu,
+  LogOut,
 } from "lucide-react"
-import { fetchUsersDirectly } from "@/lib/supabase"
+import { signOut } from "@/lib/auth"
+import { useUser } from "@/context/UserContext"
 
 interface HeaderProps {
   title: string
 }
 
 export default function Header({ title }: HeaderProps) {
+  const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false)
   const [notifications, setNotifications] = useState([
     { id: 1, content: "New lead captured", unread: true, time: "10m ago" },
@@ -40,8 +44,7 @@ export default function Header({ title }: HeaderProps) {
     { id: 5, content: "Task completed: Update contact list", unread: false, time: "2 days ago", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
   ])
   
-  const [user, setUser] = useState<any>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const { user, loading: loadingUser } = useUser();
   
   const userFullName = "GrowBro User"
   const userInitials = "GB"
@@ -58,14 +61,6 @@ export default function Header({ title }: HeaderProps) {
     return () => window.removeEventListener('resize', checkIsMobile)
   }, [])
 
-  useEffect(() => {
-    async function fetchUser() {
-      const users = await fetchUsersDirectly();
-      if (users && users.length > 0) setUser(users[0]);
-      setLoadingUser(false);
-    }
-    fetchUser();
-  }, []);
 
   return (
     <motion.header
@@ -276,6 +271,21 @@ export default function Header({ title }: HeaderProps) {
                 >
                   Upgrade to Pro
                 </Button>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="rounded-lg cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={async () => {
+                    try {
+                      await signOut();
+                      router.push("/login");
+                    } catch (error) {
+                      console.error("Error signing out:", error);
+                    }
+                  }}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>

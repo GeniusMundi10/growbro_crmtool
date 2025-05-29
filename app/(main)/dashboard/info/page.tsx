@@ -10,7 +10,7 @@ import BusinessInfoForm from "./business-info-form"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/context/UserContext"
 import { useEffect, useState } from "react"
-import { getBusinessInfo } from "@/lib/supabase"
+import { getBusinessInfo, supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 
 // Add delay to ensure saves complete before redirect
@@ -57,13 +57,47 @@ export default function BusinessInfoPage() {
       return;
     }
     
-    // Otherwise, proceed with normal aiId loading logic
+    // If aiId is provided, load that specific AI
     if (aiId && user) {
       setLoadingAI(true);
       setMode("edit");
       getBusinessInfoById(aiId);
+      return;
+    }
+    
+    // If no aiId is provided, check if user has any AIs and load the most recent one
+    if (!aiId && user && !isNew) {
+      setLoadingAI(true);
+      fetchMostRecentAI();
     }
   }, [aiId, user, isNew]);
+  
+  // Fetch the most recent AI for the current user
+  async function fetchMostRecentAI() {
+    try {
+      const { data: aiRows, error } = await supabase
+        .from('business_info')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (error) throw error;
+      
+      if (aiRows && aiRows.length > 0) {
+        // Redirect to include aiId in URL for proper bookmarking/sharing
+        router.replace(`/dashboard/info?aiId=${aiRows[0].id}`);
+      } else {
+        // No AIs found, stay in create mode
+        setMode("create");
+        setLoadingAI(false);
+      }
+    } catch (e) {
+      console.error("Error fetching most recent AI:", e);
+      setMode("create");
+      setLoadingAI(false);
+    }
+  }
 
   async function getBusinessInfoById(id: string) {
     try {

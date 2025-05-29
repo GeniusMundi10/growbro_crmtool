@@ -27,7 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { supabase, debugFetchUsers, fetchUsersDirectly, getAIsForUser, deleteAIAndData } from "@/lib/supabase"
+import { supabase, getAIsForUser, deleteAIAndData } from "@/lib/supabase"
 import { useUser } from "@/context/UserContext"
 import React from "react"
 import { toast } from "sonner"
