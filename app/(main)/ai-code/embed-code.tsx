@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,7 +10,8 @@ import { toast } from "sonner"
 import { getUserAIs } from "@/lib/supabase"
 import { useUser } from "@/context/UserContext"
 
-export default function EmbedCode() {
+// Component that uses searchParams wrapped in Suspense
+function EmbedCodeContent() {
   const { user } = useUser()
   const searchParams = useSearchParams()
   const urlAiId = searchParams.get('aiId')
@@ -138,5 +139,23 @@ export default function EmbedCode() {
         )}
       </div>
     </div>
+  )
+}
+
+// Main export component with Suspense boundary
+export default function EmbedCode() {
+  return (
+    <Suspense fallback={
+      <div className="bg-white rounded-lg p-6 shadow-sm border">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700 mx-auto mb-4"></div>
+            <p>Loading embed code options...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <EmbedCodeContent />
+    </Suspense>
   )
 }

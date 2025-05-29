@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase, onAuthStateChange } from '@/lib/auth';
 
-export default function LoginPage() {
+// Separate component to use searchParams within Suspense boundary
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirectedFrom") || "/dashboard";
@@ -141,5 +142,23 @@ export default function LoginPage() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 via-green-600 to-green-900">
+      <Card className="w-full max-w-md shadow-xl rounded-2xl border-0 bg-white/90">
+        <CardContent className="p-8 flex justify-center items-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700 mx-auto mb-4"></div>
+            <p>Loading...</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

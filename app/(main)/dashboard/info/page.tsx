@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { useSearchParams } from "next/navigation"
 import Header from "@/components/header"
 import DashboardTabs from "@/components/dashboard-tabs"
+import { Suspense } from "react"
 import BusinessInfoForm from "./business-info-form"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/context/UserContext"
@@ -39,7 +40,8 @@ const itemVariants = {
   }
 }
 
-export default function BusinessInfoPage() {
+// Component that uses useSearchParams wrapped in Suspense
+function BusinessInfoPageContent() {
   const router = useRouter();
   const { user, loading } = useUser();
   const searchParams = useSearchParams();
@@ -174,5 +176,27 @@ export default function BusinessInfoPage() {
         </motion.div>
       </motion.div>
     </div>
+  )
+}
+
+// Main export component with Suspense boundary
+export default function BusinessInfoPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+        <Header title="Dashboard" />
+        <div className="container mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold mb-6 text-slate-800">Welcome to GrowBro.ai</h1>
+          <p className="text-slate-600 mb-8">
+            Configure your AI assistant to match your business needs. Start by filling out the business information below.
+          </p>
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-600"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <BusinessInfoPageContent />
+    </Suspense>
   )
 }

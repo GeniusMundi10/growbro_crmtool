@@ -2,7 +2,7 @@
 
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import BusinessInfoForm from "@/app/dashboard/info/business-info-form"
+import BusinessInfoForm from "@/app/(main)/dashboard/info/business-info-form"
 import { getBusinessInfo } from "@/lib/supabase"
 import { toast } from "sonner"
 
