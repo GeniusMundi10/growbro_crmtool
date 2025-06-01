@@ -9,6 +9,9 @@ export interface UserProfile {
   email: string;
   avatar_url?: string;
   plan?: string;
+  phone?: string;
+  company?: string;
+  website?: string;
 }
 
 export async function getSession(): Promise<Session | null> {
@@ -77,7 +80,10 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
         name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
         email: authUser.email || '',
         avatar_url: authUser.user_metadata?.avatar_url,
-        plan: 'free'
+        plan: 'free',
+        phone: '',
+        company: '',
+        website: '',
       };
     }
 
@@ -88,6 +94,9 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
       email: profile.email || '',
       avatar_url: profile.avatar_url || '',
       plan: profile.plan || 'free',
+      phone: profile.phone || '',
+      company: profile.company || '',
+      website: profile.website || '',
     };
   } catch (error) {
     console.error('Error in getCurrentUser:', error);
@@ -97,3 +106,4 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
 
 
 export { supabase };
+

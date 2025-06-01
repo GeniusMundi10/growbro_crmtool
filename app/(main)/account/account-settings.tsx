@@ -1,69 +1,114 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff } from "lucide-react"
+import { useUser } from "@/context/UserContext"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function AccountSettings() {
-  const [showOldPassword, setShowOldPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
+  const { user, loading, refreshUser } = useUser();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
-    fullName: "Jatin Aggarwal",
-    companyName: "Genius Mundi",
-    website: "growbro.ai",
-    email: "mundigenius@gmail.com",
-    calendarLink: "",
-    phoneNumber: "9898567160",
-    oldPassword: "",
-    newPassword: "",
-  })
+    name: '',
+    company: '',
+    website: '',
+    email: '',
+    phone: '',
+    plan: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        company: user.company || '',
+        website: user.website || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        plan: user.plan || '',
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Saving account settings:", formData)
-    // Here you would typically save the data to the backend
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch('/api/account', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          company: formData.company,
+          website: formData.website,
+          email: formData.email,
+          phone: formData.phone,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to update account');
+      await refreshUser();
+      toast({
+        title: "Success",
+        description: "Your account information has been updated.",
+        variant: "default",
+      });
+    } catch (err) {
+      console.error('Error updating account:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update your account information. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border">
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="name">Full Name</Label>
             <Input
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
+              id="name"
+              name="name"
+              value={formData.name}
               onChange={handleInputChange}
               className="mt-1"
             />
           </div>
-
           <div>
-            <Label htmlFor="companyName">Company Name</Label>
+            <Label htmlFor="company">Company Name</Label>
             <Input
-              id="companyName"
-              name="companyName"
-              value={formData.companyName}
+              id="company"
+              name="company"
+              value={formData.company}
               onChange={handleInputChange}
               className="mt-1"
             />
           </div>
-
           <div>
             <Label htmlFor="website">Website</Label>
-            <Input id="website" name="website" value={formData.website} onChange={handleInputChange} className="mt-1" />
+            <Input
+              id="website"
+              name="website"
+              value={formData.website}
+              onChange={handleInputChange}
+              className="mt-1"
+            />
           </div>
-
           <div>
             <Label htmlFor="email">Email</Label>
             <Input
@@ -75,72 +120,25 @@ export default function AccountSettings() {
               className="mt-1"
             />
           </div>
-
           <div>
-            <Label htmlFor="calendarLink">Calendar Link</Label>
+            <Label htmlFor="phone">Phone Number</Label>
             <Input
-              id="calendarLink"
-              name="calendarLink"
-              value={formData.calendarLink}
-              onChange={handleInputChange}
-              placeholder="Calendar Link"
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="phoneNumber">Phone Number</Label>
-            <Input
-              id="phoneNumber"
-              name="phoneNumber"
-              value={formData.phoneNumber}
+              id="phone"
+              name="phone"
+              value={formData.phone}
               onChange={handleInputChange}
               className="mt-1"
             />
           </div>
-
-          <div className="relative">
-            <Label htmlFor="oldPassword">Old Password</Label>
-            <div className="flex mt-1">
-              <Input
-                id="oldPassword"
-                name="oldPassword"
-                type={showOldPassword ? "text" : "password"}
-                value={formData.oldPassword}
-                onChange={handleInputChange}
-                placeholder="Enter old password"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowOldPassword(!showOldPassword)}
-                className="absolute right-2 top-[calc(50%_+_4px)]"
-              >
-                {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div className="relative">
-            <Label htmlFor="newPassword">New Password</Label>
-            <div className="flex mt-1">
-              <Input
-                id="newPassword"
-                name="newPassword"
-                type={showNewPassword ? "text" : "password"}
-                value={formData.newPassword}
-                onChange={handleInputChange}
-                placeholder="Enter new password"
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewPassword(!showNewPassword)}
-                className="absolute right-2 top-[calc(50%_+_4px)]"
-              >
-                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+          <div>
+            <Label htmlFor="plan">Plan</Label>
+            <Input
+              id="plan"
+              name="plan"
+              value={formData.plan}
+              disabled
+              className="mt-1 bg-gray-100 cursor-not-allowed"
+            />
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -254,10 +255,14 @@ export default function Header({ title }: HeaderProps) {
               </div>
               
               <div className="p-2">
-                <DropdownMenuItem className="rounded-lg cursor-pointer">
-                  <User className="mr-2 h-4 w-4 text-slate-500" />
-                  <span>My Profile</span>
-                </DropdownMenuItem>
+                <Link href="/account" passHref legacyBehavior>
+  <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+    <a className="flex items-center w-full">
+      <User className="mr-2 h-4 w-4 text-slate-500" />
+      <span>My Profile</span>
+    </a>
+  </DropdownMenuItem>
+</Link>
                 <DropdownMenuItem className="rounded-lg cursor-pointer">
                   <Settings className="mr-2 h-4 w-4 text-slate-500" />
                   <span>Account Settings</span>
