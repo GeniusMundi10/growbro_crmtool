@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Copy, X } from "lucide-react"
+import { Copy, X, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import { getUserAIs } from "@/lib/supabase"
 import { useUser } from "@/context/UserContext"
@@ -22,7 +22,9 @@ function EmbedCodeContent() {
   const [copiedFrame, setCopiedFrame] = useState(false)
   const [loading, setLoading] = useState(true)
   const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewKey, setPreviewKey] = useState(0) // For forcing re-render
   const previewContainerRef = useRef<HTMLDivElement>(null)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Generate code snippets with the selected AI ID
   const htmlCode = `<script defer src="https://growbro-chatbox-widget.vercel.app/assets/index-DAUQoV-Y.js" data-ai-id="${selectedAI}"></script>`
@@ -64,10 +66,9 @@ function EmbedCodeContent() {
   const handleAIChange = (value: string) => {
     setSelectedAI(value)
     
-    // If preview is open, close and reopen it to refresh the script
+    // If preview is open, force a refresh by incrementing the key
     if (previewOpen) {
-      setPreviewOpen(false)
-      setTimeout(() => setPreviewOpen(true), 100)
+      setPreviewKey(prev => prev + 1)
     }
   }
 
@@ -88,145 +89,78 @@ function EmbedCodeContent() {
     setPreviewOpen(!previewOpen)
   }
   
-  // Global variable to track script loading and containment
-  useEffect(() => {
-    // Add a custom CSS style to force the chatbot to be contained
-    const styleElement = document.createElement('style')
-    styleElement.id = 'chatbot-containment-style'
-    styleElement.textContent = `
-      /* Only hide chatbot elements outside our container, but don't affect ones inside */
-      body > [data-growbro-widget],
-      body > div[class*="growbro"],
-      body > div[id*="growbro"],
-      body > div[class*="chatbot"],
-      body > div[id*="chatbot"] {
-        display: none !important;
-      }
-
-      /* Ensure the chatbot container is properly sized */
-      #chatbot-preview-container {
-        width: 100% !important;
-        height: 100% !important;
-        overflow: hidden !important;
-      }
-
-      /* Allow widget to be visible in our container */
-      #preview-container [data-growbro-widget],
-      #preview-container [class*="growbro"],
-      #preview-container [id*="growbro"],
-      #preview-container [class*="chatbot"],
-      #preview-container [id*="chatbot"] {
-        display: block !important;
-        position: static !important;
-        transform: none !important;
-      }
-    `
-    document.head.appendChild(styleElement)
-
-    // Cleanup when component unmounts
-    return () => {
-      if (document.getElementById('chatbot-containment-style')) {
-        document.getElementById('chatbot-containment-style')?.remove()
-      }
-      // Ensure we clean up any chatbot elements when the component unmounts
-      cleanupChatbot()
+  // Function to refresh the preview
+  const refreshPreview = () => {
+    if (previewOpen && selectedAI) {
+      setPreviewKey(prev => prev + 1)
     }
-  }, [])
-
-  // Function to clean up any chatbot elements
-  const cleanupChatbot = () => {
-    // Remove the script
-    const existingScript = document.getElementById('chatbot-preview-script')
-    if (existingScript && existingScript.parentNode) {
-      existingScript.parentNode.removeChild(existingScript)
-    }
-    
-    // Remove any chatbot widget elements that might have been created
-    const chatbotElements = document.querySelectorAll(
-      '[data-growbro-widget], [id*="growbro"], [class*="growbro"], [id*="chatbot"], [class*="chatbot"]'
-    )
-    chatbotElements.forEach(element => {
-      if (element.parentNode) {
-        element.parentNode.removeChild(element)
-      }
-    })
   }
-
-  // Effect to handle script injection and cleanup for preview
-  useEffect(() => {
-    if (!previewOpen || !selectedAI || !previewContainerRef.current) {
-      // Clean up any existing chatbot elements when closing
-      if (!previewOpen) {
-        cleanupChatbot()
-      }
-      return
-    }
-    
-    // Clean up any existing chatbot first
-    cleanupChatbot()
-    
-    // Find the preview-container div and prepare it
-    const previewContainer = document.getElementById('preview-container')
-    if (previewContainer) {
-      // Show loading indicator
-      previewContainer.innerHTML = `
-        <div class="flex justify-center items-center h-full">
-          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700"></div>
-        </div>
-      `
-    }
-
-    // Create a script element for the chatbot
-    const script = document.createElement('script')
-    script.defer = true
-    script.src = "https://growbro-chatbox-widget.vercel.app/assets/index-DAUQoV-Y.js"
-    script.setAttribute('data-ai-id', selectedAI)
-    script.id = 'chatbot-preview-script'
-    
-    // Add to document body (required for the script to work properly)
-    document.body.appendChild(script)
-    
-    // Set up a mutation observer to watch for chatbot elements
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'childList') {
-          // Look for chatbot elements
-          const chatbotElements = document.querySelectorAll(
-            'body > [data-growbro-widget], body > div[class*="growbro"], body > div[id*="growbro"]'
-          )
-          
-          if (chatbotElements.length > 0 && previewContainer) {
-            // Clear loading indicator
-            previewContainer.innerHTML = ''
-            
-            // Move each chatbot element to our preview container
-            chatbotElements.forEach(element => {
-              // Clone the element to our container (since moving may break functionality)
-              const clone = element.cloneNode(true)
-              previewContainer.appendChild(clone)
-              
-              // Hide the original
-              if (element.parentNode && element instanceof HTMLElement) {
-                element.style.display = 'none'
-              }
-            })
-            
-            // Stop observing once we've found chatbot elements
-            observer.disconnect()
-          }
-        }
-      }
-    })
-    
-    // Start observing changes to the body
-    observer.observe(document.body, { childList: true, subtree: true })
-    
-    // Ensure cleanup when preview is closed or component unmounts
-    return () => {
-      observer.disconnect()
-      cleanupChatbot()
-    }
-  }, [previewOpen, selectedAI])
+  
+  // Function to create HTML content with the chatbot script
+  const createChatbotHtml = (aiId: string) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              overflow: hidden;
+              width: 100%;
+              height: 100vh;
+              font-family: sans-serif;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              background-color: #f9fafb;
+            }
+            .loading {
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100%;
+              width: 100%;
+            }
+            .spinner {
+              width: 40px;
+              height: 40px;
+              border: 4px solid rgba(0, 0, 0, 0.1);
+              border-radius: 50%;
+              border-top: 4px solid #10b981;
+              animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+            /* Force chatbot to be centered */
+            div[data-growbro-widget], 
+            div[class*="growbro"], 
+            div[id*="growbro"] {
+              position: relative !important;
+              top: auto !important;
+              right: auto !important;
+              bottom: auto !important;
+              left: auto !important;
+              margin: 0 auto !important;
+              transform: none !important;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="preview-container">
+            <div class="loading">
+              <div class="spinner"></div>
+            </div>
+          </div>
+          <script defer src="https://growbro-chatbox-widget.vercel.app/assets/index-DAUQoV-Y.js" data-ai-id="${aiId}"></script>
+        </body>
+      </html>
+    `
+  }
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border">
@@ -285,7 +219,7 @@ function EmbedCodeContent() {
         <h3 className="text-lg font-medium mb-2">Preview</h3>
         <div 
           ref={previewContainerRef}
-          className={`relative overflow-hidden transition-all duration-300 rounded-lg border ${previewOpen ? 'h-[500px]' : 'h-64'}`}
+          className={`relative overflow-hidden transition-all duration-300 rounded-lg border ${previewOpen ? 'h-[650px]' : 'h-64'}`}
           style={{
             background: previewOpen ? '#f9fafb' : '#f3f4f6',
           }}
@@ -312,20 +246,36 @@ function EmbedCodeContent() {
             <div className="absolute inset-0 w-full h-full flex flex-col">
               <div className="bg-gray-100 p-2 flex justify-between items-center border-b">
                 <h4 className="text-sm font-medium">AI Chatbot Preview</h4>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={togglePreview}
-                  className="h-8 w-8 p-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={refreshPreview} 
+                    className="h-8 w-8 p-0 mr-1"
+                    title="Refresh preview"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={togglePreview}
+                    className="h-8 w-8 p-0"
+                    title="Close preview"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="flex-1 overflow-hidden" id="preview-container">
-                {/* The chatbot script will insert elements here */}
-                <div className="flex justify-center items-center h-full">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700"></div>
-                </div>
+                <iframe
+                  ref={iframeRef}
+                  key={previewKey} // This forces re-render when AI changes
+                  srcDoc={createChatbotHtml(selectedAI)}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title="Chatbot Preview"
+                  sandbox="allow-scripts allow-same-origin"
+                />
               </div>
             </div>
           )}
