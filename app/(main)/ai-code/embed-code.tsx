@@ -239,7 +239,7 @@ function EmbedCodeContent() {
                     srcDoc={createChatbotHtml(selectedAI)}
                     style={{ width: '100%', height: '100%', border: 'none' }}
                     title="Chatbot Preview"
-                    sandbox="allow-scripts allow-same-origin"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation"
                   />
                 </div>
               </div>
