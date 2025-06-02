@@ -22,13 +22,12 @@ function EmbedCodeContent() {
   const [copiedFrame, setCopiedFrame] = useState(false)
   const [loading, setLoading] = useState(true)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [previewKey, setPreviewKey] = useState(0) // For forcing re-render
-  const previewContainerRef = useRef<HTMLDivElement>(null)
+  const [previewKey, setPreviewKey] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Generate code snippets with the selected AI ID
-  const htmlCode = `<script defer src="https://growbro-chatbox-widget.vercel.app/assets/index-DAUQoV-Y.js" data-ai-id="${selectedAI}"></script>`
-  const iframeCode = `<iframe src="https://chat.growbro.ai/?agentId=${selectedAI}" width="450px" height="650px"></iframe>`
+  const htmlCode = `<script defer src="https://growbro-chatbox-widget.vercel.app/assets/chatbox-widget-bundle.js" data-ai-id="${selectedAI}"></script>`
+  const iframeCode = `<iframe src="https://growbro-chatbox-widget.vercel.app/iframe.html?agentId=${selectedAI}" width="450" height="650"></iframe>`
   
   // Load user's AIs on component mount
   useEffect(() => {
@@ -65,8 +64,7 @@ function EmbedCodeContent() {
   // Handle AI selection change
   const handleAIChange = (value: string) => {
     setSelectedAI(value)
-    
-    // If preview is open, force a refresh by incrementing the key
+    // Reset preview key to force iframe refresh when AI changes
     if (previewOpen) {
       setPreviewKey(prev => prev + 1)
     }
@@ -75,214 +73,182 @@ function EmbedCodeContent() {
   const handleCopyHtml = () => {
     navigator.clipboard.writeText(htmlCode)
     setCopiedHtml(true)
+    toast.success("HTML code copied to clipboard")
     setTimeout(() => setCopiedHtml(false), 2000)
   }
 
   const handleCopyFrame = () => {
     navigator.clipboard.writeText(iframeCode)
     setCopiedFrame(true)
+    toast.success("iframe code copied to clipboard")
     setTimeout(() => setCopiedFrame(false), 2000)
   }
 
-  // Toggle the preview state
+  // Toggle preview open/closed
   const togglePreview = () => {
-    setPreviewOpen(!previewOpen)
+    setPreviewOpen(prev => !prev)
   }
-  
-  // Function to refresh the preview
+
+  // Refresh preview by incrementing the key which forces iframe re-render
   const refreshPreview = () => {
-    if (previewOpen && selectedAI) {
-      setPreviewKey(prev => prev + 1)
-    }
+    setPreviewKey(prev => prev + 1)
   }
-  
-  // Function to create HTML content with the chatbot script
+
+  // Create HTML content for the chatbot iframe
   const createChatbotHtml = (aiId: string) => {
     return `
       <!DOCTYPE html>
       <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <style>
-            body {
-              margin: 0;
-              padding: 0;
-              overflow: hidden;
-              width: 100%;
-              height: 100vh;
-              font-family: sans-serif;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              background-color: #f9fafb;
-            }
-            .loading {
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              height: 100%;
-              width: 100%;
-            }
-            .spinner {
-              width: 40px;
-              height: 40px;
-              border: 4px solid rgba(0, 0, 0, 0.1);
-              border-radius: 50%;
-              border-top: 4px solid #10b981;
-              animation: spin 1s linear infinite;
-            }
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            /* Force chatbot to be centered */
-            div[data-growbro-widget], 
-            div[class*="growbro"], 
-            div[id*="growbro"] {
-              position: relative !important;
-              top: auto !important;
-              right: auto !important;
-              bottom: auto !important;
-              left: auto !important;
-              margin: 0 auto !important;
-              transform: none !important;
-            }
-          </style>
-        </head>
-        <body>
-          <div id="preview-container">
-            <div class="loading">
-              <div class="spinner"></div>
-            </div>
-          </div>
-          <script defer src="https://growbro-chatbox-widget.vercel.app/assets/index-DAUQoV-Y.js" data-ai-id="${aiId}"></script>
-        </body>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Chatbot Preview</title>
+        <style>
+          body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+          .container { width: 100%; height: 100%; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <script defer src="https://growbro-chatbox-widget.vercel.app/assets/chatbox-widget-bundle.js" data-ai-id="${aiId}"></script>
+        </div>
+      </body>
       </html>
     `
   }
 
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <div className="mb-6">
-        <Select value={selectedAI} onValueChange={handleAIChange}>
-          <SelectTrigger className={loading ? "opacity-50" : ""}>
-            <SelectValue placeholder="Select AI" />
-          </SelectTrigger>
-          <SelectContent>
-            {aiOptions.length > 0 ? (
-              aiOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-              ))
-            ) : (
-              <div className="py-2 px-2 text-sm text-gray-500">
-                {loading ? "Loading..." : "No AIs available"}
+      <h2 className="text-xl font-semibold mb-6">Get AI Code & Test AI</h2>
+      
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left column - Form & Code snippets */}
+        <div className="w-full lg:w-5/12 flex flex-col bg-white p-6 rounded-lg shadow-sm border">
+          <div className="mb-6">
+            <p className="text-sm font-medium mb-2">Select AI:</p>
+            <Select value={selectedAI} onValueChange={handleAIChange}>
+              <SelectTrigger className={loading ? "opacity-50" : ""}>
+                <SelectValue placeholder="Select AI" />
+              </SelectTrigger>
+              <SelectContent>
+                {aiOptions.length > 0 ? (
+                  aiOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))
+                ) : (
+                  <div className="py-2 px-2 text-sm text-gray-500">
+                    {loading ? "Loading..." : "No AIs available"}
+                  </div>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex items-center mb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-green-600 text-white hover:bg-green-700"
+                onClick={handleCopyHtml}
+                disabled={!selectedAI}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                {copiedHtml ? "Copied!" : "Copy HTML"}
+              </Button>
+            </div>
+            <p className="mb-2 text-sm">Copy and add the following script to your website html:</p>
+            <Textarea 
+              value={selectedAI ? htmlCode : "Please select an AI first"} 
+              readOnly 
+              className="font-mono text-sm h-24" 
+            />
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-green-600 text-white hover:bg-green-700"
+                onClick={handleCopyFrame}
+                disabled={!selectedAI}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                {copiedFrame ? "Copied!" : "Copy iframe"}
+              </Button>
+            </div>
+            <p className="mb-2 text-sm">Or use iframe if you want to embed to specific section:</p>
+            <Textarea 
+              value={selectedAI ? iframeCode : "Please select an AI first"} 
+              readOnly 
+              className="font-mono text-sm h-24" 
+            />
+          </div>
+        </div>
+
+        {/* Right column - Preview area */}
+        <div className="w-full lg:w-7/12">
+          <div className="w-full h-[650px] relative rounded-lg border bg-gray-50 overflow-hidden">
+            {!selectedAI ? (
+              <div className="w-full h-full flex items-center justify-center text-center p-4">
+                <p className="text-gray-500">Please select an AI agent to preview.</p>
               </div>
-            )}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="mb-8">
-        <div className="flex items-center mb-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-green-700 text-white hover:bg-green-800"
-            onClick={handleCopyHtml}
-          >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy HTML
-          </Button>
-        </div>
-        <p className="mb-2">Copy and add the following script to your website html:</p>
-        <Textarea value={htmlCode} readOnly className="font-mono text-sm h-24" />
-      </div>
-
-      <div className="mb-8">
-        <div className="flex items-center mb-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-green-700 text-white hover:bg-green-800"
-            onClick={handleCopyFrame}
-          >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy iframe
-          </Button>
-        </div>
-        <p className="mb-2">Or use iframe if you want to embed to specific section:</p>
-        <Textarea value={iframeCode} readOnly className="font-mono text-sm h-24" />
-      </div>
-
-      <div className="mb-8">
-        <h3 className="text-lg font-medium mb-2">Preview</h3>
-        <div 
-          ref={previewContainerRef}
-          className={`relative overflow-hidden transition-all duration-300 rounded-lg border ${previewOpen ? 'h-[650px]' : 'h-64'}`}
-          style={{
-            background: previewOpen ? '#f9fafb' : '#f3f4f6',
-          }}
-        >
-          {!previewOpen && (
-            <div className="flex justify-center items-center h-full">
-              {selectedAI ? (
-                <div className="text-center">
-                  <div className="mb-4">Preview of your AI chatbot will appear here</div>
+            ) : !previewOpen ? (
+              <div className="w-full h-full flex items-center justify-center text-center p-4">
+                <div>
+                  <p className="text-gray-500 mb-4">Preview your chatbot here</p>
                   <Button 
-                    className="bg-green-600 hover:bg-green-700"
+                    variant="outline" 
+                    className="bg-green-600 text-white hover:bg-green-700"
                     onClick={togglePreview}
                   >
                     Open Preview
                   </Button>
                 </div>
-              ) : (
-                <p className="text-gray-500">Please select an AI agent to preview.</p>
-              )}
-            </div>
-          )}
-          
-          {previewOpen && (
-            <div className="absolute inset-0 w-full h-full flex flex-col">
-              <div className="bg-gray-100 p-2 flex justify-between items-center border-b">
-                <h4 className="text-sm font-medium">AI Chatbot Preview</h4>
-                <div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={refreshPreview} 
-                    className="h-8 w-8 p-0 mr-1"
-                    title="Refresh preview"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={togglePreview}
-                    className="h-8 w-8 p-0"
-                    title="Close preview"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              </div>
+            ) : (
+              <div className="absolute inset-0 w-full h-full flex flex-col">
+                <div className="bg-gray-100 p-2 flex justify-between items-center border-b">
+                  <h4 className="text-sm font-medium">AI Chatbot Preview</h4>
+                  <div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={refreshPreview} 
+                      className="h-8 w-8 p-0 mr-1"
+                      title="Refresh preview"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={togglePreview}
+                      className="h-8 w-8 p-0"
+                      title="Close preview"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-hidden" id="preview-container">
+                  <iframe
+                    ref={iframeRef}
+                    key={previewKey} // This forces re-render when AI changes
+                    srcDoc={createChatbotHtml(selectedAI)}
+                    style={{ width: '100%', height: '100%', border: 'none' }}
+                    title="Chatbot Preview"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
                 </div>
               </div>
-              <div className="flex-1 overflow-hidden" id="preview-container">
-                <iframe
-                  ref={iframeRef}
-                  key={previewKey} // This forces re-render when AI changes
-                  srcDoc={createChatbotHtml(selectedAI)}
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                  title="Chatbot Preview"
-                  sandbox="allow-scripts allow-same-origin"
-                />
-              </div>
-            </div>
-          )}
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            This preview shows how the chatbot will appear on your website.
+          </p>
         </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Note: This preview shows how the chatbot will appear on your website.
-        </p>
       </div>
     </div>
   )
@@ -295,7 +261,7 @@ export default function EmbedCode() {
       <div className="bg-white rounded-lg p-6 shadow-sm border">
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-700 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-4"></div>
             <p>Loading embed code options...</p>
           </div>
         </div>
