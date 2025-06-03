@@ -4,8 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import PricingPlans from "./pricing-plans"
+import { useRouter } from "next/navigation"
 
 export default function BillingInfo() {
+  const router = useRouter()
   const [showPricingPlans, setShowPricingPlans] = useState(false)
 
   return (
@@ -68,7 +70,11 @@ export default function BillingInfo() {
               <Button onClick={() => setShowPricingPlans(true)} className="w-full bg-green-600 hover:bg-green-700">
                 Subscribe
               </Button>
-              <Button variant="outline" className="w-full">
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => router.push("/billing/usage")}
+              >
                 View Usage
               </Button>
             </div>

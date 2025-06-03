@@ -52,10 +52,10 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Starter",
       description: "For entrepreneurs",
-      price: billingCycle === "monthly" ? "$49" : "$490",
+      price: billingCycle === "monthly" ? "₹4199" : "₹41990",
       features: [
         "25000 chat messages",
-        "$0.10 per additional 1000 messages",
+        "₹8 per additional 1000 messages",
         "Voice not included",
         "1 AI Agent",
         "Unlimited Sales Leads",
@@ -66,10 +66,10 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Basic",
       description: "For new startups",
-      price: billingCycle === "monthly" ? "$199" : "$1990",
+      price: billingCycle === "monthly" ? "₹16999" : "₹169990",
       features: [
         "100000 chat messages",
-        "$0.08 per additional 1000 messages",
+        "₹8 per additional 1000 messages",
         "Voice not included",
         "2 AI Agents",
         "Unlimited Sales Leads",
@@ -80,12 +80,12 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Pro",
       description: "For small businesses",
-      price: billingCycle === "monthly" ? "$349" : "$3490",
+      price: billingCycle === "monthly" ? "₹29699" : "₹296990",
       features: [
         "250000 chat messages",
-        "$0.07 per additional 1000 messages",
+        "₹8 per additional 1000 messages",
         "300 voice messages",
-        "$0.35 per additional voice minute",
+        "₹35 per additional voice minute",
         "4 AI Agents",
         "Unlimited Sales Leads",
         "Remove Growbro watermark",
@@ -95,12 +95,12 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Growth",
       description: "For growing businesses",
-      price: billingCycle === "monthly" ? "$649" : "$6490",
+      price: billingCycle === "monthly" ? "₹55199" : "₹551990",
       features: [
         "500000 chat messages",
-        "$0.06 per additional 1000 messages",
+        "₹6 per additional 1000 messages",
         "400 voice messages",
-        "$0.34 per additional voice minute",
+        "₹34 per additional voice minute",
         "7 AI Agents",
         "Unlimited Sales Leads",
         "Remove Growbro watermark",
@@ -109,12 +109,12 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Advanced",
       description: "For scaling teams",
-      price: billingCycle === "monthly" ? "$1199" : "$11990",
+      price: billingCycle === "monthly" ? "₹101999" : "₹1019990",
       features: [
         "2000000 chat messages",
-        "$0.05 per additional 1000 messages",
+        "₹5 per additional 1000 messages",
         "600 voice messages",
-        "$0.32 per additional voice minute",
+        "₹32 per additional voice minute",
         "10 AI Agents",
         "Unlimited Sales Leads",
         "Remove Growbro watermark",
