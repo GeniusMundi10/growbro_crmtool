@@ -10,7 +10,6 @@ export async function POST(req: NextRequest) {
 
     const form = await req.formData();
     const txnid = form.get('txnid') as string;
-    const payu_response = Object.fromEntries(form.entries());
 
     // (Optional) Verify hash here
 
@@ -20,10 +19,8 @@ export async function POST(req: NextRequest) {
       await supabase.from('payments')
         .update({
           status: 'success',
-          payu_response,
           updated_at: new Date().toISOString(),
         })
-        .eq('payu_txn_id', txnid);
     }
 
     // Redirect or show a success message

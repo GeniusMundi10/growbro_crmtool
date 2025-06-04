@@ -12,31 +12,30 @@ interface PricingPlansProps {
   onClose?: () => void
 }
 
-function PayUForm({ payuParams }: { payuParams: any }) {
-  // Auto-submit form when params are present
-  return (
-    <form
-      action={payuParams.action}
-      method="POST"
-      style={{ display: "none" }}
-      id="payuForm"
-    >
-      {Object.entries(payuParams).map(([key, value]) =>
-        key !== "action" ? (
-          <input key={key} type="hidden" name={key} value={value as string} />
-        ) : null
-      )}
-    </form>
-  );
-}
 
 export default function PricingPlans({ onClose }: PricingPlansProps) {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
-  const [payuParams, setPayuParams] = useState<any>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const { user, loading: userLoading } = useUser();
+  
+  // Get user's current plan to determine which plans to disable
+  const currentPlan = user?.plan?.toLowerCase() || 'free';
+  
+  // Helper function to determine if a plan should be disabled
+  const isPlanDisabled = (planName: string, userPlan: string): boolean => {
+    const planRanking = {
+      'free': 0,
+      'starter': 1,
+      'basic': 2, 
+      'pro': 3,
+      'growth': 4,
+      'advanced': 5
+    };
+    
+    return planRanking[planName as keyof typeof planRanking] <= planRanking[userPlan as keyof typeof planRanking];
+  };
 
   // Set payment status from URL on mount
   React.useEffect(() => {
@@ -52,7 +51,7 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Starter",
       description: "For entrepreneurs",
-      price: billingCycle === "monthly" ? "₹4199" : "₹41990",
+      price: billingCycle === "monthly" ? "₹1" : "₹2",
       features: [
         "25000 chat messages",
         "₹8 per additional 1000 messages",
@@ -180,7 +179,10 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
                 className={`w-full ${
                   plan.popular ? "bg-green-600 hover:bg-green-700" : "bg-gray-200 hover:bg-gray-300 text-gray-800"
                 }`}
-                 disabled={loadingPlan === plan.name || userLoading}
+                disabled={loadingPlan === plan.name || userLoading || isPlanDisabled(plan.name.toLowerCase(), currentPlan)}
+                title={isPlanDisabled(plan.name.toLowerCase(), currentPlan) ? 
+                    "You're already subscribed to this plan or a higher plan" : 
+                    ""}
                 onClick={async () => {
                   setError(null);
                   if (!user || userLoading) {
@@ -193,23 +195,72 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
                   }
                   setLoadingPlan(plan.name);
                   try {
-                    const res = await fetch("/api/payments/payu", {
+                    // 1. Create Razorpay order
+                    const amount = parseInt(plan.price.replace(/[^\d]/g, ""), 10);
+                    const res = await fetch("/api/payments/razorpay", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
-                        userId: user.id,
-                        firstname: user.name || "User",
-                        email: user.email,
-                        phone: (user as any).phone,
-                        plan: plan.name.toLowerCase(),
+                        user_id: user.id,
+                        plan_id: plan.name.toLowerCase(),
+                        amount,
+                        currency: "INR",
+                        billing_cycle: billingCycle,
                       }),
                     });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || "Failed to initiate payment");
-                    setPayuParams(data);
-                    setTimeout(() => {
-                      document.getElementById("payuForm")?.submit();
-                    }, 100);
+                    if (!res.ok || !data.order) throw new Error(data.error || "Failed to create payment order");
+                    // 2. Load Razorpay script if not present
+                    if (!document.getElementById("razorpay-sdk")) {
+                      const script = document.createElement("script");
+                      script.id = "razorpay-sdk";
+                      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+                      document.body.appendChild(script);
+                      await new Promise((resolve) => {
+                        script.onload = resolve;
+                      });
+                    }
+                    // 3. Trigger Razorpay checkout
+                    const options = {
+                      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_eIZIu8DDRCbETJ", // fallback for local dev
+                      amount: data.order.amount,
+                      currency: data.order.currency,
+                      name: "Growbro.ai CRM",
+                      description: plan.description,
+                      order_id: data.order.id,
+                      handler: async function (response: any) {
+                        // 4. Verify payment
+                        const verifyRes = await fetch("/api/payments/razorpay", {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            user_id: user.id,
+                            plan_id: plan.name.toLowerCase(),
+                            amount,
+                            currency: "INR",
+                            billing_cycle: billingCycle,
+                          }),
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.success) {
+                          setPaymentStatus("Payment successful! Thank you for your purchase.");
+                        } else {
+                          setPaymentStatus("Payment failed. " + (verifyData.error || "Please try again or contact support."));
+                        }
+                      },
+                      prefill: {
+                        name: user.name || "User",
+                        email: user.email,
+                        contact: (user as any).phone,
+                      },
+                      theme: { color: plan.popular ? "#16a34a" : "#e5e7eb" },
+                    };
+                    // @ts-ignore
+                    const rzp = new window.Razorpay(options);
+                    rzp.open();
                   } catch (err: any) {
                     setError(err.message || "Payment initiation failed");
                   } finally {
@@ -217,7 +268,9 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
                   }
                 }}
               >
-                {loadingPlan === plan.name ? "Processing..." : "Select"}
+                {loadingPlan === plan.name ? "Processing..." : 
+                 isPlanDisabled(plan.name.toLowerCase(), currentPlan) ? 
+                 "Current or Lower Plan" : "Select"}
               </Button>
             </CardContent>
           </Card>
@@ -226,7 +279,7 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
       {error && (
         <div className="text-red-500 text-center mt-4">{error}</div>
       )}
-      {payuParams && <PayUForm payuParams={payuParams} />}
+      {/* Razorpay checkout UI will be placed here */}
     </div>
   )
 }
