@@ -9,12 +9,6 @@ import { toast } from "sonner"
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -25,107 +19,67 @@ import { Calendar, Clock, MessageSquare, User, Users } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
-// Remove direct Supabase imports
-// import { getCurrentUser, getAnalytics } from "@/lib/supabase"
-import type { Analytics } from "@/lib/supabase"
-
-// Mock functions to replace Supabase calls
-const mockUser = { id: "demo-user-123" };
-
-const mockGetCurrentUser = async () => {
-  return mockUser;
-};
-
-const mockGetAnalytics = async (userId: string, period: "day" | "week" | "month"): Promise<Analytics> => {
-  return {
-    id: "mock-analytics-id",
-    user_id: userId,
-    total_conversations: 87,
-    total_messages: 563,
-    total_leads: 42,
-    avg_conversation_length: 12,
-    data_period: period,
-    created_at: new Date().toISOString()
-  };
-};
+import { getCurrentUser } from "@/lib/auth";
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser } from "@/lib/supabase"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
-
-// Sample data for demo purposes
-const sampleAnalytics = {
-  id: "1",
-  user_id: "user_123",
-  total_conversations: 87,
-  total_messages: 563,
-  total_leads: 42,
-  avg_conversation_length: 12,
-  data_period: "week",
-  created_at: new Date().toISOString()
-}
-
-const sampleConversationsByDay = [
-  { day: "Monday", count: 12 },
-  { day: "Tuesday", count: 19 },
-  { day: "Wednesday", count: 22 },
-  { day: "Thursday", count: 18 },
-  { day: "Friday", count: 15 },
-  { day: "Saturday", count: 7 },
-  { day: "Sunday", count: 4 },
-]
-
-const sampleLeadsBySource = [
-  { name: "Chat", value: 25 },
-  { name: "Website", value: 8 },
-  { name: "Referral", value: 5 },
-  { name: "Ads", value: 4 },
-]
-
-const sampleLeadsByStatus = [
-  { name: "New", value: 18 },
-  { name: "Contacted", value: 12 },
-  { name: "Qualified", value: 8 },
-  { name: "Proposal", value: 3 },
-  { name: "Closed", value: 1 },
-]
 
 export default function AnalyticsPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [analytics, setAnalytics] = useState<Analytics>(sampleAnalytics as unknown as Analytics)
-  const [period, setPeriod] = useState<"day" | "week" | "month">("week")
-  
+  const [period, setPeriod] = useState<"week" | "month">("week")
+  const [summaryRows, setSummaryRows] = useState<DashboardMessageSummary[]>([])
+
   useEffect(() => {
     async function loadData() {
+      setLoading(true)
       try {
-        // Use mock function instead of real Supabase call
-        const currentUser = await mockGetCurrentUser()
-        if (!currentUser) {
-          setLoading(false)
-          return
-        }
-        
+        const currentUser = await getCurrentUser()
         setUser(currentUser)
-        
-        // Use mock function instead of real Supabase call
-        const fetchedAnalytics = await mockGetAnalytics(currentUser.id, period)
-        if (fetchedAnalytics) {
-          setAnalytics(fetchedAnalytics)
+        if (currentUser) {
+          // For now, just use the first AI for this user
+          // You may want to support multiple AIs in the future
+          const ais = await getAIsForUser(currentUser.id)
+          if (ais && ais.length > 0) {
+            const aiId = ais[0].id
+            const rows = await getDashboardMessageSummary(aiId)
+            setSummaryRows(rows)
+          } else {
+            setSummaryRows([])
+          }
         }
-        // For demo, we'll use the sample data if no actual data exists
       } catch (error) {
-        // Silently fail and use sample data instead of showing errors
-        setAnalytics(sampleAnalytics as unknown as Analytics)
+        setSummaryRows([])
       } finally {
         setLoading(false)
       }
     }
-
     loadData()
   }, [period])
-  
+
   if (loading) {
     return <div className="p-6 text-center">Loading analytics...</div>
   }
+
+  // Data shaping for charts from summaryRows
+  // Bar chart: messages by day
+  const messagesByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.message_count }))
+  const conversationsByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.conversation_count }))
+  const newLeadsByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.new_leads }))
+
+  // Stat cards (latest day)
+  const latest = summaryRows.length > 0 ? summaryRows[summaryRows.length - 1] : null
+      convoMap[day] = (convoMap[day] || 0) + 1
+    })
+    leads.forEach(lead => {
+      const day = days[new Date(lead.created_at).getDay()]
+      leadMap[day] = (leadMap[day] || 0) + 1
+    })
+    return days.map(day => ({
+      day,
+      rate: convoMap[day] ? Math.round((100 * (leadMap[day] || 0)) / convoMap[day]) : 0
+    }))
+  })()
 
   return (
     <div className="min-h-screen bg-white">

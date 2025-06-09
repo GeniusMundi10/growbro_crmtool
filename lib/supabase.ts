@@ -433,6 +433,40 @@ export async function upsertAIServices(
   return data as AIServices;
 }
 
+// Dashboard Message Summary View
+export type DashboardMessageSummary = {
+  agent_id: string;
+  client_id: string;
+  ai_name: string;
+  day: string; // ISO date string
+  message_count: number;
+  conversation_count: number;
+  total_leads: number;
+  new_leads: number;
+  first_message_time: string | null;
+  last_message_time: string | null;
+  min_conversation_duration: number | null;
+  max_conversation_duration: number | null;
+  avg_conversation_duration: number | null;
+  avg_messages_per_conversation: number | null;
+  avg_messages_per_lead: number | null;
+};
+
+export async function getDashboardMessageSummary(agentId: string, fromDate?: string, toDate?: string): Promise<DashboardMessageSummary[]> {
+  let query = supabase
+    .from('dashboard_message_summary')
+    .select('*')
+    .eq('agent_id', agentId)
+    .order('day', { ascending: true });
+
+  if (fromDate) query = query.gte('day', fromDate);
+  if (toDate) query = query.lte('day', toDate);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data as DashboardMessageSummary[];
+}
+
 // AI Greeting CRUD operations
 export type AIGreeting = {
   id: string;
