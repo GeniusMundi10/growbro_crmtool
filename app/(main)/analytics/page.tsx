@@ -177,29 +177,22 @@ export default function AnalyticsPage() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Leads by Source</CardTitle>
-              <CardDescription>Where your leads are coming from</CardDescription>
+              <CardTitle>Messages by Day</CardTitle>
+              <CardDescription>Number of messages sent each day</CardDescription>
             </CardHeader>
             <CardContent className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sampleLeadsBySource}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {sampleLeadsBySource.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
+                <BarChart
+                  data={messagesByDay}
+                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" />
+                  <YAxis />
                   <Tooltip />
                   <Legend />
-                </PieChart>
+                  <Bar dataKey="count" fill="#16a34a" name="Messages" />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -208,66 +201,22 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Leads by Status</CardTitle>
-              <CardDescription>Current status distribution of your leads</CardDescription>
+              <CardTitle>New Leads by Day</CardTitle>
+              <CardDescription>Number of new leads each day</CardDescription>
             </CardHeader>
             <CardContent className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sampleLeadsByStatus}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {sampleLeadsByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversion Rate Over Time</CardTitle>
-              <CardDescription>Percentage of conversations that convert to leads</CardDescription>
-            </CardHeader>
-            <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={[
-                    { day: "Mon", rate: 12 },
-                    { day: "Tue", rate: 15 },
-                    { day: "Wed", rate: 18 },
-                    { day: "Thu", rate: 22 },
-                    { day: "Fri", rate: 25 },
-                    { day: "Sat", rate: 20 },
-                    { day: "Sun", rate: 17 },
-                  ]}
+                <BarChart
+                  data={newLeadsByDay}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
-                  <YAxis unit="%" />
-                  <Tooltip formatter={(value) => [`${value}%`, "Conversion Rate"]} />
+                  <YAxis />
+                  <Tooltip />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="rate"
-                    stroke="#16a34a"
-                    name="Conversion Rate"
-                    strokeWidth={2}
-                    dot={{ strokeWidth: 2 }}
-                  />
-                </LineChart>
+                  <Bar dataKey="count" fill="#16a34a" name="New Leads" />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
