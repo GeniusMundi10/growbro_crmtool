@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import AnimatedLogoSprout from "@/components/AnimatedLogoSprout"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -224,7 +225,7 @@ export default function Sidebar() {
               )}
             >
               <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <span className="text-xl font-bold text-white">G</span>
+                <AnimatedLogoSprout size={32} colorScheme="light" />
               </div>
               {(expanded || isHovering) && (
                 <Link href="/dashboard" className="flex items-center">

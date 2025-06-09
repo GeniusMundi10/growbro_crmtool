@@ -43,7 +43,10 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
     calendar_link: "",
     phone_number: "",
     agent_type: "information-education",
+    vectorstore_ready: false,
   })
+  // Track the initial website to detect changes
+  const [initialWebsite, setInitialWebsite] = useState<string>("");
   const [isRetraining, setIsRetraining] = useState(false)
 
   useEffect(() => {
@@ -65,6 +68,7 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
       
       if (initialData && Object.keys(initialData).length > 0) {
         setBusinessInfo(initialData)
+        setInitialWebsite(initialData.website || "");
         setLoading(false)
         return
       }
@@ -72,7 +76,10 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
       if (mode === "edit" && aiId) {
         try {
           const data = await getBusinessInfo(aiId)
-          if (data) setBusinessInfo(data)
+          if (data) {
+            setBusinessInfo(data);
+            setInitialWebsite(data.website || "");
+          }
         } catch (error) {
           console.error("Error loading business info:", error)
         }
@@ -92,8 +99,14 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setBusinessInfo((prev) => ({ ...prev, [name]: value }))
+    const { name, value } = e.target;
+    setBusinessInfo((prev) => {
+      // If website is being changed, reset vectorstore_ready to false
+      if (name === "website" && prev.website !== value) {
+        return { ...prev, [name]: value, vectorstore_ready: false };
+      }
+      return { ...prev, [name]: value };
+    });
   }
 
   const handleSelectChange = (value: string) => {
@@ -136,7 +149,12 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
       let result: BusinessInfo | null = null
       
       if (mode === "edit" && businessInfo.id) {
-        success = await updateBusinessInfo(businessInfo as BusinessInfo)
+        // If website changed, also set vectorstore_ready: false in DB
+        let updatePayload = { ...businessInfo };
+        if (businessInfo.website !== initialWebsite) {
+          updatePayload.vectorstore_ready = false;
+        }
+        success = await updateBusinessInfo(updatePayload as BusinessInfo)
         if (success) {
           toast.success("AI updated successfully")
           // Trigger sidebar refresh with the updated AI name
@@ -148,7 +166,8 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
           toast.error("Failed to update AI")
         }
       } else {
-        result = await createBusinessInfo(userId, businessInfo)
+        // Always set vectorstore_ready: false on create
+        result = await createBusinessInfo(userId, { ...businessInfo, vectorstore_ready: false })
         success = !!result
         if (result) {
           console.log("New AI created successfully:", result)

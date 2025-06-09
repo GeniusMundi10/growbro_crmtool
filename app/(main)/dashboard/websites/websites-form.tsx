@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { useUser } from "@/context/UserContext"
-import { getAIWebsites, upsertAIWebsites, deleteAIWebsiteByLabel, AIWebsite } from "@/lib/supabase"
+import { getAIWebsites, upsertAIWebsites, deleteAIWebsiteByLabel, AIWebsite, supabase } from "@/lib/supabase"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -74,6 +74,11 @@ export default function WebsitesForm() {
     if (value.trim() === "" && aiId && user?.id) {
       const deleted = await deleteAIWebsiteByLabel(user.id, aiId, target.label);
       if (deleted) {
+        // Set vectorstore_ready to false after delete
+        await supabase
+          .from("business_info")
+          .update({ vectorstore_ready: false })
+          .eq("id", aiId);
         // For custom slots, remove from state; for default, just clear url
         if (target.isCustom) {
           setWebsites(websites.filter((website) => website.id !== id));
@@ -112,6 +117,11 @@ export default function WebsitesForm() {
     setSaving(true);
     try {
       await upsertAIWebsites(aiId, user.id, websites);
+      // Set vectorstore_ready to false after any save
+      await supabase
+        .from("business_info")
+        .update({ vectorstore_ready: false })
+        .eq("id", aiId);
       toast.success("Websites saved!");
     } catch (error) {
       toast.error("Failed to save websites");
@@ -140,6 +150,11 @@ export default function WebsitesForm() {
     if (aiId && user?.id) {
       const deleted = await deleteAIWebsiteByLabel(user.id, aiId, website.label);
       if (deleted) {
+        // Set vectorstore_ready to false after delete
+        await supabase
+          .from("business_info")
+          .update({ vectorstore_ready: false })
+          .eq("id", aiId);
         setWebsites(websites.filter((_, i) => i !== idx));
         toast.success("Website entry deleted");
       } else {

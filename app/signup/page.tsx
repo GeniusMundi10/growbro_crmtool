@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import AnimatedLogoSprout from "@/components/AnimatedLogoSprout";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -108,6 +109,7 @@ export default function SignupPage() {
           widget_color: "#4285F4",
           send_button_color: "#4285F4",
           start_minimized: false,
+          vectorstore_ready: false,
         }
       ]);
       setLoading(false);
@@ -127,7 +129,10 @@ export default function SignupPage() {
       <Card className="w-full max-w-lg shadow-2xl rounded-2xl border-0 bg-white/90">
         <CardContent className="p-8">
           <div className="mb-8 text-center">
-            <img src="/logo.svg" alt="Growbro AI" className="mx-auto mb-2 h-10" />
+            <div className="flex flex-col items-center mb-2">
+  <AnimatedLogoSprout size={56} />
+  <div className="font-bold text-xl text-green-800 tracking-tight mt-2">growbro.ai</div>
+</div>
             <h1 className="text-2xl font-bold text-green-700">Try Growbro for FREE and Boost Your Sales! 🚀</h1>
             <p className="text-green-500">Sign up to supercharge your business with AI</p>
           </div>
