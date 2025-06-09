@@ -69,17 +69,7 @@ export default function AnalyticsPage() {
 
   // Stat cards (latest day)
   const latest = summaryRows.length > 0 ? summaryRows[summaryRows.length - 1] : null
-      convoMap[day] = (convoMap[day] || 0) + 1
-    })
-    leads.forEach(lead => {
-      const day = days[new Date(lead.created_at).getDay()]
-      leadMap[day] = (leadMap[day] || 0) + 1
-    })
-    return days.map(day => ({
-      day,
-      rate: convoMap[day] ? Math.round((100 * (leadMap[day] || 0)) / convoMap[day]) : 0
-    }))
-  })()
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -102,53 +92,29 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Conversations</CardDescription>
-              <CardTitle className="text-3xl">{analytics.total_conversations}</CardTitle>
+              <CardTitle className="text-3xl">{latest ? latest.conversation_count : 0}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                <span>+12% from last {period}</span>
-              </div>
-            </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Messages</CardDescription>
-              <CardTitle className="text-3xl">{analytics.total_messages}</CardTitle>
+              <CardTitle className="text-3xl">{latest ? latest.message_count : 0}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                <span>+8% from last {period}</span>
-              </div>
-            </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Leads</CardDescription>
-              <CardTitle className="text-3xl">{analytics.total_leads}</CardTitle>
+              <CardTitle className="text-3xl">{latest ? latest.total_leads : 0}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <Users className="h-4 w-4 mr-1" />
-                <span>+15% from last {period}</span>
-              </div>
-            </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>Avg. Conversation Length</CardDescription>
-              <CardTitle className="text-3xl">{analytics.avg_conversation_length} min</CardTitle>
+              <CardDescription>Avg. Conversation Duration</CardDescription>
+              <CardTitle className="text-3xl">{latest ? latest.avg_conversation_duration?.toFixed(1) : 0} min</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <Clock className="h-4 w-4 mr-1" />
-                <span>-2% from last {period}</span>
-              </div>
-            </CardContent>
           </Card>
         </div>
         
@@ -161,7 +127,7 @@ export default function AnalyticsPage() {
             <CardContent className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={sampleConversationsByDay}
+                  data={conversationsByDay}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
