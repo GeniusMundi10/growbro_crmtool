@@ -31,7 +31,7 @@ export default function AnalyticsPage() {
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week')
   const [summaryRows, setSummaryRows] = useState<DashboardMessageSummary[]>([])
   const [ais, setAIs] = useState<any[]>([])
-  const [selectedAIId, setSelectedAIId] = useState<string | null>(null)
+  const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
 
   useEffect(() => {
     async function loadUserAndAIs() {
@@ -42,9 +42,6 @@ export default function AnalyticsPage() {
         if (currentUser) {
           const ais = await getAIsForUser(currentUser.id)
           setAIs(ais)
-          if (ais && ais.length > 0 && !selectedAIId) {
-            setSelectedAIId(ais[0].id)
-          }
         }
       } finally {
         setLoading(false)
@@ -57,7 +54,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     async function fetchAnalytics() {
-      if (!selectedAIId) return;
+      if (!ais) return;
       setLoading(true)
       try {
         // Compute fromDate and toDate based on period
@@ -75,7 +72,32 @@ export default function AnalyticsPage() {
           monthAgo.setMonth(now.getMonth() - 1)
           fromDate = monthAgo.toISOString().slice(0, 10)
         }
-        const rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
+        let rows: DashboardMessageSummary[] = [];
+        if (selectedAIId === "__all__") {
+          // Aggregate all AIs
+          const allRows = await Promise.all(
+            ais.map((ai: any) => getDashboardMessageSummary(ai.id, fromDate, toDate))
+          );
+          // Flatten and aggregate by day
+          const byDay: { [day: string]: DashboardMessageSummary } = {};
+          allRows.flat().forEach(row => {
+            if (!byDay[row.day]) {
+              byDay[row.day] = { ...row };
+            } else {
+              byDay[row.day] = {
+                ...row,
+                message_count: (byDay[row.day].message_count || 0) + (row.message_count || 0),
+                conversation_count: (byDay[row.day].conversation_count || 0) + (row.conversation_count || 0),
+                new_leads: (byDay[row.day].new_leads || 0) + (row.new_leads || 0),
+                total_leads: (byDay[row.day].total_leads || 0) + (row.total_leads || 0),
+                avg_conversation_duration: ((byDay[row.day].avg_conversation_duration || 0) + (row.avg_conversation_duration || 0)) / 2, // simple avg
+              }
+            }
+          });
+          rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
+        } else {
+          rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
+        }
         setSummaryRows(rows)
       } catch {
         setSummaryRows([])
@@ -84,7 +106,7 @@ export default function AnalyticsPage() {
       }
     }
     fetchAnalytics()
-  }, [selectedAIId, period])
+  }, [selectedAIId, period, ais])
 
   if (loading) {
     return <div className="p-6 text-center">Loading analytics...</div>
@@ -108,13 +130,14 @@ export default function AnalyticsPage() {
           <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
 
           {/* AI Selector Dropdown */}
-          {ais.length > 1 && (
+          {ais.length > 0 && (
             <select
               className="border rounded px-3 py-2 text-sm"
-              value={selectedAIId || ''}
+              value={selectedAIId}
               onChange={e => setSelectedAIId(e.target.value)}
             >
-              {ais.map(ai => (
+              <option value="__all__">All AIs (Client Level)</option>
+              {ais.map((ai: any) => (
                 <option key={ai.id} value={ai.id}>{ai.label || ai.ai_name || ai.id}</option>
               ))}
             </select>
