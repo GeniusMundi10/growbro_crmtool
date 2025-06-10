@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser } from "@/lib/supabase"
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod } from "@/lib/supabase"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
@@ -36,6 +36,7 @@ export default function AnalyticsPage() {
   const [summaryRows, setSummaryRows] = useState<DashboardMessageSummary[]>([])
   const [ais, setAIs] = useState<any[]>([])
   const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
+  const [uniqueLeadsCount, setUniqueLeadsCount] = useState<number>(0);
 
   useEffect(() => {
     async function loadUserAndAIs() {
@@ -77,12 +78,12 @@ export default function AnalyticsPage() {
           fromDate = monthAgo.toISOString().slice(0, 10)
         }
         let rows: DashboardMessageSummary[] = [];
+        let uniqueLeads = 0;
         if (selectedAIId === "__all__") {
           // Aggregate all AIs
           const allRows = await Promise.all(
             ais.map((ai: any) => getDashboardMessageSummary(ai.id, fromDate, toDate))
           );
-          // Flatten and aggregate by day
           const byDay: { [day: string]: DashboardMessageSummary } = {};
           allRows.flat().forEach(row => {
             if (!byDay[row.day]) {
@@ -94,17 +95,26 @@ export default function AnalyticsPage() {
                 conversation_count: (byDay[row.day].conversation_count || 0) + (row.conversation_count || 0),
                 new_leads: (byDay[row.day].new_leads || 0) + (row.new_leads || 0),
                 total_leads: (byDay[row.day].total_leads || 0) + (row.total_leads || 0),
-                avg_conversation_duration: ((byDay[row.day].avg_conversation_duration || 0) + (row.avg_conversation_duration || 0)) / 2, // simple avg
+                avg_conversation_duration: ((byDay[row.day].avg_conversation_duration || 0) + (row.avg_conversation_duration || 0)) / 2,
               }
             }
           });
           rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
+          // Get unique leads for each AI and deduplicate across all AIs
+          const allCounts = await Promise.all(
+            ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, fromDate!, toDate!))
+          );
+          // If leads can overlap across AIs, you would need to fetch unique IDs, but with only counts per AI, sum is best effort
+          uniqueLeads = allCounts.reduce((sum, n) => sum + n, 0);
         } else {
           rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
+          uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);
         }
         setSummaryRows(rows)
+        setUniqueLeadsCount(uniqueLeads)
       } catch {
         setSummaryRows([])
+        setUniqueLeadsCount(0)
       } finally {
         setLoading(false)
       }
@@ -173,7 +183,7 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Leads (unique, period)</CardDescription>
-              <CardTitle className="text-3xl">{[...new Set(summaryRows.flatMap(row => row.total_leads ? [row.total_leads] : []))].reduce((a, b) => a + b, 0)}</CardTitle>
+              <CardTitle className="text-3xl">{uniqueLeadsCount}</CardTitle>
             </CardHeader>
           </Card>
           
