@@ -1092,10 +1092,12 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
     .eq('ai_id', agentId)
     .gte('timestamp', fromDate)
     .lte('timestamp', toDate);
+  console.log('[DEBUG] getUniqueLeadsForPeriod', { agentId, fromDate, toDate, data, error });
   if (error) throw error;
   const endUserIds = (data || [])
     .map((msg: any) => msg.conversations?.end_user_id)
     .filter((id: string | null | undefined) => !!id);
+  console.log('[DEBUG] Extracted endUserIds:', endUserIds);
   return new Set(endUserIds).size;
 }
 
