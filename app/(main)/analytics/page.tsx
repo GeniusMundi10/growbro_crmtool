@@ -251,6 +251,98 @@ export default function AnalyticsPage() {
           </Card>
         </div>
       </div>
+
+      {/* --- New Analytics Charts Row --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        {/* Avg Messages Per Conversation by Day */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Avg Messages Per Conversation</CardTitle>
+            <CardDescription>Average number of messages per conversation by day</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={summaryRows.map(row => ({ day: row.day, avg: row.avg_messages_per_conversation }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="avg" stroke="#0ea5e9" name="Avg Msgs/Conversation" dot />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Avg Messages Per Lead by Day */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Avg Messages Per Lead</CardTitle>
+            <CardDescription>Average number of messages per lead by day</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={summaryRows.map(row => ({ day: row.day, avg: row.avg_messages_per_lead }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="avg" stroke="#f59e42" name="Avg Msgs/Lead" dot />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Conversation Duration (min/avg/max) by Day */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Conversation Duration by Day</CardTitle>
+            <CardDescription>Min, Avg, and Max conversation duration (minutes) by day</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={summaryRows.map(row => ({ day: row.day, min: row.min_conversation_duration, avg: row.avg_conversation_duration, max: row.max_conversation_duration }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="min" stroke="#22c55e" name="Min Duration" dot />
+                <Line type="monotone" dataKey="avg" stroke="#0ea5e9" name="Avg Duration" dot />
+                <Line type="monotone" dataKey="max" stroke="#ef4444" name="Max Duration" dot />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Enhanced Lead Acquisition Trend (Area Chart) */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Lead Acquisition Trend</CardTitle>
+            <CardDescription>New leads acquired each day (area chart)</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={summaryRows.map(row => ({ day: row.day, newLeads: row.new_leads }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorNewLeads" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="newLeads" stroke="#16a34a" fillOpacity={1} fill="url(#colorNewLeads)" name="New Leads" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
+
