@@ -100,12 +100,11 @@ export default function AnalyticsPage() {
             }
           });
           rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
-          // Get unique leads for each AI and deduplicate across all AIs
+          // For 'All AIs', sum unique leads for each AI (not deduplicated across AIs)
           const allCounts = await Promise.all(
             ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, fromDate!, toDate!))
           );
-          // If leads can overlap across AIs, you would need to fetch unique IDs, but with only counts per AI, sum is best effort
-          uniqueLeads = allCounts.reduce((sum, n) => sum + n, 0);
+          uniqueLeads = allCounts.reduce((sum: number, n: number) => sum + n, 0);
         } else {
           rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
           uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);

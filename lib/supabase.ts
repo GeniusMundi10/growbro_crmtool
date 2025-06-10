@@ -1085,15 +1085,18 @@ export async function fetchUsersDirectly() {
 
 // Get unique leads for an AI and period (across all days in the range)
 export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string, toDate: string): Promise<number> {
-  // Query: count distinct end_users.id who interacted via messages for this AI in the period
-  const { count, error } = await supabase
+  // Fetch all messages for the AI and date range, join to conversations to get end_user_id
+  const { data, error } = await supabase
     .from('messages')
-    .select('conversations!inner(end_user_id)', { count: 'exact', head: true })
+    .select('conversation_id, conversations(end_user_id)')
     .eq('ai_id', agentId)
     .gte('timestamp', fromDate)
     .lte('timestamp', toDate);
   if (error) throw error;
-  return count || 0;
+  const endUserIds = (data || [])
+    .map((msg: any) => msg.conversations?.end_user_id)
+    .filter((id: string | null | undefined) => !!id);
+  return new Set(endUserIds).size;
 }
 
 // Fetch all AIs for a user
