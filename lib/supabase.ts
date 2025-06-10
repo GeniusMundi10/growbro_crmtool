@@ -1083,37 +1083,6 @@ export async function fetchUsersDirectly() {
   }
 }
 
-// Count unique leads (distinct end_user_id) for a given AI and date range
-export async function getUniqueLeadsCount(agentId: string, fromDate?: string, toDate?: string): Promise<number> {
-  let query = supabase
-    .from('messages')
-    .select('end_user_id', { count: 'exact', head: true })
-    .eq('ai_id', agentId);
-
-  if (fromDate) query = query.gte('timestamp', fromDate);
-  if (toDate) query = query.lte('timestamp', toDate);
-
-  const { count, error } = await query;
-  if (error) throw error;
-  return count || 0;
-}
-
-// Get all unique end_user_ids for an AI and period (for union across all AIs)
-export async function getUniqueLeadIds(agentId: string, fromDate?: string, toDate?: string): Promise<string[]> {
-  let query = supabase
-    .from('messages')
-    .select('end_user_id')
-    .eq('ai_id', agentId);
-
-  if (fromDate) query = query.gte('timestamp', fromDate);
-  if (toDate) query = query.lte('timestamp', toDate);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  const ids = (data || []).map((row: any) => row.end_user_id).filter((id: string | null) => !!id);
-  return Array.from(new Set(ids));
-}
-
 // Fetch all AIs for a user
 export async function getAIsForUser(userId: string) {
   const { data, error } = await supabase
