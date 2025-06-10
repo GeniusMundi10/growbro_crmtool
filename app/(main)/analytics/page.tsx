@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser } from "@/lib/supabase"
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadIds, getUniqueLeadsCount } from "@/lib/supabase"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
@@ -59,7 +59,12 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     async function fetchAnalytics() {
-      if (!ais) return;
+      if (!ais || ais.length === 0) {
+        setSummaryRows([]);
+        setUniqueLeadsCount(0);
+        setLoading(false);
+        return;
+      }
       setLoading(true)
       try {
         // Compute fromDate and toDate based on period
