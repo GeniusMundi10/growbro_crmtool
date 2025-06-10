@@ -24,8 +24,9 @@ import { Calendar, Clock, MessageSquare, User, Users } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
+// IMPORTANT: Only use analytics helpers from @/lib/supabase to ensure correct API key usage
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadIds, getUniqueLeadsCount } from "@/lib/supabase"
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadIds, getUniqueLeadsCount, supabase } from "@/lib/supabase"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
@@ -119,9 +120,21 @@ export default function AnalyticsPage() {
         }
         setSummaryRows(rows)
         setUniqueLeadsCount(uniqueLeads)
-      } catch {
+        // Debug log for unique leads
+        console.log("[Analytics] Unique leads count:", uniqueLeads)
+      } catch (err) {
         setSummaryRows([])
         setUniqueLeadsCount(0)
+        toast.error("Failed to fetch analytics data. Check API keys and backend connection.");
+        // Debugging output
+        console.error("[Analytics] Fetch error:", err);
+        if (typeof window !== "undefined") {
+          // Print env info if available
+          // @ts-ignore
+          console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+          // @ts-ignore
+          console.log("Supabase Anon Key:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+        }
       } finally {
         setLoading(false)
       }
