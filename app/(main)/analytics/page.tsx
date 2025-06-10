@@ -101,15 +101,15 @@ export default function AnalyticsPage() {
             }
           });
           rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
-          // Get unique leads across all AIs (sum unique for each AI)
-          const { getUniqueLeadsCount } = await import("@/lib/supabase");
-          const allCounts = await Promise.all(
-            ais.map((ai: any) => getUniqueLeadsCount(ai.id, fromDate, toDate))
+          // Get all unique lead IDs for all AIs, flatten and deduplicate
+          const allLeadIdArrays = await Promise.all(
+            ais.map((ai: any) => getUniqueLeadIds(ai.id, fromDate, toDate))
           );
-          uniqueLeads = allCounts.reduce((sum, count) => sum + (count || 0), 0);
+          const allLeadIds = allLeadIdArrays.flat();
+          const uniqueLeadIds = new Set(allLeadIds);
+          uniqueLeads = uniqueLeadIds.size;
         } else {
           rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
-          const { getUniqueLeadsCount } = await import("@/lib/supabase");
           uniqueLeads = await getUniqueLeadsCount(selectedAIId, fromDate, toDate)
         }
         setSummaryRows(rows)
