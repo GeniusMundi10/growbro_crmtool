@@ -36,6 +36,7 @@ export default function AnalyticsPage() {
   const [summaryRows, setSummaryRows] = useState<DashboardMessageSummary[]>([])
   const [ais, setAIs] = useState<any[]>([])
   const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
+  const [uniqueLeadsCount, setUniqueLeadsCount] = useState<number>(0);
 
   useEffect(() => {
     async function loadUserAndAIs() {
@@ -77,6 +78,7 @@ export default function AnalyticsPage() {
           fromDate = monthAgo.toISOString().slice(0, 10)
         }
         let rows: DashboardMessageSummary[] = [];
+        let uniqueLeads = 0;
         if (selectedAIId === "__all__") {
           // Aggregate all AIs
           const allRows = await Promise.all(
@@ -99,12 +101,22 @@ export default function AnalyticsPage() {
             }
           });
           rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
+          // Get unique leads across all AIs (sum unique for each AI)
+          const { getUniqueLeadsCount } = await import("@/lib/supabase");
+          const allCounts = await Promise.all(
+            ais.map((ai: any) => getUniqueLeadsCount(ai.id, fromDate, toDate))
+          );
+          uniqueLeads = allCounts.reduce((sum, count) => sum + (count || 0), 0);
         } else {
           rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
+          const { getUniqueLeadsCount } = await import("@/lib/supabase");
+          uniqueLeads = await getUniqueLeadsCount(selectedAIId, fromDate, toDate)
         }
         setSummaryRows(rows)
+        setUniqueLeadsCount(uniqueLeads)
       } catch {
         setSummaryRows([])
+        setUniqueLeadsCount(0)
       } finally {
         setLoading(false)
       }
@@ -173,7 +185,7 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Total Leads (unique, period)</CardDescription>
-              <CardTitle className="text-3xl">{[...new Set(summaryRows.flatMap(row => row.total_leads ? [row.total_leads] : []))].reduce((a, b) => a + b, 0)}</CardTitle>
+              <CardTitle className="text-3xl">{uniqueLeadsCount}</CardTitle>
             </CardHeader>
           </Card>
           
