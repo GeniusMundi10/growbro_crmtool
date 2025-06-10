@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
   const newLeadsByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.new_leads }))
 
   // Stat cards (latest day)
-  const latest = summaryRows.length > 0 ? summaryRows[summaryRows.length - 1] : null
+  const latest = summaryRows.length > 0 ? summaryRows[summaryRows.length - 1] : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -128,12 +128,6 @@ export default function AnalyticsPage() {
             </TabsList>
           </Tabs>
         </div>
-            <TabsList>
-              <TabsTrigger value="day">Today</TabsTrigger>
-              <TabsTrigger value="week">This Week</TabsTrigger>
-              <TabsTrigger value="month">This Month</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
