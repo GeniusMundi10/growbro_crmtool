@@ -41,6 +41,7 @@ export default function AnalyticsPage() {
   const [ais, setAIs] = useState<any[]>([])
   const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
   const [uniqueLeadsCount, setUniqueLeadsCount] = useState<number>(0);
+  const [aiSummaryRows, setAISummaryRows] = useState<any[]>([]); // Per-AI totals for leaderboard
   const [kpiStats, setKpiStats] = useState<{
     totalMessages: number;
     totalConversations: number;
@@ -124,6 +125,7 @@ export default function AnalyticsPage() {
           const allRows = await Promise.all(
             ais.map((ai: any) => getDashboardMessageSummary(ai.id, fromDate, toDate))
           );
+          // Per-day aggregation for charts
           const byDay: { [day: string]: DashboardMessageSummary } = {};
           allRows.flat().forEach((row: DashboardMessageSummary) => {
             if (!byDay[row.day]) {
@@ -140,6 +142,18 @@ export default function AnalyticsPage() {
             }
           });
           rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
+          // For leaderboard: aggregate per-AI totals
+          const aiTotals = ais.map((ai: any, idx: number) => {
+            const aiRows = allRows[idx] || [];
+            return {
+              aiId: ai.id,
+              aiName: ai.label || ai.ai_name || ai.id,
+              message_count: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.message_count || 0), 0),
+              conversation_count: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.conversation_count || 0), 0),
+              new_leads: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.new_leads || 0), 0),
+            };
+          });
+          setAISummaryRows(aiTotals);
           // For 'All AIs', sum unique leads for each AI (not deduplicated across AIs)
           const allCounts = await Promise.all(
             ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, fromDate!, toDate!))
@@ -147,6 +161,16 @@ export default function AnalyticsPage() {
           uniqueLeads = allCounts.reduce((sum: number, n: number) => sum + n, 0);
         } else {
           rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
+          // For leaderboard: single AI
+          setAISummaryRows([
+            {
+              aiId: selectedAIId,
+              aiName: ais.find((ai: any) => ai.id === selectedAIId)?.label || ais.find((ai: any) => ai.id === selectedAIId)?.ai_name || selectedAIId,
+              message_count: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.message_count || 0), 0),
+              conversation_count: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.conversation_count || 0), 0),
+              new_leads: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.new_leads || 0), 0),
+            }
+          ]);
           uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);
         }
         setSummaryRows(rows)
@@ -233,23 +257,17 @@ export default function AnalyticsPage() {
 
       {/* --- Leaderboard Table for AIs by Conversations --- */}
       <LeaderboardTable
-        rows={ais.map((ai, idx) => {
-          // Aggregate metrics for each AI from summaryRows
-          const aiRows = summaryRows.filter((row) => row.ai_id === ai.id);
-          const aiMessages = aiRows.reduce((sum, row) => sum + (row.message_count || 0), 0);
-          const aiConversations = aiRows.reduce((sum, row) => sum + (row.conversation_count || 0), 0);
-          const aiLeads = aiRows.reduce((sum, row) => sum + (row.new_leads || 0), 0);
-          return {
+        rows={aiSummaryRows
+          .map((row, idx) => ({
             rank: idx + 1,
-            name: ai.label || ai.ai_name || ai.id,
-            subtitle: ai.id,
-            value: aiMessages,
-            extra1: aiConversations,
-            extra2: aiLeads,
-          };
-        })
-        .sort((a, b) => b.value - a.value)
-        .map((row, idx) => ({ ...row, rank: idx + 1 }))}
+            name: row.aiName,
+            subtitle: row.aiId,
+            value: row.message_count,
+            extra1: row.conversation_count,
+            extra2: row.new_leads,
+          }))
+          .sort((a, b) => b.value - a.value)
+          .map((row, idx) => ({ ...row, rank: idx + 1 }))}
         title="AI Leaderboard"
         description="Top AIs by total messages, conversations, and leads in the selected period."
         valueLabel="Messages"
