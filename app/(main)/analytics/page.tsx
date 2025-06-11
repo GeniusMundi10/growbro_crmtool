@@ -31,8 +31,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats } from "@/lib/supabase"
 import KPISection from "./components/KPISection"
 import ConversationDurationPieChart from "./components/ConversationDurationPieChart"
+import UserSegmentPieChart from "./components/UserSegmentPieChart"
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
+const SEGMENT_COLORS = ["#60a5fa", "#34d399"];
 
 export default function AnalyticsPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
@@ -50,6 +51,7 @@ export default function AnalyticsPage() {
     totalLeads: number;
     avgConversationDuration: number;
   } | null>(null);
+  const [userSegment, setUserSegment] = useState<{ newUsers: number; returningUsers: number } | null>(null);
 
   useEffect(() => {
     async function loadUserAndAIs() {
@@ -98,7 +100,7 @@ export default function AnalyticsPage() {
           prevFromDate = prevMonthAgo.toISOString().slice(0, 10)
           prevToDate = monthAgo.toISOString().slice(0, 10)
         }
-        const [kpi, prevKpi] = await Promise.all([
+        const [kpi, prevKpi, segment] = await Promise.all([
           getDashboardKPIStats({
             aiId: selectedAIId,
             fromDate: fromDate!,
@@ -108,8 +110,9 @@ export default function AnalyticsPage() {
             aiId: selectedAIId,
             fromDate: prevFromDate!,
             toDate: prevToDate!
-          })
-        ])
+          }),
+          getUserSegmentDistribution(selectedAIId, fromDate!, toDate!)
+        ]);
         setKpiStats({ 
           totalMessages: kpi.totalMessages,
           totalConversations: kpi.totalConversations,
@@ -177,6 +180,7 @@ export default function AnalyticsPage() {
         }
         setSummaryRows(rows)
         setUniqueLeadsCount(uniqueLeads)
+        setUserSegment(segment);
       } catch {
         setSummaryRows([])
         setUniqueLeadsCount(0)
@@ -220,6 +224,14 @@ export default function AnalyticsPage() {
             .filter((d): d is number => typeof d === 'number' && !isNaN(d))
           }
         />
+        {userSegment && (
+          <UserSegmentPieChart
+            data={[
+              { label: "New Users", value: userSegment.newUsers, color: SEGMENT_COLORS[0] },
+              { label: "Returning Users", value: userSegment.returningUsers, color: SEGMENT_COLORS[1] },
+            ]}
+          />
+        )}
         {/* AI Selector Dropdown */}
         {ais.length > 0 && (
           <select

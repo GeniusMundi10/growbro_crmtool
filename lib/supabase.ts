@@ -1149,6 +1149,52 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
   return endUserIds.length;
 }
 
+// Get user segment distribution: counts of new vs. returning users for a given AI and period
+// New: user's first conversation is in the period; Returning: first conversation is before period but has a conversation in the period
+export async function getUserSegmentDistribution(agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
+  // 1. Get all conversations for the AI (with end_user_id, created_at)
+  const { data: conversations, error } = await supabase
+    .from('conversations')
+    .select('end_user_id, created_at')
+    .eq('ai_id', agentId)
+    .not('end_user_id', 'is', null);
+  if (error) throw error;
+  if (!conversations) return { newUsers: 0, returningUsers: 0 };
+
+  // 2. Build map: end_user_id -> [all their conversation dates]
+  const userConvoDates: Record<string, string[]> = {};
+  conversations.forEach((conv: any) => {
+    const { end_user_id, created_at } = conv;
+    if (!end_user_id) return;
+    if (!userConvoDates[end_user_id]) userConvoDates[end_user_id] = [];
+    userConvoDates[end_user_id].push(created_at);
+  });
+
+  let newUsers = 0;
+  let returningUsers = 0;
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+
+  Object.entries(userConvoDates).forEach(([userId, dates]) => {
+    // Find earliest conversation for this user
+    const sorted = dates.slice().sort();
+    const firstDate = new Date(sorted[0]);
+    // Check if user participated in the period
+    const hasConvoInPeriod = dates.some(dateStr => {
+      const dt = new Date(dateStr);
+      return dt >= from && dt <= to;
+    });
+    if (!hasConvoInPeriod) return;
+    if (firstDate >= from && firstDate <= to) {
+      newUsers += 1;
+    } else if (firstDate < from) {
+      returningUsers += 1;
+    }
+  });
+  return { newUsers, returningUsers };
+}
+
+
 // Fetch all AIs for a user
 export async function getAIsForUser(userId: string) {
   const { data, error } = await supabase
