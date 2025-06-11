@@ -1085,20 +1085,32 @@ export async function fetchUsersDirectly() {
 
 // Get unique leads for an AI and period (across all days in the range)
 export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string, toDate: string): Promise<number> {
-  // Fetch all messages for the AI and date range, join to conversations to get end_user_id
-  const { data, error } = await supabase
+  // Step 1: Fetch unique conversation_ids from messages for the AI and date range
+  const { data: messages, error: msgError } = await supabase
     .from('messages')
-    .select('conversation_id, conversation(end_user_id)')
+    .select('conversation_id')
     .eq('ai_id', agentId)
     .gte('timestamp', fromDate)
     .lte('timestamp', toDate);
-  console.log('[DEBUG] getUniqueLeadsForPeriod', { agentId, fromDate, toDate, data, error });
-  if (error) throw error;
-  const endUserIds = (data || [])
-    .map((msg: any) => msg.conversation?.end_user_id)
-    .filter((id: string | null | undefined) => !!id);
-  console.log('[DEBUG] Extracted endUserIds:', endUserIds);
-  return new Set(endUserIds).size;
+  console.log('[DEBUG] [Step 1] messages:', { agentId, fromDate, toDate, messages, msgError });
+  if (msgError) throw msgError;
+
+  const conversationIds = Array.from(new Set((messages || []).map((msg: any) => msg.conversation_id).filter(Boolean)));
+  if (conversationIds.length === 0) {
+    return 0;
+  }
+
+  // Step 2: Fetch end_user_id from conversations for those conversation_ids
+  const { data: conversations, error: convError } = await supabase
+    .from('conversations')
+    .select('end_user_id')
+    .in('id', conversationIds);
+  console.log('[DEBUG] [Step 2] conversations:', { conversationIds, conversations, convError });
+  if (convError) throw convError;
+
+  const endUserIds = Array.from(new Set((conversations || []).map((conv: any) => conv.end_user_id).filter(Boolean)));
+  console.log('[DEBUG] Extracted unique endUserIds:', endUserIds);
+  return endUserIds.length;
 }
 
 // Fetch all AIs for a user
