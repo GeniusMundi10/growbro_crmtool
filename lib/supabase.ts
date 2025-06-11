@@ -467,6 +467,36 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
   return data as DashboardMessageSummary[];
 }
 
+// Fetch KPI stats (totals and averages) for dashboard cards
+export async function getDashboardKPIStats({ aiId, clientId, fromDate, toDate }: { aiId?: string, clientId?: string, fromDate: string, toDate: string }) {
+  // Build filter
+  let query = supabase
+    .from('dashboard_message_summary')
+    .select('*')
+    .gte('day', fromDate)
+    .lte('day', toDate);
+  if (aiId && aiId !== "__all__") query = query.eq('agent_id', aiId);
+  if (clientId && clientId !== "__all__") query = query.eq('client_id', clientId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  // Aggregate totals and averages
+  const totalMessages = data?.reduce((sum, row) => sum + (row.message_count || 0), 0) || 0;
+  const totalConversations = data?.reduce((sum, row) => sum + (row.conversation_count || 0), 0) || 0;
+  const totalLeads = data?.reduce((sum, row) => sum + (row.total_leads || 0), 0) || 0;
+  // Weighted average for duration
+  const durationSum = data?.reduce((sum, row) => sum + ((row.avg_conversation_duration || 0) * (row.conversation_count || 0)), 0) || 0;
+  const conversationCount = data?.reduce((sum, row) => sum + (row.conversation_count || 0), 0) || 0;
+  const avgConversationDuration = conversationCount ? durationSum / conversationCount : 0;
+  return {
+    totalMessages,
+    totalConversations,
+    totalLeads,
+    avgConversationDuration,
+  };
+}
+
+
 // AI Greeting CRUD operations
 export type AIGreeting = {
   id: string;

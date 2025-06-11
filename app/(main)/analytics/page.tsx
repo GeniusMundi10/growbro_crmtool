@@ -25,7 +25,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod } from "@/lib/supabase"
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats } from "@/lib/supabase"
+import KPISection from "./components/KPISection"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
@@ -37,6 +38,12 @@ export default function AnalyticsPage() {
   const [ais, setAIs] = useState<any[]>([])
   const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
   const [uniqueLeadsCount, setUniqueLeadsCount] = useState<number>(0);
+  const [kpiStats, setKpiStats] = useState<{
+    totalMessages: number;
+    totalConversations: number;
+    totalLeads: number;
+    avgConversationDuration: number;
+  } | null>(null);
 
   useEffect(() => {
     async function loadUserAndAIs() {
@@ -59,6 +66,74 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     async function fetchAnalytics() {
+      // Compute current and previous periods
+      const now = new Date()
+      let fromDate: string | undefined
+      let toDate: string | undefined = now.toISOString().slice(0, 10)
+      let prevFromDate: string | undefined
+      let prevToDate: string | undefined
+      if (period === 'day') {
+        fromDate = now.toISOString().slice(0, 10)
+        prevFromDate = new Date(now.getTime() - 24*60*60*1000).toISOString().slice(0, 10)
+        prevToDate = fromDate
+      } else if (period === 'week') {
+        const weekAgo = new Date(now)
+        weekAgo.setDate(now.getDate() - 6)
+        fromDate = weekAgo.toISOString().slice(0, 10)
+        const prevWeekAgo = new Date(weekAgo)
+        prevWeekAgo.setDate(weekAgo.getDate() - 7)
+        prevFromDate = prevWeekAgo.toISOString().slice(0, 10)
+        prevToDate = weekAgo.toISOString().slice(0, 10)
+      } else if (period === 'month') {
+        const monthAgo = new Date(now)
+        monthAgo.setMonth(now.getMonth() - 1)
+        fromDate = monthAgo.toISOString().slice(0, 10)
+        const prevMonthAgo = new Date(monthAgo)
+        prevMonthAgo.setMonth(monthAgo.getMonth() - 1)
+        prevFromDate = prevMonthAgo.toISOString().slice(0, 10)
+        prevToDate = monthAgo.toISOString().slice(0, 10)
+      }
+      // Fetch current and previous period KPIs
+      const [kpi, prevKpi] = await Promise.all([
+        getDashboardKPIStats({
+          aiId: selectedAIId,
+          fromDate: fromDate!,
+          toDate: toDate!
+        }),
+        getDashboardKPIStats({
+          aiId: selectedAIId,
+          fromDate: prevFromDate!,
+          toDate: prevToDate!
+        })
+      ])
+      setKpiStats({ ...kpi, 
+        trendMessages: kpi.totalMessages - (prevKpi?.totalMessages ?? 0),
+        trendConversations: kpi.totalConversations - (prevKpi?.totalConversations ?? 0),
+        trendLeads: kpi.totalLeads - (prevKpi?.totalLeads ?? 0),
+        trendDuration: kpi.avgConversationDuration - (prevKpi?.avgConversationDuration ?? 0)
+      });
+      // Compute fromDate and toDate based on period
+      const now = new Date()
+      let fromDate: string | undefined
+      let toDate: string | undefined = now.toISOString().slice(0, 10)
+      if (period === 'day') {
+        fromDate = now.toISOString().slice(0, 10)
+      } else if (period === 'week') {
+        const weekAgo = new Date(now)
+        weekAgo.setDate(now.getDate() - 6)
+        fromDate = weekAgo.toISOString().slice(0, 10)
+      } else if (period === 'month') {
+        const monthAgo = new Date(now)
+        monthAgo.setMonth(now.getMonth() - 1)
+        fromDate = monthAgo.toISOString().slice(0, 10)
+      }
+      // Fetch KPI stats for selected AI or all
+      const kpi = await getDashboardKPIStats({
+        aiId: selectedAIId,
+        fromDate: fromDate!,
+        toDate: toDate!
+      });
+      setKpiStats(kpi);
       if (!ais) return;
       setLoading(true)
       try {
@@ -131,17 +206,22 @@ export default function AnalyticsPage() {
   const conversationsByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.conversation_count }))
   const newLeadsByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.new_leads }))
 
-  // Stat cards (latest day)
-  const latest = summaryRows.length > 0 ? summaryRows[summaryRows.length - 1] : null;
-
   return (
     <div className="min-h-screen bg-white">
       <Header title="Analytics" />
       
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-
+      <div className="container mx-auto py-8">
+        <KPISection
+          totalMessages={kpiStats?.totalMessages ?? 0}
+          totalConversations={kpiStats?.totalConversations ?? 0}
+          totalLeads={kpiStats?.totalLeads ?? 0}
+          avgConversationDuration={kpiStats?.avgConversationDuration ?? 0}
+          period={period}
+          trendMessages={kpiStats?.trendMessages}
+          trendConversations={kpiStats?.trendConversations}
+          trendLeads={kpiStats?.trendLeads}
+          trendDuration={kpiStats?.trendDuration}
+        />
           {/* AI Selector Dropdown */}
           {ais.length > 0 && (
             <select
@@ -164,36 +244,6 @@ export default function AnalyticsPage() {
             </TabsList>
           </Tabs>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Conversations (period)</CardDescription>
-              <CardTitle className="text-3xl">{summaryRows.reduce((sum, row) => sum + (row.conversation_count || 0), 0)}</CardTitle>
-            </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Messages (period)</CardDescription>
-              <CardTitle className="text-3xl">{summaryRows.reduce((sum, row) => sum + (row.message_count || 0), 0)}</CardTitle>
-            </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Leads (unique, period)</CardDescription>
-              <CardTitle className="text-3xl">{uniqueLeadsCount}</CardTitle>
-            </CardHeader>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Avg. Conversation Duration (min, period)</CardDescription>
-              <CardTitle className="text-3xl">{summaryRows.length > 0 ? (summaryRows.reduce((sum, row) => sum + (row.avg_conversation_duration || 0), 0) / summaryRows.length).toFixed(1) : 0} min</CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
-        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader>
