@@ -217,21 +217,27 @@ export default function AnalyticsPage() {
           trendLeads={kpiStats?.trendLeads}
           trendDuration={kpiStats?.trendDuration}
         />
-        {/* Conversation Duration Pie Chart */}
-        <ConversationDurationPieChart
-          durations={summaryRows
-            .map(row => row.avg_conversation_duration)
-            .filter((d): d is number => typeof d === 'number' && !isNaN(d))
-          }
-        />
-        {userSegment && (
-          <UserSegmentPieChart
-            data={[
-              { label: "New Users", value: userSegment.newUsers, color: SEGMENT_COLORS[0] },
-              { label: "Returning Users", value: userSegment.returningUsers, color: SEGMENT_COLORS[1] },
-            ]}
-          />
-        )}
+        {/* Pie Charts Side by Side */}
+        <div className="flex flex-col lg:flex-row gap-8 justify-center items-stretch mb-8">
+          <div className="flex-1 min-w-[280px]">
+            <ConversationDurationPieChart
+              durations={summaryRows
+                .map(row => row.avg_conversation_duration)
+                .filter((d): d is number => typeof d === 'number' && !isNaN(d))
+              }
+            />
+          </div>
+          <div className="flex-1 min-w-[280px]">
+            {userSegment && (
+              <UserSegmentPieChart
+                data={[
+                  { label: "New Users", value: userSegment.newUsers, color: SEGMENT_COLORS[0] },
+                  { label: "Returning Users", value: userSegment.returningUsers, color: SEGMENT_COLORS[1] },
+                ]}
+              />
+            )}
+          </div>
+        </div>
         {/* AI Selector Dropdown */}
         {ais.length > 0 && (
           <select
