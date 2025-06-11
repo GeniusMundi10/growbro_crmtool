@@ -28,7 +28,7 @@ import LeaderboardTable from "./components/LeaderboardTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats } from "@/lib/supabase"
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats, getUserSegmentDistribution } from "@/lib/supabase"
 import KPISection from "./components/KPISection"
 import ConversationDurationPieChart from "./components/ConversationDurationPieChart"
 import UserSegmentPieChart from "./components/UserSegmentPieChart"
