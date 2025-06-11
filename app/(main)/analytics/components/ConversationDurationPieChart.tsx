@@ -27,6 +27,7 @@ function bucketizeDurations(durations: number[]) {
 
 const ConversationDurationPieChart: React.FC<ConversationDurationPieChartProps> = ({ durations }) => {
   const data = bucketizeDurations(durations);
+  const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
     <div className="bg-white rounded shadow p-4 mb-6">
@@ -47,19 +48,17 @@ const ConversationDurationPieChart: React.FC<ConversationDurationPieChartProps> 
             ))}
           </Pie>
           <Tooltip
-            formatter={(_value: any, name: any, props: any) => {
-              // _value is count, but we want percent
-              const percent = props && props.payload && props.payload.percent;
+            formatter={(value: any, name: any, props: any) => {
+              // value is count for this bucket
+              const percent = total > 0 ? (value / total) : 0;
               return [`${(percent * 100).toFixed(1)}%`, name];
             }}
           />
           <Legend
             formatter={(_value: string, entry: any) => {
-              // entry.payload.percent is available
-              if (entry && entry.payload && typeof entry.payload.percent === 'number') {
-                return `${entry.value}: ${(entry.payload.percent * 100).toFixed(1)}%`;
-              }
-              return entry.value;
+              // entry.payload.value is count for this bucket
+              const percent = total > 0 ? (entry.payload.value / total) : 0;
+              return `${entry.value}: ${(percent * 100).toFixed(1)}%`;
             }}
           />
         </PieChart>
