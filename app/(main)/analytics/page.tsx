@@ -183,8 +183,11 @@ export default function AnalyticsPage() {
         setLoading(false)
       }
     }
-    fetchAnalytics()
-  }, [selectedAIId, period])
+    if (user && ais.length > 0) {
+      fetchAnalytics()
+    }
+  }, [user, ais, period, selectedAIId])
+
   if (loading) {
     return <div className="p-6 text-center">Loading analytics...</div>;
   }
