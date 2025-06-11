@@ -24,6 +24,7 @@ import { Calendar, Clock, MessageSquare, User, Users } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TimeSeriesChart from "./components/TimeSeriesChart";
 import FunnelChart from "./components/FunnelChart";
+import LeaderboardTable from "./components/LeaderboardTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
@@ -228,6 +229,24 @@ export default function AnalyticsPage() {
         ]}
         title="Conversation Funnel"
         description="See how many messages lead to conversations and unique leads in the selected period."
+      />
+
+      {/* --- Leaderboard Table for AIs by Conversations --- */}
+      <LeaderboardTable
+        rows={ais.map((ai, idx) => {
+          // Aggregate conversation count for each AI from summaryRows
+          const aiConversations = summaryRows
+            .filter((row) => row.ai_id === ai.id)
+            .reduce((sum, row) => sum + (row.conversation_count || 0), 0);
+          return {
+            rank: idx + 1,
+            name: ai.label || ai.ai_name || ai.id,
+            value: aiConversations,
+          };
+        }).sort((a, b) => b.value - a.value).map((row, idx) => ({ ...row, rank: idx + 1 }))}
+        title="AI Leaderboard"
+        description="Top AIs by total conversations in the selected period."
+        valueLabel="Conversations"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
