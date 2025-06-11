@@ -194,6 +194,8 @@ export default function AnalyticsPage() {
       }
     }
     fetchAnalytics()
+  }
+  // Close fetchAnalytics function above, then close useEffect here
   }, [selectedAIId, period, ais])
 
   if (loading) {
