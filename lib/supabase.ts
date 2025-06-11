@@ -1096,6 +1096,7 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
   if (msgError) throw msgError;
 
   const conversationIds = Array.from(new Set((messages || []).map((msg: any) => msg.conversation_id).filter(Boolean)));
+  console.log('[DEBUG] [Conversation IDs from messages]:', conversationIds);
   if (conversationIds.length === 0) {
     return 0;
   }
@@ -1103,13 +1104,18 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
   // Step 2: Fetch end_user_id from conversations for those conversation_ids
   const { data: conversations, error: convError } = await supabase
     .from('conversations')
-    .select('end_user_id')
+    .select('id, end_user_id')
     .in('id', conversationIds);
   console.log('[DEBUG] [Step 2] conversations:', { conversationIds, conversations, convError });
   if (convError) throw convError;
 
+  // Log all conversation rows with their end_user_id
+  (conversations || []).forEach((conv: any) => {
+    console.log(`[DEBUG] Conversation ID: ${conv.id}, end_user_id: ${conv.end_user_id}`);
+  });
+
   const endUserIds = Array.from(new Set((conversations || []).map((conv: any) => conv.end_user_id).filter(Boolean)));
-  console.log('[DEBUG] Extracted unique endUserIds:', endUserIds);
+  console.log('[DEBUG] [Non-null endUserIds]:', endUserIds);
   return endUserIds.length;
 }
 
