@@ -234,19 +234,27 @@ export default function AnalyticsPage() {
       {/* --- Leaderboard Table for AIs by Conversations --- */}
       <LeaderboardTable
         rows={ais.map((ai, idx) => {
-          // Aggregate conversation count for each AI from summaryRows
-          const aiConversations = summaryRows
-            .filter((row) => row.ai_id === ai.id)
-            .reduce((sum, row) => sum + (row.conversation_count || 0), 0);
+          // Aggregate metrics for each AI from summaryRows
+          const aiRows = summaryRows.filter((row) => row.ai_id === ai.id);
+          const aiMessages = aiRows.reduce((sum, row) => sum + (row.message_count || 0), 0);
+          const aiConversations = aiRows.reduce((sum, row) => sum + (row.conversation_count || 0), 0);
+          const aiLeads = aiRows.reduce((sum, row) => sum + (row.new_leads || 0), 0);
           return {
             rank: idx + 1,
             name: ai.label || ai.ai_name || ai.id,
-            value: aiConversations,
+            subtitle: ai.id,
+            value: aiMessages,
+            extra1: aiConversations,
+            extra2: aiLeads,
           };
-        }).sort((a, b) => b.value - a.value).map((row, idx) => ({ ...row, rank: idx + 1 }))}
+        })
+        .sort((a, b) => b.value - a.value)
+        .map((row, idx) => ({ ...row, rank: idx + 1 }))}
         title="AI Leaderboard"
-        description="Top AIs by total conversations in the selected period."
-        valueLabel="Conversations"
+        description="Top AIs by total messages, conversations, and leads in the selected period."
+        valueLabel="Messages"
+        extra1Label="Conversations"
+        extra2Label="Leads"
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
