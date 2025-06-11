@@ -36,7 +36,8 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 export default function AnalyticsPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week')
+  // Always default to 'week' filter, even on remount or navigation
+  const [period, setPeriod] = useState<'day' | 'week' | 'month'>(() => 'week')
   const [summaryRows, setSummaryRows] = useState<DashboardMessageSummary[]>([])
   const [ais, setAIs] = useState<any[]>([])
   const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
