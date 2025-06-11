@@ -1152,12 +1152,15 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
 // Get user segment distribution: counts of new vs. returning users for a given AI and period
 // New: user's first conversation is in the period; Returning: first conversation is before period but has a conversation in the period
 export async function getUserSegmentDistribution(agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
-  // 1. Get all conversations for the AI (with end_user_id, created_at)
-  const { data: conversations, error } = await supabase
+  // 1. Get all conversations for the AI (with end_user_id, started_at)
+  let query = supabase
     .from('conversations')
     .select('end_user_id, started_at')
-    .eq('ai_id', agentId)
     .not('end_user_id', 'is', null);
+  if (agentId !== "__all__") {
+    query = query.eq('ai_id', agentId);
+  }
+  const { data: conversations, error } = await query;
   if (error) throw error;
   if (!conversations) return { newUsers: 0, returningUsers: 0 };
 
