@@ -1088,14 +1088,14 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
   // Fetch all messages for the AI and date range, join to conversations to get end_user_id
   const { data, error } = await supabase
     .from('messages')
-    .select('conversation_id, conversations(end_user_id)')
+    .select('conversation_id, conversation(end_user_id)')
     .eq('ai_id', agentId)
     .gte('timestamp', fromDate)
     .lte('timestamp', toDate);
   console.log('[DEBUG] getUniqueLeadsForPeriod', { agentId, fromDate, toDate, data, error });
   if (error) throw error;
   const endUserIds = (data || [])
-    .map((msg: any) => msg.conversations?.end_user_id)
+    .map((msg: any) => msg.conversation?.end_user_id)
     .filter((id: string | null | undefined) => !!id);
   console.log('[DEBUG] Extracted endUserIds:', endUserIds);
   return new Set(endUserIds).size;
