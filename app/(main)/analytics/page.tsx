@@ -30,6 +30,7 @@ import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
 import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats } from "@/lib/supabase"
 import KPISection from "./components/KPISection"
+import ConversationDurationPieChart from "./components/ConversationDurationPieChart"
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
 
@@ -211,6 +212,13 @@ export default function AnalyticsPage() {
           trendConversations={kpiStats?.trendConversations}
           trendLeads={kpiStats?.trendLeads}
           trendDuration={kpiStats?.trendDuration}
+        />
+        {/* Conversation Duration Pie Chart */}
+        <ConversationDurationPieChart
+          durations={summaryRows
+            .map(row => row.avg_conversation_duration)
+            .filter((d): d is number => typeof d === 'number' && !isNaN(d))
+          }
         />
         {/* AI Selector Dropdown */}
         {ais.length > 0 && (
