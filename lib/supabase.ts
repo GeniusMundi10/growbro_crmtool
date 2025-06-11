@@ -1178,19 +1178,22 @@ export async function getUserSegmentDistribution(agentId: string, fromDate: stri
   const from = new Date(fromDate);
   const to = new Date(toDate);
 
+  console.log('[DEBUG][User Segments] fromDate:', fromDate, 'toDate:', toDate);
   Object.entries(userConvoDates).forEach(([userId, dates]) => {
-    // Find earliest conversation for this user
     const sorted = dates.slice().sort();
     const firstDate = new Date(sorted[0]);
-    // Check if user participated in the period
-    const hasConvoInPeriod = dates.some(dateStr => {
-      const dt = new Date(dateStr);
-      return dt >= from && dt <= to;
-    });
+    const allDates = dates.map(dateStr => new Date(dateStr));
+    const hasConvoInPeriod = allDates.some(dt => dt >= from && dt <= to);
+    console.log(`[DEBUG][User Segments] userId: ${userId}`);
+    console.log('  All conversation dates:', allDates);
+    console.log('  First conversation date:', firstDate);
+    console.log('  Has conversation in period:', hasConvoInPeriod);
     if (!hasConvoInPeriod) return;
     if (firstDate >= from && firstDate <= to) {
+      console.log('  => Counted as NEW user');
       newUsers += 1;
     } else if (firstDate < from) {
+      console.log('  => Counted as RETURNING user');
       returningUsers += 1;
     }
   });
