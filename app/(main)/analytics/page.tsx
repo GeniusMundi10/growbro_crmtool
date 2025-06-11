@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
             ais.map((ai: any) => getDashboardMessageSummary(ai.id, fromDate, toDate))
           );
           const byDay: { [day: string]: DashboardMessageSummary } = {};
-          allRows.flat().forEach(row => {
+          allRows.flat().forEach((row: DashboardMessageSummary) => {
             if (!byDay[row.day]) {
               byDay[row.day] = { ...row };
             } else {
@@ -156,8 +156,6 @@ export default function AnalyticsPage() {
       }
     }
     fetchAnalytics()
-  }
-  // Close fetchAnalytics function above, then close useEffect here
   }, [selectedAIId, period, ais])
 
   if (loading) {
