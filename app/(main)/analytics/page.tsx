@@ -312,9 +312,6 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </div>
-      </div>
-
       {/* --- New Analytics Charts Row --- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         {/* Avg Messages Per Conversation by Day */}
