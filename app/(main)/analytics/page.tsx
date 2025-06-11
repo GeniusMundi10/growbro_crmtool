@@ -23,6 +23,7 @@ import {
 import { Calendar, Clock, MessageSquare, User, Users } from "lucide-react"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TimeSeriesChart from "./components/TimeSeriesChart";
+import FunnelChart from "./components/FunnelChart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
@@ -216,6 +217,17 @@ export default function AnalyticsPage() {
         ]}
         title="Messages & Conversations Over Time"
         description="Trends for messages and conversations by day in the selected period."
+      />
+
+      {/* --- Funnel Chart for Conversion --- */}
+      <FunnelChart
+        stages={[
+          { label: "Messages", value: kpiStats?.totalMessages ?? 0, color: "#0ea5e9" },
+          { label: "Conversations", value: kpiStats?.totalConversations ?? 0, color: "#16a34a" },
+          { label: "Leads (Unique)", value: uniqueLeadsCount ?? 0, color: "#f59e42" }
+        ]}
+        title="Conversation Funnel"
+        description="See how many messages lead to conversations and unique leads in the selected period."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
