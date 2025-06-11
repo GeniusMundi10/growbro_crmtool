@@ -1175,8 +1175,16 @@ export async function getUserSegmentDistribution(agentId: string, fromDate: stri
 
   let newUsers = 0;
   let returningUsers = 0;
-  const from = new Date(fromDate);
-  const to = new Date(toDate);
+  let from: Date;
+  let to: Date;
+  if (fromDate === toDate && /^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
+    // Day-level query: cover the entire day
+    from = new Date(fromDate + 'T00:00:00.000Z');
+    to = new Date(fromDate + 'T23:59:59.999Z');
+  } else {
+    from = new Date(fromDate);
+    to = new Date(toDate);
+  }
 
   console.log('[DEBUG][User Segments] fromDate:', fromDate, 'toDate:', toDate);
   Object.entries(userConvoDates).forEach(([userId, dates]) => {
