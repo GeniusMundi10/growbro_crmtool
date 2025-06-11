@@ -60,98 +60,60 @@ export default function AnalyticsPage() {
       }
     }
     loadUserAndAIs()
-    // Only run on mount
-    // eslint-disable-next-line
   }, [])
 
   useEffect(() => {
     async function fetchAnalytics() {
-      // Compute current and previous periods
-      const now = new Date()
-      let fromDate: string | undefined
-      let toDate: string | undefined = now.toISOString().slice(0, 10)
-      let prevFromDate: string | undefined
-      let prevToDate: string | undefined
-      if (period === 'day') {
-        fromDate = now.toISOString().slice(0, 10)
-        prevFromDate = new Date(now.getTime() - 24*60*60*1000).toISOString().slice(0, 10)
-        prevToDate = fromDate
-      } else if (period === 'week') {
-        const weekAgo = new Date(now)
-        weekAgo.setDate(now.getDate() - 6)
-        fromDate = weekAgo.toISOString().slice(0, 10)
-        const prevWeekAgo = new Date(weekAgo)
-        prevWeekAgo.setDate(weekAgo.getDate() - 7)
-        prevFromDate = prevWeekAgo.toISOString().slice(0, 10)
-        prevToDate = weekAgo.toISOString().slice(0, 10)
-      } else if (period === 'month') {
-        const monthAgo = new Date(now)
-        monthAgo.setMonth(now.getMonth() - 1)
-        fromDate = monthAgo.toISOString().slice(0, 10)
-        const prevMonthAgo = new Date(monthAgo)
-        prevMonthAgo.setMonth(monthAgo.getMonth() - 1)
-        prevFromDate = prevMonthAgo.toISOString().slice(0, 10)
-        prevToDate = monthAgo.toISOString().slice(0, 10)
-      }
-      // Fetch current and previous period KPIs
-      const [kpi, prevKpi] = await Promise.all([
-        getDashboardKPIStats({
-          aiId: selectedAIId,
-          fromDate: fromDate!,
-          toDate: toDate!
-        }),
-        getDashboardKPIStats({
-          aiId: selectedAIId,
-          fromDate: prevFromDate!,
-          toDate: prevToDate!
-        })
-      ])
-      setKpiStats({ ...kpi, 
-        trendMessages: kpi.totalMessages - (prevKpi?.totalMessages ?? 0),
-        trendConversations: kpi.totalConversations - (prevKpi?.totalConversations ?? 0),
-        trendLeads: kpi.totalLeads - (prevKpi?.totalLeads ?? 0),
-        trendDuration: kpi.avgConversationDuration - (prevKpi?.avgConversationDuration ?? 0)
-      });
-      // Compute fromDate and toDate based on period
-      const now = new Date()
-      let fromDate: string | undefined
-      let toDate: string | undefined = now.toISOString().slice(0, 10)
-      if (period === 'day') {
-        fromDate = now.toISOString().slice(0, 10)
-      } else if (period === 'week') {
-        const weekAgo = new Date(now)
-        weekAgo.setDate(now.getDate() - 6)
-        fromDate = weekAgo.toISOString().slice(0, 10)
-      } else if (period === 'month') {
-        const monthAgo = new Date(now)
-        monthAgo.setMonth(now.getMonth() - 1)
-        fromDate = monthAgo.toISOString().slice(0, 10)
-      }
-      // Fetch KPI stats for selected AI or all
-      const kpi = await getDashboardKPIStats({
-        aiId: selectedAIId,
-        fromDate: fromDate!,
-        toDate: toDate!
-      });
-      setKpiStats(kpi);
-      if (!ais) return;
       setLoading(true)
       try {
-        // Compute fromDate and toDate based on period
         const now = new Date()
         let fromDate: string | undefined
         let toDate: string | undefined = now.toISOString().slice(0, 10)
+        let prevFromDate: string | undefined
+        let prevToDate: string | undefined
         if (period === 'day') {
           fromDate = now.toISOString().slice(0, 10)
+          prevFromDate = new Date(now.getTime() - 24*60*60*1000).toISOString().slice(0, 10)
+          prevToDate = fromDate
         } else if (period === 'week') {
           const weekAgo = new Date(now)
           weekAgo.setDate(now.getDate() - 6)
           fromDate = weekAgo.toISOString().slice(0, 10)
+          const prevWeekAgo = new Date(weekAgo)
+          prevWeekAgo.setDate(weekAgo.getDate() - 7)
+          prevFromDate = prevWeekAgo.toISOString().slice(0, 10)
+          prevToDate = weekAgo.toISOString().slice(0, 10)
         } else if (period === 'month') {
           const monthAgo = new Date(now)
           monthAgo.setMonth(now.getMonth() - 1)
           fromDate = monthAgo.toISOString().slice(0, 10)
+          const prevMonthAgo = new Date(monthAgo)
+          prevMonthAgo.setMonth(monthAgo.getMonth() - 1)
+          prevFromDate = prevMonthAgo.toISOString().slice(0, 10)
+          prevToDate = monthAgo.toISOString().slice(0, 10)
         }
+        const [kpi, prevKpi] = await Promise.all([
+          getDashboardKPIStats({
+            aiId: selectedAIId,
+            fromDate: fromDate!,
+            toDate: toDate!
+          }),
+          getDashboardKPIStats({
+            aiId: selectedAIId,
+            fromDate: prevFromDate!,
+            toDate: prevToDate!
+          })
+        ])
+        setKpiStats({ 
+          totalMessages: kpi.totalMessages,
+          totalConversations: kpi.totalConversations,
+          totalLeads: kpi.totalLeads,
+          avgConversationDuration: kpi.avgConversationDuration,
+          trendMessages: kpi.totalMessages - (prevKpi?.totalMessages ?? 0),
+          trendConversations: kpi.totalConversations - (prevKpi?.totalConversations ?? 0),
+          trendLeads: kpi.totalLeads - (prevKpi?.totalLeads ?? 0),
+          trendDuration: kpi.avgConversationDuration - (prevKpi?.avgConversationDuration ?? 0)
+        });
         let rows: DashboardMessageSummary[] = [];
         let uniqueLeads = 0;
         if (selectedAIId === "__all__") {
