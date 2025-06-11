@@ -21,7 +21,8 @@ import {
   ResponsiveContainer
 } from "recharts"
 import { Calendar, Clock, MessageSquare, User, Users } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TimeSeriesChart from "./components/TimeSeriesChart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
@@ -202,6 +203,21 @@ export default function AnalyticsPage() {
           </TabsList>
         </Tabs>
       </div>
+      {/* --- Modular Time Series Chart --- */}
+      <TimeSeriesChart
+        data={summaryRows.map((row) => ({
+          day: row.day.slice(0, 10),
+          messages: row.message_count,
+          conversations: row.conversation_count,
+        }))}
+        series={[
+          { key: "messages", label: "Messages", color: "#0ea5e9" },
+          { key: "conversations", label: "Conversations", color: "#16a34a" },
+        ]}
+        title="Messages & Conversations Over Time"
+        description="Trends for messages and conversations by day in the selected period."
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card>
           <CardHeader>
