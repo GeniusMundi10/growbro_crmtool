@@ -1155,7 +1155,7 @@ export async function getUserSegmentDistribution(agentId: string, fromDate: stri
   // 1. Get all conversations for the AI (with end_user_id, created_at)
   const { data: conversations, error } = await supabase
     .from('conversations')
-    .select('end_user_id, created_at')
+    .select('end_user_id, started_at')
     .eq('ai_id', agentId)
     .not('end_user_id', 'is', null);
   if (error) throw error;
@@ -1164,10 +1164,10 @@ export async function getUserSegmentDistribution(agentId: string, fromDate: stri
   // 2. Build map: end_user_id -> [all their conversation dates]
   const userConvoDates: Record<string, string[]> = {};
   conversations.forEach((conv: any) => {
-    const { end_user_id, created_at } = conv;
+    const { end_user_id, started_at } = conv;
     if (!end_user_id) return;
     if (!userConvoDates[end_user_id]) userConvoDates[end_user_id] = [];
-    userConvoDates[end_user_id].push(created_at);
+    userConvoDates[end_user_id].push(started_at);
   });
 
   let newUsers = 0;
