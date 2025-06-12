@@ -459,6 +459,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
       {/* End max-w-4xl container */}
+      </div>
     </div>
   );
 }
