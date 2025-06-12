@@ -205,7 +205,7 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header title="Analytics" />
-      <div className="max-w-4xl mx-auto py-8">
+      <div className="mx-auto py-8 max-w-4xl xl:max-w-6xl 2xl:max-w-7xl">
         <KPISection
           totalMessages={kpiStats?.totalMessages ?? 0}
           totalConversations={kpiStats?.totalConversations ?? 0}
@@ -463,4 +463,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
- 
