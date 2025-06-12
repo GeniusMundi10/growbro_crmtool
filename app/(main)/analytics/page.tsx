@@ -258,7 +258,6 @@ export default function AnalyticsPage() {
             <TabsTrigger value="month">This Month</TabsTrigger>
           </TabsList>
         </Tabs>
-      </div>
       {/* --- Modular Time Series Chart --- */}
       <TimeSeriesChart
         data={summaryRows.map((row) => ({
@@ -459,6 +458,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+      {/* End max-w-4xl container */}
     </div>
   );
 }
