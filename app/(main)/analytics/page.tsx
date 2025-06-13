@@ -213,10 +213,11 @@ export default function AnalyticsPage() {
         setLoading(false)
       }
     }
+    
     if (user && ais.length > 0) {
-      fetchAnalytics()
+      fetchAnalytics();
     }
-  }, [user, ais, period, selectedAIId])
+  }, [user, ais, period, selectedAIId]);
 
   if (loading) {
     return <div className="p-6 text-center">Loading analytics...</div>;
