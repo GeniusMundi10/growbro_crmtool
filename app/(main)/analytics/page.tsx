@@ -62,6 +62,7 @@ export default function AnalyticsPage() {
   const [ais, setAIs] = useState<any[]>([])
   const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
   const [uniqueLeadsCount, setUniqueLeadsCount] = useState<number>(0);
+  const [prevUniqueLeadsCount, setPrevUniqueLeadsCount] = useState<number>(0);
   const [aiSummaryRows, setAISummaryRows] = useState<any[]>([]); // Per-AI totals for leaderboard
   const [kpiStats, setKpiStats] = useState<{
     totalMessages: number;
@@ -182,6 +183,11 @@ export default function AnalyticsPage() {
             ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, fromDate!, toDate!))
           );
           uniqueLeads = allCounts.reduce((sum: number, n: number) => sum + n, 0);
+          // Previous period unique leads
+          const prevAllCounts = await Promise.all(
+            ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, prevFromDate!, prevToDate!))
+          );
+          setPrevUniqueLeadsCount(prevAllCounts.reduce((sum: number, n: number) => sum + n, 0));
         } else {
           rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
           // For leaderboard: single AI
@@ -195,7 +201,8 @@ export default function AnalyticsPage() {
             }
           ]);
           uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);
-        }
+          // Previous period unique leads for single AI
+          setPrevUniqueLeadsCount(await getUniqueLeadsForPeriod(selectedAIId, prevFromDate!, prevToDate!));
         setSummaryRows(rows)
         setUniqueLeadsCount(uniqueLeads)
         setUserSegment(segment);
@@ -254,7 +261,7 @@ export default function AnalyticsPage() {
           period={period}
           trendMessages={kpiStats?.trendMessages}
           trendConversations={kpiStats?.trendConversations}
-          trendLeads={kpiStats?.trendLeads}
+          trendLeads={uniqueLeadsCount - (prevUniqueLeadsCount ?? 0)}
           trendDuration={kpiStats?.trendDuration}
         />
         {/* Pie Charts Side by Side */}
