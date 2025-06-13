@@ -48,21 +48,31 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
           <React.Fragment key={stage.label}>
             <div className="flex items-center">
               <div
-                className={`h-12 rounded-l rounded-r-full flex items-center justify-between px-4 font-semibold text-white shadow transition-all duration-500 ${getGradient(stage.color || "#0ea5e9", idx)}`}
-                style={{
-                  width: `${(stage.value / maxValue) * 100}%`,
-                  minWidth: 180,
-                  border: '1.5px solid #e5e7eb',
-                  boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
-                }}
-                aria-label={`${stage.label}: ${stage.value}`}
-              >
-                <span className="flex items-center">
-                  {ICONS[stage.label] || null}
-                  {stage.label}
-                </span>
-                <span className="ml-4 text-xl font-bold drop-shadow-sm">{stage.value}</span>
-              </div>
+  className={`h-12 rounded-l rounded-r-full flex items-center justify-between px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
+  style={{
+    width: `${(stage.value / maxValue) * 100}%`,
+    minWidth: 40,
+    border: '1.5px solid #e5e7eb',
+    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
+    position: 'relative',
+  }}
+  aria-label={`${stage.label}: ${stage.value}`}
+>
+  <span className="flex items-center truncate" style={{ maxWidth: '60%' }}>
+    {ICONS[stage.label] || null}
+    {((stage.value / maxValue) > 0.12) ? stage.label : null}
+  </span>
+  <span
+    className="ml-4 text-xl font-bold drop-shadow-sm"
+    style={{
+      fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
+      marginLeft: (stage.value / maxValue) > 0.12 ? '1rem' : '0.25rem',
+      whiteSpace: 'nowrap',
+    }}
+  >
+    {stage.value}
+  </span>
+</div>
             </div>
             {/* Conversion rate label between bars */}
             {idx > 0 && (
