@@ -249,7 +249,7 @@ export default function AnalyticsPage() {
         <KPISection
           totalMessages={kpiStats?.totalMessages ?? 0}
           totalConversations={kpiStats?.totalConversations ?? 0}
-          totalLeads={kpiStats?.totalLeads ?? 0}
+          totalLeads={uniqueLeadsCount ?? 0}
           avgConversationDuration={kpiStats?.avgConversationDuration ?? 0}
           period={period}
           trendMessages={kpiStats?.trendMessages}
