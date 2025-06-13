@@ -224,7 +224,7 @@ export default function AnalyticsPage() {
     <div className="min-h-screen bg-white">
       <Header title="Analytics" />
       {/* Filter Bar: AI Selector + Period Tabs */}
-      <div className="flex flex-wrap items-center gap-4 bg-white rounded-lg shadow px-4 py-3 mb-6">
+      <div className="flex flex-wrap justify-center items-center gap-4 bg-white rounded-lg shadow px-4 py-3 mb-6">
         {ais.length > 0 && (
           <select
             className="border rounded px-3 py-2 text-sm"
