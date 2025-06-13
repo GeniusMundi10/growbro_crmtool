@@ -58,20 +58,28 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
   }}
   aria-label={`${stage.label}: ${stage.value}`}
 >
-  <span className="flex items-center truncate" style={{ maxWidth: '60%' }}>
-    {ICONS[stage.label] || null}
-    {((stage.value / maxValue) > 0.12) ? stage.label : null}
-  </span>
   <span
-    className="ml-4 text-xl font-bold drop-shadow-sm"
-    style={{
-      fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
-      marginLeft: (stage.value / maxValue) > 0.12 ? '1rem' : '0.25rem',
-      whiteSpace: 'nowrap',
-    }}
-  >
-    {stage.value}
-  </span>
+  className="flex items-center truncate"
+  style={{
+    maxWidth: '60%',
+    fontSize: (stage.value / maxValue) > 0.12 ? '1rem' : '0.85rem',
+    transition: 'font-size 0.3s',
+  }}
+>
+  {ICONS[stage.label] || null}
+  {stage.label}
+</span>
+<span
+  className="ml-4 font-bold drop-shadow-sm"
+  style={{
+    fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
+    marginLeft: (stage.value / maxValue) > 0.12 ? '1rem' : '0.25rem',
+    whiteSpace: 'nowrap',
+    transition: 'font-size 0.3s',
+  }}
+>
+  {stage.value}
+</span>
 </div>
             </div>
             {/* Conversion rate label between bars */}
