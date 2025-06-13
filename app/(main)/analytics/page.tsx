@@ -35,6 +35,24 @@ import UserSegmentPieChart from "./components/UserSegmentPieChart"
 
 const SEGMENT_COLORS = ["#60a5fa", "#34d399"];
 
+// --- Weekday grouping utility ---
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function groupByWeekday(rows: DashboardMessageSummary[], valueKey: keyof DashboardMessageSummary) {
+  const weekdayTotals: Record<string, number> = {};
+  WEEKDAYS.forEach(day => { weekdayTotals[day] = 0; });
+  rows.forEach(row => {
+    const date = new Date(row.day);
+    let weekdayIdx = date.getDay();
+    weekdayIdx = (weekdayIdx + 6) % 7; // Monday=0, Sunday=6
+    const weekday = WEEKDAYS[weekdayIdx];
+    weekdayTotals[weekday] += row[valueKey] ?? 0;
+  });
+  return WEEKDAYS.map(day => ({
+    weekday: day,
+    value: weekdayTotals[day],
+  }));
+}
+
 export default function AnalyticsPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -198,9 +216,9 @@ export default function AnalyticsPage() {
   }
 
   // Data shaping for charts from summaryRows
-  const messagesByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.message_count }));
-  const conversationsByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.conversation_count }));
-  const newLeadsByDay = summaryRows.map((row: DashboardMessageSummary) => ({ day: row.day.slice(0, 10), count: row.new_leads }));
+  const conversationsByWeekday = groupByWeekday(summaryRows, "conversation_count");
+  const messagesByWeekday = groupByWeekday(summaryRows, "message_count");
+  const newLeadsByWeekday = groupByWeekday(summaryRows, "new_leads");
 
   return (
     <div className="min-h-screen bg-white">
@@ -305,67 +323,81 @@ export default function AnalyticsPage() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Conversations by Weekday */}
         <Card>
           <CardHeader>
-            <CardTitle>Conversations by Day</CardTitle>
-            <CardDescription>Number of conversations started each day</CardDescription>
+            <CardTitle>Conversations by Weekday</CardTitle>
+            <CardDescription>Total conversations started on each weekday</CardDescription>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={conversationsByDay}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
+              <BarChart data={conversationsByWeekday} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="weekdayConvoBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
+                <XAxis dataKey="weekday" tick={{ fontWeight: 600 }} />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#16a34a" name="Conversations" />
+                <Bar dataKey="value" fill="url(#weekdayConvoBar)" radius={[8, 8, 0, 0]} name="Conversations" isAnimationActive />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
+
+        {/* Messages by Weekday */}
         <Card>
           <CardHeader>
-            <CardTitle>Messages by Day</CardTitle>
-            <CardDescription>Number of messages sent each day</CardDescription>
+            <CardTitle>Messages by Weekday</CardTitle>
+            <CardDescription>Total messages sent on each weekday</CardDescription>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={messagesByDay}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
+              <BarChart data={messagesByWeekday} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="weekdayMsgBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
+                <XAxis dataKey="weekday" tick={{ fontWeight: 600 }} />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#16a34a" name="Messages" />
+                <Bar dataKey="value" fill="url(#weekdayMsgBar)" radius={[8, 8, 0, 0]} name="Messages" isAnimationActive />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      {/* New Leads by Weekday */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>New Leads by Day</CardTitle>
-            <CardDescription>Number of new leads each day</CardDescription>
+            <CardTitle>New Leads by Weekday</CardTitle>
+            <CardDescription>Number of new leads acquired on each weekday</CardDescription>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={newLeadsByDay}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
+              <BarChart data={newLeadsByWeekday} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="weekdayLeadsBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
+                <XAxis dataKey="weekday" tick={{ fontWeight: 600 }} />
+                <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="count" fill="#16a34a" name="New Leads" />
+                <Bar dataKey="value" fill="url(#weekdayLeadsBar)" radius={[8, 8, 0, 0]} name="New Leads" isAnimationActive />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
