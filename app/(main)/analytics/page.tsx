@@ -245,7 +245,7 @@ export default function AnalyticsPage() {
           </TabsList>
         </Tabs>
       </div>
-      <div className="mx-auto py-8 max-w-4xl xl:max-w-6xl 2xl:max-w-7xl">
+      <div className="mx-auto py-8 max-w-2xl md:max-w-3xl xl:max-w-5xl 2xl:max-w-7xl">
         <KPISection
           totalMessages={kpiStats?.totalMessages ?? 0}
           totalConversations={kpiStats?.totalConversations ?? 0}
