@@ -47,34 +47,35 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
         {stages.map((stage, idx) => (
           <React.Fragment key={stage.label}>
             <div className="flex flex-row items-center w-full">
-  {/* Icon + Label always visible, fixed-width left column */}
+  {/* Icon + Label: fixed width */}
   <div className="flex items-center min-w-[140px] max-w-[180px] pr-3 text-gray-700 font-medium">
     {ICONS[stage.label] || null}
     {stage.label}
   </div>
-  {/* Proportional bar, always left-aligned, value inside */}
-  <div
-    className={`flex-1 h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
-    style={{
-      width: `${(stage.value / maxValue) * 100}%`,
-      minWidth: 40,
-      border: '1.5px solid #e5e7eb',
-      boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
-      position: 'relative',
-      marginLeft: 0,
-    }}
-    aria-label={`${stage.label}: ${stage.value}`}
-  >
-    <span
-      className="text-xl font-bold drop-shadow-sm"
+  {/* Bar container: fixed width for all bars */}
+  <div className="flex-1 flex items-center">
+    <div
+      className={`h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
       style={{
-        fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
-        whiteSpace: 'nowrap',
-        transition: 'font-size 0.3s',
+        width: `${(stage.value / maxValue) * 100}%`,
+        minWidth: 40,
+        border: '1.5px solid #e5e7eb',
+        boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
+        position: 'relative',
       }}
+      aria-label={`${stage.label}: ${stage.value}`}
     >
-      {stage.value}
-    </span>
+      <span
+        className="text-xl font-bold drop-shadow-sm"
+        style={{
+          fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
+          whiteSpace: 'nowrap',
+          transition: 'font-size 0.3s',
+        }}
+      >
+        {stage.value}
+      </span>
+    </div>
   </div>
 </div>
             {/* Conversion rate label between bars */}
