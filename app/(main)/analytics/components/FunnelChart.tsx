@@ -47,43 +47,34 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
         {stages.map((stage, idx) => (
           <React.Fragment key={stage.label}>
             <div className="flex items-center">
+              {/* Icon + Label always visible, left of the bar */}
+              <span className="flex items-center min-w-[120px] mr-2 text-gray-700 font-medium">
+                {ICONS[stage.label] || null}
+                {stage.label}
+              </span>
+              {/* The proportional bar, with value inside */}
               <div
-  className={`h-12 rounded-l rounded-r-full flex items-center justify-between px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
-  style={{
-    width: `${(stage.value / maxValue) * 100}%`,
-    minWidth: 40,
-    border: '1.5px solid #e5e7eb',
-    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
-    position: 'relative',
-  }}
-  aria-label={`${stage.label}: ${stage.value}`}
->
-  <span
-  className="flex items-center"
-  style={{
-    position: (stage.value / maxValue) < 0.22 ? 'absolute' : 'static',
-    left: (stage.value / maxValue) < 0.22 ? '-8.5rem' : 'auto',
-    whiteSpace: 'nowrap',
-    fontSize: (stage.value / maxValue) > 0.12 ? '1rem' : '0.95rem',
-    pointerEvents: 'none',
-    transition: 'font-size 0.3s',
-  }}
->
-  {ICONS[stage.label] || null}
-  {stage.label}
-</span>
-<span
-  className="ml-4 font-bold drop-shadow-sm"
-  style={{
-    fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
-    marginLeft: (stage.value / maxValue) > 0.12 ? '1rem' : '0.25rem',
-    whiteSpace: 'nowrap',
-    transition: 'font-size 0.3s',
-  }}
->
-  {stage.value}
-</span>
-</div>
+                className={`h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
+                style={{
+                  width: `${(stage.value / maxValue) * 100}%`,
+                  minWidth: 40,
+                  border: '1.5px solid #e5e7eb',
+                  boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
+                  position: 'relative',
+                }}
+                aria-label={`${stage.label}: ${stage.value}`}
+              >
+                <span
+                  className="text-xl font-bold drop-shadow-sm"
+                  style={{
+                    fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
+                    whiteSpace: 'nowrap',
+                    transition: 'font-size 0.3s',
+                  }}
+                >
+                  {stage.value}
+                </span>
+              </div>
             </div>
             {/* Conversion rate label between bars */}
             {idx > 0 && (
