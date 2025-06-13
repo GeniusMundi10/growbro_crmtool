@@ -46,14 +46,14 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
       <div className="space-y-4 relative">
         {stages.map((stage, idx) => (
           <React.Fragment key={stage.label}>
-            <div className="flex flex-row items-center w-full">
+            <div className="flex flex-row items-center w-full h-14">
   {/* Icon + Label: fixed width */}
-  <div className="flex items-center min-w-[140px] max-w-[180px] pr-3 text-gray-700 font-medium">
+  <div className="flex items-center min-w-[140px] max-w-[180px] pr-3 text-gray-700 font-medium h-full">
     {ICONS[stage.label] || null}
     {stage.label}
   </div>
   {/* Bar container: fixed width for all bars */}
-  <div className="flex-1 flex items-center">
+  <div className="flex-1 flex items-center h-full">
     <div className="w-full relative">
       <div
         className={`h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
