@@ -11,314 +11,489 @@ import {
   Bar,
   LineChart,
   Line,
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend
+  Legend,
+  ResponsiveContainer
 } from "recharts"
 import { Calendar, Clock, MessageSquare, User, Users } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import TimeSeriesChart from "./components/TimeSeriesChart";
+import FunnelChart from "./components/FunnelChart";
+import LeaderboardTable from "./components/LeaderboardTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
-// Remove direct Supabase imports
-// import { getCurrentUser, getAnalytics } from "@/lib/supabase"
-import type { Analytics } from "@/lib/supabase"
+import { getCurrentUser } from "@/lib/auth";
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats, getUserSegmentDistribution } from "@/lib/supabase"
+import KPISection from "./components/KPISection"
+import ConversationDurationPieChart from "./components/ConversationDurationPieChart"
+import UserSegmentPieChart from "./components/UserSegmentPieChart"
 
-// Mock functions to replace Supabase calls
-const mockUser = { id: "demo-user-123" };
+const SEGMENT_COLORS = ["#60a5fa", "#34d399"];
 
-const mockGetCurrentUser = async () => {
-  return mockUser;
-};
-
-const mockGetAnalytics = async (userId: string, period: "day" | "week" | "month"): Promise<Analytics> => {
-  return {
-    id: "mock-analytics-id",
-    user_id: userId,
-    total_conversations: 87,
-    total_messages: 563,
-    total_leads: 42,
-    avg_conversation_length: 12,
-    data_period: period,
-    created_at: new Date().toISOString()
-  };
-};
-
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"]
-
-// Sample data for demo purposes
-const sampleAnalytics = {
-  id: "1",
-  user_id: "user_123",
-  total_conversations: 87,
-  total_messages: 563,
-  total_leads: 42,
-  avg_conversation_length: 12,
-  data_period: "week",
-  created_at: new Date().toISOString()
+// --- Weekday grouping utility ---
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function groupByWeekday(rows: DashboardMessageSummary[], valueKey: keyof DashboardMessageSummary) {
+  const weekdayTotals: Record<string, number> = {};
+  WEEKDAYS.forEach(day => { weekdayTotals[day] = 0; });
+  rows.forEach(row => {
+    const date = new Date(row.day);
+    let weekdayIdx = date.getDay();
+    weekdayIdx = (weekdayIdx + 6) % 7; // Monday=0, Sunday=6
+    const weekday = WEEKDAYS[weekdayIdx];
+    weekdayTotals[weekday] += row[valueKey] ?? 0;
+  });
+  return WEEKDAYS.map(day => ({
+    weekday: day,
+    value: weekdayTotals[day],
+  }));
 }
-
-const sampleConversationsByDay = [
-  { day: "Monday", count: 12 },
-  { day: "Tuesday", count: 19 },
-  { day: "Wednesday", count: 22 },
-  { day: "Thursday", count: 18 },
-  { day: "Friday", count: 15 },
-  { day: "Saturday", count: 7 },
-  { day: "Sunday", count: 4 },
-]
-
-const sampleLeadsBySource = [
-  { name: "Chat", value: 25 },
-  { name: "Website", value: 8 },
-  { name: "Referral", value: 5 },
-  { name: "Ads", value: 4 },
-]
-
-const sampleLeadsByStatus = [
-  { name: "New", value: 18 },
-  { name: "Contacted", value: 12 },
-  { name: "Qualified", value: 8 },
-  { name: "Proposal", value: 3 },
-  { name: "Closed", value: 1 },
-]
 
 export default function AnalyticsPage() {
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [analytics, setAnalytics] = useState<Analytics>(sampleAnalytics as unknown as Analytics)
-  const [period, setPeriod] = useState<"day" | "week" | "month">("week")
-  
+  // Always default to 'week' filter, even on remount or navigation
+  const [period, setPeriod] = useState<'day' | 'week' | 'month'>(() => 'week')
+  const [summaryRows, setSummaryRows] = useState<DashboardMessageSummary[]>([])
+  const [ais, setAIs] = useState<any[]>([])
+  const [selectedAIId, setSelectedAIId] = useState<string>("__all__");
+  const [uniqueLeadsCount, setUniqueLeadsCount] = useState<number>(0);
+  const [aiSummaryRows, setAISummaryRows] = useState<any[]>([]); // Per-AI totals for leaderboard
+  const [kpiStats, setKpiStats] = useState<{
+    totalMessages: number;
+    totalConversations: number;
+    totalLeads: number;
+    avgConversationDuration: number;
+  } | null>(null);
+  const [userSegment, setUserSegment] = useState<{ newUsers: number; returningUsers: number } | null>(null);
+
   useEffect(() => {
-    async function loadData() {
+    async function loadUserAndAIs() {
+      setLoading(true)
       try {
-        // Use mock function instead of real Supabase call
-        const currentUser = await mockGetCurrentUser()
-        if (!currentUser) {
-          setLoading(false)
-          return
-        }
-        
+        const currentUser = await getCurrentUser()
         setUser(currentUser)
-        
-        // Use mock function instead of real Supabase call
-        const fetchedAnalytics = await mockGetAnalytics(currentUser.id, period)
-        if (fetchedAnalytics) {
-          setAnalytics(fetchedAnalytics)
+        if (currentUser) {
+          const ais = await getAIsForUser(currentUser.id)
+          setAIs(ais)
         }
-        // For demo, we'll use the sample data if no actual data exists
-      } catch (error) {
-        // Silently fail and use sample data instead of showing errors
-        setAnalytics(sampleAnalytics as unknown as Analytics)
       } finally {
         setLoading(false)
       }
     }
+    loadUserAndAIs()
+  }, [])
 
-    loadData()
-  }, [period])
-  
+  useEffect(() => {
+    async function fetchAnalytics() {
+      setLoading(true)
+      try {
+        const now = new Date()
+        let fromDate: string | undefined
+        let toDate: string | undefined = now.toISOString().slice(0, 10)
+        let prevFromDate: string | undefined
+        let prevToDate: string | undefined
+        if (period === 'day') {
+          fromDate = now.toISOString().slice(0, 10)
+          prevFromDate = new Date(now.getTime() - 24*60*60*1000).toISOString().slice(0, 10)
+          prevToDate = fromDate
+        } else if (period === 'week') {
+          const weekAgo = new Date(now)
+          weekAgo.setDate(now.getDate() - 6)
+          fromDate = weekAgo.toISOString().slice(0, 10)
+          const prevWeekAgo = new Date(weekAgo)
+          prevWeekAgo.setDate(weekAgo.getDate() - 7)
+          prevFromDate = prevWeekAgo.toISOString().slice(0, 10)
+          prevToDate = weekAgo.toISOString().slice(0, 10)
+        } else if (period === 'month') {
+          const monthAgo = new Date(now)
+          monthAgo.setMonth(now.getMonth() - 1)
+          fromDate = monthAgo.toISOString().slice(0, 10)
+          const prevMonthAgo = new Date(monthAgo)
+          prevMonthAgo.setMonth(monthAgo.getMonth() - 1)
+          prevFromDate = prevMonthAgo.toISOString().slice(0, 10)
+          prevToDate = monthAgo.toISOString().slice(0, 10)
+        }
+        const [kpi, prevKpi, segment] = await Promise.all([
+          getDashboardKPIStats({
+            aiId: selectedAIId,
+            fromDate: fromDate!,
+            toDate: toDate!
+          }),
+          getDashboardKPIStats({
+            aiId: selectedAIId,
+            fromDate: prevFromDate!,
+            toDate: prevToDate!
+          }),
+          getUserSegmentDistribution(selectedAIId, fromDate!, toDate!)
+        ]);
+        setKpiStats({ 
+          totalMessages: kpi.totalMessages,
+          totalConversations: kpi.totalConversations,
+          totalLeads: kpi.totalLeads,
+          avgConversationDuration: kpi.avgConversationDuration,
+          trendMessages: kpi.totalMessages - (prevKpi?.totalMessages ?? 0),
+          trendConversations: kpi.totalConversations - (prevKpi?.totalConversations ?? 0),
+          trendLeads: kpi.totalLeads - (prevKpi?.totalLeads ?? 0),
+          trendDuration: kpi.avgConversationDuration - (prevKpi?.avgConversationDuration ?? 0)
+        });
+        let rows: DashboardMessageSummary[] = [];
+        let uniqueLeads = 0;
+        if (selectedAIId === "__all__") {
+          // Aggregate all AIs
+          const allRows = await Promise.all(
+            ais.map((ai: any) => getDashboardMessageSummary(ai.id, fromDate, toDate))
+          );
+          // Per-day aggregation for charts
+          const byDay: { [day: string]: DashboardMessageSummary } = {};
+          allRows.flat().forEach((row: DashboardMessageSummary) => {
+            if (!byDay[row.day]) {
+              byDay[row.day] = { ...row };
+            } else {
+              byDay[row.day] = {
+                ...row,
+                message_count: (byDay[row.day].message_count || 0) + (row.message_count || 0),
+                conversation_count: (byDay[row.day].conversation_count || 0) + (row.conversation_count || 0),
+                new_leads: (byDay[row.day].new_leads || 0) + (row.new_leads || 0),
+                total_leads: (byDay[row.day].total_leads || 0) + (row.total_leads || 0),
+                avg_conversation_duration: ((byDay[row.day].avg_conversation_duration || 0) + (row.avg_conversation_duration || 0)) / 2,
+              }
+            }
+          });
+          rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
+          // For leaderboard: aggregate per-AI totals
+          const aiTotals = ais.map((ai: any, idx: number) => {
+            const aiRows = allRows[idx] || [];
+            return {
+              aiId: ai.id,
+              aiName: ai.label || ai.ai_name || ai.id,
+              message_count: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.message_count || 0), 0),
+              conversation_count: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.conversation_count || 0), 0),
+              new_leads: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.new_leads || 0), 0),
+            };
+          });
+          setAISummaryRows(aiTotals);
+          // For 'All AIs', sum unique leads for each AI (not deduplicated across AIs)
+          const allCounts = await Promise.all(
+            ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, fromDate!, toDate!))
+          );
+          uniqueLeads = allCounts.reduce((sum: number, n: number) => sum + n, 0);
+        } else {
+          rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
+          // For leaderboard: single AI
+          setAISummaryRows([
+            {
+              aiId: selectedAIId,
+              aiName: ais.find((ai: any) => ai.id === selectedAIId)?.label || ais.find((ai: any) => ai.id === selectedAIId)?.ai_name || selectedAIId,
+              message_count: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.message_count || 0), 0),
+              conversation_count: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.conversation_count || 0), 0),
+              new_leads: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.new_leads || 0), 0),
+            }
+          ]);
+          uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);
+        }
+        setSummaryRows(rows)
+        setUniqueLeadsCount(uniqueLeads)
+        setUserSegment(segment);
+      } catch {
+        setSummaryRows([])
+        setUniqueLeadsCount(0)
+      } finally {
+        setLoading(false)
+      }
+    }
+    if (user && ais.length > 0) {
+      fetchAnalytics()
+    }
+  }, [user, ais, period, selectedAIId])
+
   if (loading) {
-    return <div className="p-6 text-center">Loading analytics...</div>
+    return <div className="p-6 text-center">Loading analytics...</div>;
   }
+
+  // Data shaping for charts from summaryRows
+  const conversationsByWeekday = groupByWeekday(summaryRows, "conversation_count");
+  const messagesByWeekday = groupByWeekday(summaryRows, "message_count");
+  const newLeadsByWeekday = groupByWeekday(summaryRows, "new_leads");
 
   return (
     <div className="min-h-screen bg-white">
       <Header title="Analytics" />
-      
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-          
-          <Tabs defaultValue="week" value={period} onValueChange={(v) => setPeriod(v as "day" | "week" | "month")}>
-            <TabsList>
-              <TabsTrigger value="day">Today</TabsTrigger>
-              <TabsTrigger value="week">This Week</TabsTrigger>
-              <TabsTrigger value="month">This Month</TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {/* Filter Bar: AI Selector + Period Tabs */}
+      <div className="flex flex-wrap justify-center items-center gap-4 bg-white rounded-lg shadow px-4 py-3 mb-6">
+        {ais.length > 0 && (
+          <select
+            className="border rounded px-3 py-2 text-sm"
+            value={selectedAIId}
+            onChange={e => setSelectedAIId(e.target.value)}
+          >
+            <option value="__all__">All AIs (Client Level)</option>
+            {ais.map((ai: any) => (
+              <option key={ai.id} value={ai.id}>{ai.label || ai.ai_name || ai.id}</option>
+            ))}
+          </select>
+        )}
+        <Tabs defaultValue={period} value={period} onValueChange={(v) => setPeriod(v as 'day' | 'week' | 'month')}>
+          <TabsList>
+            <TabsTrigger value="day">Today</TabsTrigger>
+            <TabsTrigger value="week">This Week</TabsTrigger>
+            <TabsTrigger value="month">This Month</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+      <div className="mx-auto py-8 max-w-2xl md:max-w-3xl xl:max-w-5xl 2xl:max-w-7xl">
+        <KPISection
+          totalMessages={kpiStats?.totalMessages ?? 0}
+          totalConversations={kpiStats?.totalConversations ?? 0}
+          totalLeads={kpiStats?.totalLeads ?? 0}
+          avgConversationDuration={kpiStats?.avgConversationDuration ?? 0}
+          period={period}
+          trendMessages={kpiStats?.trendMessages}
+          trendConversations={kpiStats?.trendConversations}
+          trendLeads={kpiStats?.trendLeads}
+          trendDuration={kpiStats?.trendDuration}
+        />
+        {/* Pie Charts Side by Side */}
+        <div className="flex flex-col lg:flex-row gap-8 justify-center items-stretch mb-8">
+          <div className="flex-1 min-w-[280px]">
+            <ConversationDurationPieChart
+              durations={summaryRows
+                .map(row => row.avg_conversation_duration)
+                .filter((d): d is number => typeof d === 'number' && !isNaN(d))
+              }
+            />
+          </div>
+          <div className="flex-1 min-w-[280px]">
+            {userSegment && (
+              <UserSegmentPieChart
+                data={[
+                  { label: "New Users", value: userSegment.newUsers, color: SEGMENT_COLORS[0] },
+                  { label: "Returning Users", value: userSegment.returningUsers, color: SEGMENT_COLORS[1] },
+                ]}
+              />
+            )}
+          </div>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Conversations</CardDescription>
-              <CardTitle className="text-3xl">{analytics.total_conversations}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                <span>+12% from last {period}</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Messages</CardDescription>
-              <CardTitle className="text-3xl">{analytics.total_messages}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                <span>+8% from last {period}</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Leads</CardDescription>
-              <CardTitle className="text-3xl">{analytics.total_leads}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <Users className="h-4 w-4 mr-1" />
-                <span>+15% from last {period}</span>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Avg. Conversation Length</CardDescription>
-              <CardTitle className="text-3xl">{analytics.avg_conversation_length} min</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center text-sm text-gray-500">
-                <Clock className="h-4 w-4 mr-1" />
-                <span>-2% from last {period}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversations by Day</CardTitle>
-              <CardDescription>Number of conversations started each day</CardDescription>
-            </CardHeader>
-            <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={sampleConversationsByDay}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="count" fill="#16a34a" name="Conversations" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Leads by Source</CardTitle>
-              <CardDescription>Where your leads are coming from</CardDescription>
-            </CardHeader>
-            <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sampleLeadsBySource}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {sampleLeadsBySource.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Leads by Status</CardTitle>
-              <CardDescription>Current status distribution of your leads</CardDescription>
-            </CardHeader>
-            <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={sampleLeadsByStatus}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {sampleLeadsByStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversion Rate Over Time</CardTitle>
-              <CardDescription>Percentage of conversations that convert to leads</CardDescription>
-            </CardHeader>
-            <CardContent className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={[
-                    { day: "Mon", rate: 12 },
-                    { day: "Tue", rate: 15 },
-                    { day: "Wed", rate: 18 },
-                    { day: "Thu", rate: 22 },
-                    { day: "Fri", rate: 25 },
-                    { day: "Sat", rate: 20 },
-                    { day: "Sun", rate: 17 },
-                  ]}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis unit="%" />
-                  <Tooltip formatter={(value) => [`${value}%`, "Conversion Rate"]} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="rate"
-                    stroke="#16a34a"
-                    name="Conversion Rate"
-                    strokeWidth={2}
-                    dot={{ strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+      {/* --- Modular Time Series Chart --- */}
+      <TimeSeriesChart
+        data={summaryRows.map((row) => ({
+          day: row.day.slice(0, 10),
+          messages: row.message_count,
+          conversations: row.conversation_count,
+        }))}
+        series={[
+          { key: "messages", label: "Messages", color: "#0ea5e9" },
+          { key: "conversations", label: "Conversations", color: "#16a34a" },
+        ]}
+        title="Messages & Conversations Over Time"
+        description="Trends for messages and conversations by day in the selected period."
+      />
+
+      {/* --- Funnel Chart for Conversion --- */}
+      <FunnelChart
+        stages={[
+          { label: "Messages", value: kpiStats?.totalMessages ?? 0, color: "#0ea5e9" },
+          { label: "Conversations", value: kpiStats?.totalConversations ?? 0, color: "#16a34a" },
+          { label: "Leads (Unique)", value: uniqueLeadsCount ?? 0, color: "#f59e42" }
+        ]}
+        title="Conversation Funnel"
+        description="See how many messages lead to conversations and unique leads in the selected period."
+      />
+
+      {/* --- Leaderboard Table for AIs by Conversations --- */}
+      <LeaderboardTable
+        rows={aiSummaryRows
+          .map((row, idx) => ({
+            rank: idx + 1,
+            name: row.aiName,
+            subtitle: row.aiId,
+            value: row.message_count,
+            extra1: row.conversation_count,
+            extra2: row.new_leads,
+          }))
+          .sort((a, b) => b.value - a.value)
+          .map((row, idx) => ({ ...row, rank: idx + 1 }))}
+        title="AI Leaderboard"
+        description="Top AIs by total messages, conversations, and leads in the selected period."
+        valueLabel="Messages"
+        extra1Label="Conversations"
+        extra2Label="Leads"
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Conversations by Weekday */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Conversations by Weekday</CardTitle>
+            <CardDescription>Total conversations started on each weekday</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={conversationsByWeekday} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="weekdayConvoBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="weekday" tick={{ fontWeight: 600 }} />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value" fill="url(#weekdayConvoBar)" radius={[8, 8, 0, 0]} name="Conversations" isAnimationActive />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Messages by Weekday */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Messages by Weekday</CardTitle>
+            <CardDescription>Total messages sent on each weekday</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={messagesByWeekday} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="weekdayMsgBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="weekday" tick={{ fontWeight: 600 }} />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value" fill="url(#weekdayMsgBar)" radius={[8, 8, 0, 0]} name="Messages" isAnimationActive />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* New Leads by Weekday */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>New Leads by Weekday</CardTitle>
+            <CardDescription>Number of new leads acquired on each weekday</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={newLeadsByWeekday} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="weekdayLeadsBar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.2}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="weekday" tick={{ fontWeight: 600 }} />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="value" fill="url(#weekdayLeadsBar)" radius={[8, 8, 0, 0]} name="New Leads" isAnimationActive />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+      {/* --- New Analytics Charts Row --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        {/* Avg Messages Per Conversation by Day */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Avg Messages Per Conversation</CardTitle>
+            <CardDescription>Average number of messages per conversation by day</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={summaryRows.map(row => ({ day: row.day, avg: row.avg_messages_per_conversation }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="avg" stroke="#0ea5e9" name="Avg Msgs/Conversation" dot />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        {/* Avg Messages Per Lead by Day */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Avg Messages Per Lead</CardTitle>
+            <CardDescription>Average number of messages per lead by day</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={summaryRows.map(row => ({ day: row.day, avg: row.avg_messages_per_lead }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="avg" stroke="#f59e42" name="Avg Msgs/Lead" dot />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        {/* Conversation Duration (min/avg/max) by Day */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Conversation Duration by Day</CardTitle>
+            <CardDescription>Min, Avg, and Max conversation duration (minutes) by day</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={summaryRows.map(row => ({ day: row.day, min: row.min_conversation_duration, avg: row.avg_conversation_duration, max: row.max_conversation_duration }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="min" stroke="#22c55e" name="Min Duration" dot />
+                <Line type="monotone" dataKey="avg" stroke="#0ea5e9" name="Avg Duration" dot />
+                <Line type="monotone" dataKey="max" stroke="#ef4444" name="Max Duration" dot />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+        {/* Enhanced Lead Acquisition Trend (Area Chart) */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Lead Acquisition Trend</CardTitle>
+            <CardDescription>New leads acquired each day (area chart)</CardDescription>
+          </CardHeader>
+          <CardContent className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={summaryRows.map(row => ({ day: row.day, newLeads: row.new_leads }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorNewLeads" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#16a34a" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#16a34a" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis allowDecimals={true} />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="newLeads" stroke="#16a34a" fillOpacity={1} fill="url(#colorNewLeads)" name="New Leads" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+      {/* End max-w-4xl container */}
       </div>
     </div>
-  )
+  );
 }

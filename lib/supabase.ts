@@ -433,6 +433,70 @@ export async function upsertAIServices(
   return data as AIServices;
 }
 
+// Dashboard Message Summary View
+export type DashboardMessageSummary = {
+  agent_id: string;
+  client_id: string;
+  ai_name: string;
+  day: string; // ISO date string
+  message_count: number;
+  conversation_count: number;
+  total_leads: number;
+  new_leads: number;
+  first_message_time: string | null;
+  last_message_time: string | null;
+  min_conversation_duration: number | null;
+  max_conversation_duration: number | null;
+  avg_conversation_duration: number | null;
+  avg_messages_per_conversation: number | null;
+  avg_messages_per_lead: number | null;
+};
+
+export async function getDashboardMessageSummary(agentId: string, fromDate?: string, toDate?: string): Promise<DashboardMessageSummary[]> {
+  let query = supabase
+    .from('dashboard_message_summary')
+    .select('*')
+    .eq('agent_id', agentId)
+    .order('day', { ascending: true });
+
+  if (fromDate) query = query.gte('day', fromDate);
+  if (toDate) query = query.lte('day', toDate);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data as DashboardMessageSummary[];
+}
+
+// Fetch KPI stats (totals and averages) for dashboard cards
+export async function getDashboardKPIStats({ aiId, clientId, fromDate, toDate }: { aiId?: string, clientId?: string, fromDate: string, toDate: string }) {
+  // Build filter
+  let query = supabase
+    .from('dashboard_message_summary')
+    .select('*')
+    .gte('day', fromDate)
+    .lte('day', toDate);
+  if (aiId && aiId !== "__all__") query = query.eq('agent_id', aiId);
+  if (clientId && clientId !== "__all__") query = query.eq('client_id', clientId);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  // Aggregate totals and averages
+  const totalMessages = data?.reduce((sum, row) => sum + (row.message_count || 0), 0) || 0;
+  const totalConversations = data?.reduce((sum, row) => sum + (row.conversation_count || 0), 0) || 0;
+  const totalLeads = data?.reduce((sum, row) => sum + (row.total_leads || 0), 0) || 0;
+  // Weighted average for duration
+  const durationSum = data?.reduce((sum, row) => sum + ((row.avg_conversation_duration || 0) * (row.conversation_count || 0)), 0) || 0;
+  const conversationCount = data?.reduce((sum, row) => sum + (row.conversation_count || 0), 0) || 0;
+  const avgConversationDuration = conversationCount ? durationSum / conversationCount : 0;
+  return {
+    totalMessages,
+    totalConversations,
+    totalLeads,
+    avgConversationDuration,
+  };
+}
+
+
 // AI Greeting CRUD operations
 export type AIGreeting = {
   id: string;
@@ -1048,6 +1112,102 @@ export async function fetchUsersDirectly() {
     }];
   }
 }
+
+// Get unique leads for an AI and period (across all days in the range)
+export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string, toDate: string): Promise<number> {
+  // Step 1: Fetch unique conversation_ids from messages for the AI and date range
+  const { data: messages, error: msgError } = await supabase
+    .from('messages')
+    .select('conversation_id')
+    .eq('ai_id', agentId)
+    .gte('timestamp', fromDate)
+    .lte('timestamp', toDate);
+  console.log('[DEBUG] [Step 1] messages:', { agentId, fromDate, toDate, messages, msgError });
+  if (msgError) throw msgError;
+
+  const conversationIds = Array.from(new Set((messages || []).map((msg: any) => msg.conversation_id).filter(Boolean)));
+  console.log('[DEBUG] [Conversation IDs from messages]:', conversationIds);
+  if (conversationIds.length === 0) {
+    return 0;
+  }
+
+  // Step 2: Fetch end_user_id from conversations for those conversation_ids
+  const { data: conversations, error: convError } = await supabase
+    .from('conversations')
+    .select('id, end_user_id')
+    .in('id', conversationIds);
+  console.log('[DEBUG] [Step 2] conversations:', { conversationIds, conversations, convError });
+  if (convError) throw convError;
+
+  // Log all conversation rows with their end_user_id
+  (conversations || []).forEach((conv: any) => {
+    console.log(`[DEBUG] Conversation ID: ${conv.id}, end_user_id: ${conv.end_user_id}`);
+  });
+
+  const endUserIds = Array.from(new Set((conversations || []).map((conv: any) => conv.end_user_id).filter(Boolean)));
+  console.log('[DEBUG] [Non-null endUserIds]:', endUserIds);
+  return endUserIds.length;
+}
+
+// Get user segment distribution: counts of new vs. returning users for a given AI and period
+// New: user's first conversation is in the period; Returning: first conversation is before period but has a conversation in the period
+export async function getUserSegmentDistribution(agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
+  // 1. Get all conversations for the AI (with end_user_id, started_at)
+  let query = supabase
+    .from('conversations')
+    .select('end_user_id, started_at')
+    .not('end_user_id', 'is', null);
+  if (agentId !== "__all__") {
+    query = query.eq('ai_id', agentId);
+  }
+  const { data: conversations, error } = await query;
+  if (error) throw error;
+  if (!conversations) return { newUsers: 0, returningUsers: 0 };
+
+  // 2. Build map: end_user_id -> [all their conversation dates]
+  const userConvoDates: Record<string, string[]> = {};
+  conversations.forEach((conv: any) => {
+    const { end_user_id, started_at } = conv;
+    if (!end_user_id) return;
+    if (!userConvoDates[end_user_id]) userConvoDates[end_user_id] = [];
+    userConvoDates[end_user_id].push(started_at);
+  });
+
+  let newUsers = 0;
+  let returningUsers = 0;
+  let from: Date;
+  let to: Date;
+  if (fromDate === toDate && /^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
+    // Day-level query: cover the entire day
+    from = new Date(fromDate + 'T00:00:00.000Z');
+    to = new Date(fromDate + 'T23:59:59.999Z');
+  } else {
+    from = new Date(fromDate);
+    to = new Date(toDate);
+  }
+
+  console.log('[DEBUG][User Segments] fromDate:', fromDate, 'toDate:', toDate);
+  Object.entries(userConvoDates).forEach(([userId, dates]) => {
+    const sorted = dates.slice().sort();
+    const firstDate = new Date(sorted[0]);
+    const allDates = dates.map(dateStr => new Date(dateStr));
+    const hasConvoInPeriod = allDates.some(dt => dt >= from && dt <= to);
+    console.log(`[DEBUG][User Segments] userId: ${userId}`);
+    console.log('  All conversation dates:', allDates);
+    console.log('  First conversation date:', firstDate);
+    console.log('  Has conversation in period:', hasConvoInPeriod);
+    if (!hasConvoInPeriod) return;
+    if (firstDate >= from && firstDate <= to) {
+      console.log('  => Counted as NEW user');
+      newUsers += 1;
+    } else if (firstDate < from) {
+      console.log('  => Counted as RETURNING user');
+      returningUsers += 1;
+    }
+  });
+  return { newUsers, returningUsers };
+}
+
 
 // Fetch all AIs for a user
 export async function getAIsForUser(userId: string) {
