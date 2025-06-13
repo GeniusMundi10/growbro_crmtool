@@ -54,27 +54,29 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
   </div>
   {/* Bar container: fixed width for all bars */}
   <div className="flex-1 flex items-center">
-    <div
-      className={`h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
-      style={{
-        width: `${(stage.value / maxValue) * 100}%`,
-        minWidth: 40,
-        border: '1.5px solid #e5e7eb',
-        boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
-        position: 'relative',
-      }}
-      aria-label={`${stage.label}: ${stage.value}`}
-    >
-      <span
-        className="text-xl font-bold drop-shadow-sm"
+    <div className="w-full relative">
+      <div
+        className={`h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
         style={{
-          fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
-          whiteSpace: 'nowrap',
-          transition: 'font-size 0.3s',
+          width: `${(stage.value / maxValue) * 100}%`,
+          minWidth: 40,
+          border: '1.5px solid #e5e7eb',
+          boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
+          position: 'relative',
         }}
+        aria-label={`${stage.label}: ${stage.value}`}
       >
-        {stage.value}
-      </span>
+        <span
+          className="text-xl font-bold drop-shadow-sm"
+          style={{
+            fontSize: (stage.value / maxValue) > 0.12 ? '1.25rem' : '1rem',
+            whiteSpace: 'nowrap',
+            transition: 'font-size 0.3s',
+          }}
+        >
+          {stage.value}
+        </span>
+      </div>
     </div>
   </div>
 </div>
