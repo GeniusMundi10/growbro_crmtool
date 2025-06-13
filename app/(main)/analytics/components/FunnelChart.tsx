@@ -59,10 +59,13 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
   aria-label={`${stage.label}: ${stage.value}`}
 >
   <span
-  className="flex items-center truncate"
+  className="flex items-center"
   style={{
-    maxWidth: '60%',
-    fontSize: (stage.value / maxValue) > 0.12 ? '1rem' : '0.85rem',
+    position: (stage.value / maxValue) < 0.22 ? 'absolute' : 'static',
+    left: (stage.value / maxValue) < 0.22 ? '-8.5rem' : 'auto',
+    whiteSpace: 'nowrap',
+    fontSize: (stage.value / maxValue) > 0.12 ? '1rem' : '0.95rem',
+    pointerEvents: 'none',
     transition: 'font-size 0.3s',
   }}
 >
