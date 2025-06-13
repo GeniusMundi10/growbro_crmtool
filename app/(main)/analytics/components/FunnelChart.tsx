@@ -54,15 +54,14 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
   </div>
   {/* Bar container: fixed width for all bars */}
   <div className="flex-1 flex items-center h-full">
-    <div className="w-full relative">
+    <div className="relative w-full h-12">
       <div
-        className={`h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
+        className={`absolute left-0 top-0 h-12 rounded-l rounded-r-full flex items-center justify-end px-4 font-semibold text-white shadow transition-all duration-500 overflow-visible ${getGradient(stage.color || "#0ea5e9", idx)}`}
         style={{
           width: `${(stage.value / maxValue) * 100}%`,
           minWidth: 40,
           border: '1.5px solid #e5e7eb',
           boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
-          position: 'relative',
         }}
         aria-label={`${stage.label}: ${stage.value}`}
       >
