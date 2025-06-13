@@ -51,7 +51,7 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
                 className={`h-12 rounded-l rounded-r-full flex items-center justify-between px-4 font-semibold text-white shadow transition-all duration-500 ${getGradient(stage.color || "#0ea5e9", idx)}`}
                 style={{
                   width: `${(stage.value / maxValue) * 100}%`,
-                  minWidth: 100,
+                  minWidth: 180,
                   border: '1.5px solid #e5e7eb',
                   boxShadow: '0 2px 8px 0 rgba(0,0,0,0.07)',
                 }}
