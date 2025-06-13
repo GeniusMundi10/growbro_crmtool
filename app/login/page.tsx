@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase, onAuthStateChange } from '@/lib/auth';
+import AnimatedLogoSprout from "@/components/AnimatedLogoSprout";
 
 // Separate component to use searchParams within Suspense boundary
 function LoginContent() {
@@ -117,7 +118,10 @@ function LoginContent() {
       <Card className="w-full max-w-md shadow-xl rounded-2xl border-0 bg-white/90">
         <CardContent className="p-8">
           <div className="mb-8 text-center">
-            <img src="/logo.svg" alt="Growbro AI" className="mx-auto mb-2 h-10" />
+            <div className="flex flex-col items-center mb-2">
+  <AnimatedLogoSprout size={56} />
+  <div className="font-bold text-xl text-green-800 tracking-tight mt-2">growbro.ai</div>
+</div>
             <h1 className="text-2xl font-bold text-green-700">Welcome Back!</h1>
             <p className="text-green-500">Login to your AI-powered CRM</p>
           </div>

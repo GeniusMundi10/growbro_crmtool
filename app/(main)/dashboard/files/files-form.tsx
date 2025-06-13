@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
-import { getAIFiles, uploadAIFileToStorage, upsertAIFile, deleteAIFile, AIFile } from "@/lib/supabase";
+import { getAIFiles, uploadAIFileToStorage, upsertAIFile, deleteAIFile, AIFile, supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,13 @@ export default function FilesForm() {
         toast.success(`Uploaded: ${file.name}`);
       }
     }
+    // Set vectorstore_ready to false after any upload
+    if (aiId) {
+      await supabase
+        .from("business_info")
+        .update({ vectorstore_ready: false })
+        .eq("id", aiId);
+    }
     await loadFiles();
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -88,6 +95,13 @@ export default function FilesForm() {
         toast.success(`Uploaded: ${file.name}`);
       }
     }
+    // Set vectorstore_ready to false after any upload
+    if (aiId) {
+      await supabase
+        .from("business_info")
+        .update({ vectorstore_ready: false })
+        .eq("id", aiId);
+    }
     await loadFiles();
     setUploading(false);
   };
@@ -96,6 +110,13 @@ export default function FilesForm() {
     setUploading(true);
     const ok = await deleteAIFile(file.id, file.file_path);
     if (ok) {
+      // Set vectorstore_ready to false after delete
+      if (aiId) {
+        await supabase
+          .from("business_info")
+          .update({ vectorstore_ready: false })
+          .eq("id", aiId);
+      }
       toast.success("File deleted.");
       await loadFiles();
     } else {
