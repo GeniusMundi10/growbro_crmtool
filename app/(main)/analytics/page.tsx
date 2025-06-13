@@ -223,6 +223,28 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header title="Analytics" />
+      {/* Filter Bar: AI Selector + Period Tabs */}
+      <div className="flex flex-wrap items-center gap-4 bg-white rounded-lg shadow px-4 py-3 mb-6">
+        {ais.length > 0 && (
+          <select
+            className="border rounded px-3 py-2 text-sm"
+            value={selectedAIId}
+            onChange={e => setSelectedAIId(e.target.value)}
+          >
+            <option value="__all__">All AIs (Client Level)</option>
+            {ais.map((ai: any) => (
+              <option key={ai.id} value={ai.id}>{ai.label || ai.ai_name || ai.id}</option>
+            ))}
+          </select>
+        )}
+        <Tabs defaultValue={period} value={period} onValueChange={(v) => setPeriod(v as 'day' | 'week' | 'month')}>
+          <TabsList>
+            <TabsTrigger value="day">Today</TabsTrigger>
+            <TabsTrigger value="week">This Week</TabsTrigger>
+            <TabsTrigger value="month">This Month</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
       <div className="mx-auto py-8 max-w-4xl xl:max-w-6xl 2xl:max-w-7xl">
         <KPISection
           totalMessages={kpiStats?.totalMessages ?? 0}
@@ -256,26 +278,6 @@ export default function AnalyticsPage() {
             )}
           </div>
         </div>
-        {/* AI Selector Dropdown */}
-        {ais.length > 0 && (
-          <select
-            className="border rounded px-3 py-2 text-sm mb-4"
-            value={selectedAIId}
-            onChange={e => setSelectedAIId(e.target.value)}
-          >
-            <option value="__all__">All AIs (Client Level)</option>
-            {ais.map((ai: any) => (
-              <option key={ai.id} value={ai.id}>{ai.label || ai.ai_name || ai.id}</option>
-            ))}
-          </select>
-        )}
-        <Tabs defaultValue={period} value={period} onValueChange={(v) => setPeriod(v as 'day' | 'week' | 'month')}>
-          <TabsList>
-            <TabsTrigger value="day">Today</TabsTrigger>
-            <TabsTrigger value="week">This Week</TabsTrigger>
-            <TabsTrigger value="month">This Month</TabsTrigger>
-          </TabsList>
-        </Tabs>
       {/* --- Modular Time Series Chart --- */}
       <TimeSeriesChart
         data={summaryRows.map((row) => ({
