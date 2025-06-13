@@ -48,7 +48,7 @@ const FunnelChart: React.FC<FunnelChartProps> = ({ stages, title, description })
           <React.Fragment key={stage.label}>
             <div className="flex flex-row items-center w-full h-14">
   {/* Icon + Label: fixed width */}
-  <div className="flex items-center min-w-[140px] max-w-[180px] pr-3 text-gray-700 font-medium h-full">
+  <div className="flex items-center w-[180px] pr-3 text-gray-700 font-medium h-full">
     {ICONS[stage.label] || null}
     {stage.label}
   </div>
