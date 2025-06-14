@@ -9,8 +9,8 @@ export interface FunnelChartProps {
 import { MessageSquare, Users, User } from "lucide-react";
 
 const ICONS: Record<string, JSX.Element> = {
-  "Messages": <MessageSquare className="w-5 h-5 mr-2 text-blue-500" aria-label="Messages" />,
-  "Conversations": <Users className="w-5 h-5 mr-2 text-green-600" aria-label="Conversations" />,
+  "Conversations Started": <Users className="w-5 h-5 mr-2 text-blue-500" aria-label="Conversations Started" />, 
+  "Engaged Conversations": <MessageSquare className="w-5 h-5 mr-2 text-green-600" aria-label="Engaged Conversations" />, 
   "Leads (Unique)": <User className="w-5 h-5 mr-2 text-orange-500" aria-label="Leads" />,
 };
 

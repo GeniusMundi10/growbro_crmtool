@@ -1113,9 +1113,65 @@ export async function fetchUsersDirectly() {
   }
 }
 
+
+
+
+// Conversation Engagement Funnel: Conversations Started, Engaged, Leads
+export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
+  // Calculate day after toDate for inclusive range
+  const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  // 1. Conversations Started
+  let convoQuery = supabase
+    .from('conversations')
+    .select('id, end_user_id')
+    .gte('started_at', fromDate)
+    .lt('started_at', dayAfterToDate);
+  if (agentId !== '__all__') {
+    convoQuery = convoQuery.eq('ai_id', agentId);
+  }
+  const { data: conversations, error: convoError } = await convoQuery;
+  if (convoError) throw convoError;
+  const conversationIds = (conversations || []).map((c: any) => c.id);
+  const startedCount = conversationIds.length;
+
+  // 2. Engaged Conversations: >1 user message
+  let msgQuery = supabase
+    .from('messages')
+    .select('conversation_id, role')
+    .in('conversation_id', conversationIds)
+    .eq('role', 'user')
+    .gte('timestamp', fromDate)
+    .lt('timestamp', dayAfterToDate);
+  if (agentId !== '__all__') {
+    msgQuery = msgQuery.eq('ai_id', agentId);
+  }
+  const { data: messages, error: msgError } = await msgQuery;
+  if (msgError) throw msgError;
+  // Group by conversation_id and count user messages
+  const userMsgCount: Record<string, number> = {};
+  (messages || []).forEach((msg: any) => {
+    userMsgCount[msg.conversation_id] = (userMsgCount[msg.conversation_id] || 0) + 1;
+  });
+  const engagedConvoIds = Object.keys(userMsgCount).filter(
+    (cid) => userMsgCount[cid] > 1
+  );
+  const engagedCount = engagedConvoIds.length;
+
+  // 3. Leads: unique end_user_ids from engaged conversations
+  const engagedConvos = (conversations || []).filter((c: any) => engagedConvoIds.includes(c.id));
+  const uniqueLeads = Array.from(new Set(engagedConvos.map((c: any) => c.end_user_id).filter(Boolean)));
+  const leadsCount = uniqueLeads.length;
+
+  return {
+    startedCount,
+    engagedCount,
+    leadsCount,
+  };
+}
+
 // Get unique leads for an AI and period (across all days in the range)
 export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string, toDate: string): Promise<number> {
-  // Step 1: Fetch unique conversation_ids from messages for the AI and date range
   // Calculate the day after toDate to include the entire last day in the period
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
     .toISOString()

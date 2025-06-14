@@ -28,7 +28,7 @@ import LeaderboardTable from "./components/LeaderboardTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats, getUserSegmentDistribution } from "@/lib/supabase"
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats, getUserSegmentDistribution, getFunnelData } from "@/lib/supabase"
 import KPISection from "./components/KPISection"
 import ConversationDurationPieChart from "./components/ConversationDurationPieChart"
 import UserSegmentPieChart from "./components/UserSegmentPieChart"
@@ -71,6 +71,8 @@ export default function AnalyticsPage() {
     avgConversationDuration: number;
   } | null>(null);
   const [userSegment, setUserSegment] = useState<{ newUsers: number; returningUsers: number } | null>(null);
+  // Funnel data
+  const [funnelData, setFunnelData] = useState<{ startedCount: number; engagedCount: number; leadsCount: number } | null>(null);
 
   useEffect(() => {
     async function loadUserAndAIs() {
@@ -207,9 +209,13 @@ export default function AnalyticsPage() {
         setSummaryRows(rows)
         setUniqueLeadsCount(uniqueLeads)
         setUserSegment(segment);
+        // Fetch funnel data for new funnel chart
+        const funnel = await getFunnelData(selectedAIId, fromDate!, toDate!);
+        setFunnelData(funnel);
       } catch {
         setSummaryRows([])
         setUniqueLeadsCount(0)
+        setFunnelData(null)
       } finally {
         setLoading(false)
       }
@@ -304,12 +310,12 @@ export default function AnalyticsPage() {
       {/* --- Funnel Chart for Conversion --- */}
       <FunnelChart
         stages={[
-          { label: "Messages", value: kpiStats?.totalMessages ?? 0, color: "#0ea5e9" },
-          { label: "Conversations", value: kpiStats?.totalConversations ?? 0, color: "#16a34a" },
-          { label: "Leads (Unique)", value: uniqueLeadsCount ?? 0, color: "#f59e42" }
+          { label: "Conversations Started", value: funnelData?.startedCount ?? 0, color: "#0ea5e9" },
+          { label: "Engaged Conversations", value: funnelData?.engagedCount ?? 0, color: "#16a34a" },
+          { label: "Leads (Unique)", value: funnelData?.leadsCount ?? 0, color: "#f59e42" }
         ]}
-        title="Conversation Funnel"
-        description="See how many messages lead to conversations and unique leads in the selected period."
+        title="Conversation Engagement Funnel"
+        description="See how many conversations become engaged and convert to unique leads in the selected period."
       />
 
       {/* --- Leaderboard Table for AIs by Conversations --- */}
