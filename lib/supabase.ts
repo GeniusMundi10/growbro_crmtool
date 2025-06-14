@@ -1138,9 +1138,9 @@ export async function getFunnelData(agentId: string, fromDate: string, toDate: s
   // 2. Engaged Conversations: >1 user message
   let msgQuery = supabase
     .from('messages')
-    .select('conversation_id, role')
+    .select('conversation_id, sender')
     .in('conversation_id', conversationIds)
-    .eq('role', 'user')
+    .eq('sender', 'user')
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId !== '__all__') {
