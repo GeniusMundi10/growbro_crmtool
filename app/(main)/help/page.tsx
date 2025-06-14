@@ -25,70 +25,186 @@ export default function HelpPage() {
           </TabsList>
           
           <TabsContent value="guides">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <Book className="h-6 w-6 text-green-600 mb-2" />
-                  <CardTitle>Getting Started</CardTitle>
-                  <CardDescription>Learn the basics of using GrowBro AI</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
-                    <li className="text-blue-600 hover:underline cursor-pointer">Setting up your AI assistant</li>
-                    <li className="text-blue-600 hover:underline cursor-pointer">Customizing your AI</li>
-                    <li className="text-blue-600 hover:underline cursor-pointer">Embedding AI on your website</li>
-                    <li className="text-blue-600 hover:underline cursor-pointer">Managing conversations</li>
-                  </ul>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <Book className="h-6 w-6 text-green-600 mb-2" />
-                  <CardTitle>Advanced Features</CardTitle>
-                  <CardDescription>Get more out of your AI assistant</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 text-sm">
-                    <li className="text-blue-600 hover:underline cursor-pointer">Lead capture configuration</li>
-                    <li className="text-blue-600 hover:underline cursor-pointer">AI training with your content</li>
-                    <li className="text-blue-600 hover:underline cursor-pointer">Team collaboration</li>
-                    <li className="text-blue-600 hover:underline cursor-pointer">Analytics and reporting</li>
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <Card>
+      <CardHeader>
+        <Book className="h-6 w-6 text-green-600 mb-2" />
+        <CardTitle>Getting Started</CardTitle>
+        <CardDescription>Learn the basics of using GrowBro AI</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2 text-sm">
+          <GuideItem title="Setting up your AI assistant">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>Go to Dashboard &rarr; Create New AI.</li>
+              <li>Fill in your business details and preferences.</li>
+              <li>Click "Save" to initialize your AI assistant.</li>
+            </ol>
+          </GuideItem>
+          <GuideItem title="Customizing your AI">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>Navigate to the AI settings page.</li>
+              <li>Update branding, greeting, and lead capture forms.</li>
+              <li>Preview changes in real-time.</li>
+            </ol>
+          </GuideItem>
+          <GuideItem title="Embedding AI on your website">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>Go to "Get AI Code & Test AI" in the dashboard.</li>
+              <li>Copy the provided embed code.</li>
+              <li>Paste it into your website’s HTML.</li>
+            </ol>
+          </GuideItem>
+          <GuideItem title="Managing conversations">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>View chat history in the dashboard.</li>
+              <li>Respond to leads directly or assign to team members.</li>
+              <li>Export conversations for records or analysis.</li>
+            </ol>
+          </GuideItem>
+        </ul>
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader>
+        <Book className="h-6 w-6 text-green-600 mb-2" />
+        <CardTitle>Advanced Features</CardTitle>
+        <CardDescription>Get more out of your AI assistant</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2 text-sm">
+          <GuideItem title="Lead capture configuration">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>Customize the lead capture form in AI settings.</li>
+              <li>Choose which fields are required (name, email, etc.).</li>
+              <li>Enable notifications for new leads.</li>
+            </ol>
+          </GuideItem>
+          <GuideItem title="AI training with your content">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>Upload documents or provide website URLs in Resources.</li>
+              <li>Let the AI process and learn from your materials.</li>
+              <li>Test responses using the chat preview.</li>
+            </ol>
+          </GuideItem>
+          <GuideItem title="Team collaboration">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>Invite team members from the Team section.</li>
+              <li>Assign roles and permissions for each member.</li>
+              <li>Monitor team activity and contributions.</li>
+            </ol>
+          </GuideItem>
+          <GuideItem title="Analytics and reporting">
+            <ol className="list-decimal ml-5 mt-2 text-gray-700">
+              <li>Access analytics in the dashboard sidebar.</li>
+              <li>Track engagement, lead quality, and conversion rates.</li>
+              <li>Export reports for further analysis.</li>
+            </ol>
+          </GuideItem>
+        </ul>
+      </CardContent>
+    </Card>
+  </div>
+</TabsContent>
+
+{/* GuideItem component definition */}
+function GuideItem({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <li className="border rounded-md p-3 bg-gray-50 hover:bg-gray-100 transition">
+      <button
+        className="flex items-center justify-between w-full text-left font-medium text-blue-700 focus:outline-none"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span>{title}</span>
+        <svg
+          className={`w-4 h-4 ml-2 transform transition-transform ${open ? 'rotate-90' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+      {open && <div className="mt-2">{children}</div>}
+    </li>
+  );
+}
           
           <TabsContent value="faqs">
-            <Card>
-              <CardHeader>
-                <HelpCircle className="h-6 w-6 text-green-600 mb-2" />
-                <CardTitle>Frequently Asked Questions</CardTitle>
-                <CardDescription>Quick answers to common questions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-1">How do I customize my AI assistant?</h3>
-                    <p className="text-sm text-gray-600">You can customize your AI assistant through the dashboard by updating your business information, adding resources, and configuring lead capture settings.</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">How do I embed the AI on my website?</h3>
-                    <p className="text-sm text-gray-600">Go to the "Get AI Code & Test AI" section where you can get the embed code to add to your website. Simply copy the code and paste it into your website's HTML.</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Can I train my AI with my own content?</h3>
-                    <p className="text-sm text-gray-600">Yes, you can train your AI with your website content, files, and other resources through the dashboard.</p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">How do I invite team members?</h3>
-                    <p className="text-sm text-gray-600">Go to the Team section where you can add new team members by entering their email addresses and assigning them appropriate roles.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+  <Card>
+    <CardHeader>
+      <HelpCircle className="h-6 w-6 text-green-600 mb-2" />
+      <CardTitle>Frequently Asked Questions</CardTitle>
+      <CardDescription>Quick answers to common questions</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="space-y-2">
+        {faqData.map((faq, idx) => (
+          <FaqItem key={idx} question={faq.q} answer={faq.a} />
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+</TabsContent>
+
+{/* FaqItem component definition */}
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div className="border rounded-md p-3 bg-gray-50 hover:bg-gray-100 transition">
+      <button
+        className="flex items-center justify-between w-full text-left font-medium text-green-700 focus:outline-none"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span>{question}</span>
+        <svg
+          className={`w-4 h-4 ml-2 transform transition-transform ${open ? 'rotate-90' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+      {open && <div className="mt-2 text-gray-700 text-sm">{answer}</div>}
+    </div>
+  );
+}
+
+// FAQ data
+const faqData = [
+  {
+    q: "How do I customize my AI assistant?",
+    a: "You can customize your AI assistant through the dashboard by updating your business information, adding resources, and configuring lead capture settings.",
+  },
+  {
+    q: "How do I embed the AI on my website?",
+    a: 'Go to the "Get AI Code & Test AI" section where you can get the embed code to add to your website. Simply copy the code and paste it into your website\'s HTML.',
+  },
+  {
+    q: "Can I train my AI with my own content?",
+    a: "Yes, you can train your AI with your website content, files, and other resources through the dashboard.",
+  },
+  {
+    q: "How do I invite team members?",
+    a: "Go to the Team section where you can add new team members by entering their email addresses and assigning them appropriate roles.",
+  },
+  {
+    q: "Can I integrate GrowBro AI with my CRM?",
+    a: "Yes, GrowBro AI offers integration options with popular CRMs. Check the Integrations section in your dashboard for setup instructions.",
+  },
+  {
+    q: "What if I need more help?",
+    a: "You can reach out to our support team via the Contact Support tab for chat or a scheduled call.",
+  },
+  {
+    q: "How do I reset my password?",
+    a: "Go to Account Settings and click on 'Change Password'. Follow the instructions sent to your email.",
+  },
+];
           
           <TabsContent value="videos">
             <Card>
