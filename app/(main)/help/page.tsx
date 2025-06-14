@@ -51,7 +51,12 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </button>
-      {open && <div className="mt-2 text-gray-700 text-sm">{answer}</div>}
+      {open && (
+  <div
+    className="mt-2 text-gray-700 text-sm"
+    dangerouslySetInnerHTML={{ __html: answer }}
+  />
+)}
     </div>
   );
 }
