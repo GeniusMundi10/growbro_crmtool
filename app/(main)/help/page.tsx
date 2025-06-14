@@ -321,32 +321,29 @@ export default function HelpPage() {
           </TabsContent>
 
           <TabsContent value="videos">
-            <Card>
-              <CardHeader>
-                <Video className="h-6 w-6 text-green-600 mb-2" />
-                <CardTitle>Video Tutorials</CardTitle>
-                <CardDescription>Learn visually with step-by-step guides</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gray-100 aspect-video rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition">
-                    <div className="text-center">
-                      <Video className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                      <h3 className="font-medium">Getting Started with GrowBro AI</h3>
-                      <p className="text-sm text-gray-600">4:32</p>
-                    </div>
-                  </div>
-                  <div className="bg-gray-100 aspect-video rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition">
-                    <div className="text-center">
-                      <Video className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                      <h3 className="font-medium">Customizing Your AI</h3>
-                      <p className="text-sm text-gray-600">5:45</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+  <Card>
+    <CardHeader>
+      <Video className="h-6 w-6 text-green-600 mb-2" />
+      <CardTitle>GrowBro CRM Walkthrough</CardTitle>
+      <CardDescription>Watch this video for a step-by-step guide on how to use all the key features of GrowBro CRM.</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <div className="w-full max-w-3xl mx-auto mb-4">
+        <div className="aspect-w-16 aspect-h-9">
+          <iframe
+            src="https://drive.google.com/file/d/1_blmYsmeJlTSFbthN6bhI6C8meQKdynb/preview"
+            width="100%"
+            height="480"
+            allow="autoplay"
+            allowFullScreen
+            style={{ border: 0 }}
+            title="GrowBro CRM Walkthrough Video"
+          />
+        </div>
+      </div>
+      <p className="text-gray-500 text-sm">If the video does not load, <a href="https://drive.google.com/file/d/1_blmYsmeJlTSFbthN6bhI6C8meQKdynb/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-green-700 underline">click here to watch it on Google Drive</a>.</p>    </CardContent>
+  </Card>
+</TabsContent>
           
           <TabsContent value="contact">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
