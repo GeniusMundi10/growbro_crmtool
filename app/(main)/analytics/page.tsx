@@ -203,6 +203,7 @@ export default function AnalyticsPage() {
           uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);
           // Previous period unique leads for single AI
           setPrevUniqueLeadsCount(await getUniqueLeadsForPeriod(selectedAIId, prevFromDate!, prevToDate!));
+        }
         setSummaryRows(rows)
         setUniqueLeadsCount(uniqueLeads)
         setUserSegment(segment);
@@ -213,7 +214,6 @@ export default function AnalyticsPage() {
         setLoading(false)
       }
     }
-    
     if (user && ais.length > 0) {
       fetchAnalytics();
     }
