@@ -1116,12 +1116,16 @@ export async function fetchUsersDirectly() {
 // Get unique leads for an AI and period (across all days in the range)
 export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string, toDate: string): Promise<number> {
   // Step 1: Fetch unique conversation_ids from messages for the AI and date range
+  // Calculate the day after toDate to include the entire last day in the period
+  const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
   const { data: messages, error: msgError } = await supabase
     .from('messages')
     .select('conversation_id')
     .eq('ai_id', agentId)
     .gte('timestamp', fromDate)
-    .lte('timestamp', toDate);
+    .lt('timestamp', dayAfterToDate);
   console.log('[DEBUG] [Step 1] messages:', { agentId, fromDate, toDate, messages, msgError });
   if (msgError) throw msgError;
 
