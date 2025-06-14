@@ -83,7 +83,15 @@ export default function SalesLeadsPage() {
       return;
     }
     const filtered = (data || []).filter((row: any) => row.name || row.email || row.phone);
-    setLeads(filtered);
+    // Deduplicate leads by email (or phone if email is missing)
+    const seen = new Set<string>();
+    const deduped = filtered.filter((row: any) => {
+      const key = row.email?.toLowerCase() || row.phone || row.chat_id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    setLeads(deduped);
     const aiSet = new Set<string>();
     filtered.forEach((row: any) => {
       if (row.ai_name) aiSet.add(row.ai_name);
