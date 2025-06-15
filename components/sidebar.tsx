@@ -99,7 +99,7 @@ export default function Sidebar({ locked }: SidebarProps) {
       window.removeEventListener("resize", handleResize)
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [expanded])
+  }, [expanded]);
 
   // Fix the fetchUserAIs function reference and dependencies
   const fetchUserAIs = React.useCallback(async () => {
