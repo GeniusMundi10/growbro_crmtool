@@ -38,9 +38,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <UserProvider>
       <div className="min-h-screen bg-background font-sans antialiased">
-        <div className="flex h-screen overflow-hidden bg-gray-50">
-          <MainLayoutInner>{children}</MainLayoutInner>
-        </div>
+        <MainLayoutInner>{children}</MainLayoutInner>
       </div>
     </UserProvider>
   );
