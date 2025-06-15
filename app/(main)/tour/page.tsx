@@ -12,13 +12,13 @@ const tourSteps = [
   {
     title: "Welcome to GrowBro AI",
     description: "Let's take a quick tour to help you get the most out of your AI assistant.",
-    image: "/dashboard-overview.png", // TODO: Replace with real screenshot
+    image: "/dashboard.png", // TODO: Replace with real screenshot
     content: (user) => `GrowBro AI is a powerful customer relationship management tool that helps you engage with visitors, capture leads, and grow your business. ${user?.name ? `Welcome, ${user.name}!` : ''}`
   },
   {
     title: "Set up your AI assistant",
     description: "Configure your AI assistant to reflect your business.",
-    image: "/business-info.png", // TODO: Replace with real screenshot
+    image: "/info.png", // TODO: Replace with real screenshot
     content: (user) => `Start by entering your business information, including company name, website, and contact details. This helps your AI provide accurate information to your customers.${user?.company ? ` Your company: ${user.company}` : ''}`,
     action: {
       label: "Go to Business Info",
@@ -28,7 +28,7 @@ const tourSteps = [
   {
     title: "Train your AI",
     description: "Help your AI learn about your business.",
-    image: "/training.png", // TODO: Replace with real screenshot
+    image: "/resources.png", // TODO: Replace with real screenshot
     content: () => "Upload files, add your website, and provide resources to train your AI assistant. The more information you provide, the better your AI will understand your business.",
     action: {
       label: "Go to Resources",
@@ -41,14 +41,14 @@ const tourSteps = [
     image: "/customize.png", // TODO: Replace with real screenshot
     content: () => "Customize the appearance, behavior, and voice of your AI assistant to create a seamless experience for your visitors.",
     action: {
-      label: "Go to Voice Settings",
-      href: "/dashboard/voice"
+      label: "Go to Customize page",
+      href: "/customize"
     }
   },
   {
     title: "Embed on your website",
     description: "Add your AI assistant to your website.",
-    image: "/embed-code.png", // TODO: Replace with real screenshot
+    image: "/embed.png", // TODO: Replace with real screenshot
     content: () => "Get the embed code and add it to your website to start engaging with visitors and capturing leads.",
     action: {
       label: "Get Embed Code",
