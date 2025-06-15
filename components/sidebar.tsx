@@ -331,6 +331,28 @@ export default function Sidebar({ locked }: SidebarProps) {
                 </Button>
               </div>
 
+              {menuItems.map((item) => {
+                // If locked, only Billing is enabled
+                const isBilling = item.name === "Billing";
+                const isDisabled = locked && !isBilling;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.path}
+                    className={cn(
+                      "flex items-center rounded-lg p-2 hover:bg-white/10 transition-colors",
+                      (expanded || isHovering) ? "justify-start" : "justify-center",
+                      isDisabled && "opacity-40 pointer-events-none select-none"
+                    )}
+                    tabIndex={isDisabled ? -1 : 0}
+                    aria-disabled={isDisabled}
+                  >
+                    <span className="mr-3">{item.icon}</span>
+                    {(expanded || isHovering) && <span>{item.name}</span>}
+                  </Link>
+                );
+              })}
+
               {loadingUserContext ? (
                 <div className="text-xs text-gray-300">Loading...</div>
               ) : user ? (
