@@ -1,3 +1,5 @@
+"use client";
+
 import Sidebar from "@/components/sidebar";
 import { Toaster } from "sonner";
 import { UserProvider, useUser } from "@/context/UserContext";
