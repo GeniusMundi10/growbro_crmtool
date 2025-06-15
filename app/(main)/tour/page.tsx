@@ -57,12 +57,58 @@ const tourSteps = [
   }
 ]
 
+import { useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import confetti from "canvas-confetti";
+
 export default function TourPage() {
   const { user } = useUser();
   const [currentStep, setCurrentStep] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        if (currentStep < tourSteps.length - 1) handleNext();
+      } else if (e.key === "ArrowLeft") {
+        if (currentStep > 0) handlePrevious();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentStep]);
+
+  // Swipe gesture navigation
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchEndX.current = e.changedTouches[0].clientX;
+    if (touchStartX.current !== null && touchEndX.current !== null) {
+      const dx = touchEndX.current - touchStartX.current;
+      if (dx > 40 && currentStep > 0) handlePrevious(); // Swipe right
+      else if (dx < -40 && currentStep < tourSteps.length - 1) handleNext(); // Swipe left
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
+  // Confetti on completion
+  useEffect(() => {
+    if (feedbackSubmitted && currentStep === tourSteps.length - 1) {
+      confetti({
+        particleCount: 120,
+        spread: 70,
+        origin: { y: 0.6 },
+        zIndex: 9999,
+      });
+    }
+  }, [feedbackSubmitted, currentStep]);
 
   // Load progress from localStorage
   useEffect(() => {
@@ -128,13 +174,19 @@ export default function TourPage() {
               transition={{ duration: 0.4 }}
             >
               <Card className="mb-8 overflow-visible shadow-2xl rounded-2xl border-0 bg-white">
-                <div className="flex flex-col items-center justify-center py-10 px-4 bg-gradient-to-b from-slate-50 to-white">
-                  <motion.img
-                    key={currentTourStep.image}
-                    src={currentTourStep.image}
-                    alt={currentTourStep.title}
-                    className="rounded-xl shadow-lg border border-gray-200 max-h-96 w-auto object-contain cursor-zoom-in transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500"
-                    initial={{ opacity: 0, scale: 0.98 }}
+                {/* Animated Progress Bar */}
+                <div className="w-full max-w-xl mx-auto mb-6">
+                  <motion.div
+                    className="h-2 rounded-full bg-gray-200 overflow-hidden"
+                  >
+                    <motion.div
+                      className="h-2 rounded-full bg-green-500"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
+                      transition={{ duration: 0.5, type: "spring", stiffness: 120 }}
+                      aria-label={`Step ${currentStep + 1} of ${tourSteps.length}`}
+                    />
+                  </motion.div>
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.02 }}
                     transition={{ duration: 0.5 }}
