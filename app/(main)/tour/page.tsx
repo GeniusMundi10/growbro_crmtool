@@ -57,10 +57,6 @@ const tourSteps = [
   }
 ]
 
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
-
 export default function TourPage() {
   const { user } = useUser();
   const [currentStep, setCurrentStep] = useState(0);
