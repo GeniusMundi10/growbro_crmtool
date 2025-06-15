@@ -56,7 +56,7 @@ export function onAuthStateChange(callback: (session: Session | null) => void) {
  * Fetches the current authenticated user details including profile data
  * This is the main function to use when you need the complete user profile
  */
-export async function getCurrentUser(): Promise<UserProfile & { trial_days?: number } | null> {
+export async function getCurrentUser(): Promise<UserProfile | null> {
   try {
     // 1. Get the authentication session
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -72,17 +72,21 @@ export async function getCurrentUser(): Promise<UserProfile & { trial_days?: num
       .eq('id', authUser.id)
       .single();
 
-    if (profileError) throw profileError;
-    if (!profile) return null;
+    if (!profile || profileError) {
+      // Only fallback if the row is missing or there is a query error
+      console.warn('No matching row in public.users for user id:', authUser.id);
+      return {
+        id: authUser.id,
+        name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
+        email: authUser.email || '',
+        avatar_url: authUser.user_metadata?.avatar_url,
+        plan: 'free',
+        phone: '',
+        company: '',
+        website: '',
+      };
+    }
 
-    // 3. Fetch trial info from user_trial_status view
-    const { data: trial, error: trialError } = await supabase
-      .from('user_trial_status')
-      .select('plan, trial_days')
-      .eq('user_id', authUser.id)
-      .single();
-
-    // 4. Merge and return
     // 3. Always use public.users fields for display
     return {
       id: profile.id,

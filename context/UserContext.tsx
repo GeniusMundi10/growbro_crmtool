@@ -3,29 +3,20 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getCurrentUser, onAuthStateChange, UserProfile } from "@/lib/auth";
 
 interface UserContextType {
-  user: (UserProfile & { trial_days?: number }) | null;
+  user: UserProfile | null;
   loading: boolean;
   refreshUser: () => Promise<void>;
-  isTrialExpired: (user: (UserProfile & { trial_days?: number }) | null) => boolean;
 }
 
 const UserContext = createContext<UserContextType>({
   user: null,
   loading: true,
-  refreshUser: async () => {},
-  isTrialExpired: () => false
+  refreshUser: async () => {}
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<(UserProfile & { trial_days?: number }) | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  function isTrialExpired(user: (UserProfile & { trial_days?: number }) | null): boolean {
-    if (!user) return false;
-    if (user.plan !== 'free') return false;
-    if (typeof user.trial_days !== 'number') return false;
-    return user.trial_days >= 14;
-  }
 
   const fetchUser = async () => {
     setLoading(true);
@@ -65,7 +56,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, loading, refreshUser, isTrialExpired }}>
+    <UserContext.Provider value={{ user, loading, refreshUser }}>
       {children}
     </UserContext.Provider>
   );
