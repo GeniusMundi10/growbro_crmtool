@@ -15,19 +15,17 @@ function MainLayoutInner({ children }: { children: React.ReactNode }) {
   const locked = isTrialExpired(user);
 
   useEffect(() => {
-    if (!loading && locked && pathname !== "/billing") {
-      router.replace("/billing");
+    if (!loading && locked && pathname !== "/billing/pricing-plans") {
+      router.replace("/billing/pricing-plans");
     }
   }, [loading, locked, pathname, router]);
 
-  // Only show lock screen on /billing if locked
-  const showLockScreen = !loading && locked && pathname === "/billing";
-
+  // Always render children on /billing/pricing-plans, even if locked
   return (
     <div className="flex min-h-screen">
       <Sidebar locked={locked} />
       <main className="flex-1 overflow-auto ml-[70px] md:ml-[280px] transition-all duration-300 bg-gray-50 dark:bg-black/40">
-        {showLockScreen ? <TrialExpiredLockScreen /> : children}
+        {children}
       </main>
       <Toaster position="top-right" richColors expand closeButton />
     </div>
