@@ -51,7 +51,7 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Starter",
       description: "For entrepreneurs",
-      price: billingCycle === "monthly" ? "₹1" : "₹2",
+      price: billingCycle === "monthly" ? "₹8000" : "₹2",
       features: [
         "25000 chat messages",
         "₹8 per additional 1000 messages",
