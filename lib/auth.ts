@@ -56,7 +56,7 @@ export function onAuthStateChange(callback: (session: Session | null) => void) {
  * Fetches the current authenticated user details including profile data
  * This is the main function to use when you need the complete user profile
  */
-export async function getCurrentUser(): Promise<UserProfile | null> {
+export async function getCurrentUser(): Promise<UserProfile & { plan?: string; trial_days?: number } | null> {
   try {
     // 1. Get the authentication session
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -72,6 +72,13 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
       .eq('id', authUser.id)
       .single();
 
+    // 3. Fetch trial info from user_trial_status view
+    const { data: trial, error: trialError } = await supabase
+      .from('user_trial_status')
+      .select('plan, trial_days')
+      .eq('user_id', authUser.id)
+      .single();
+
     if (!profile || profileError) {
       // Only fallback if the row is missing or there is a query error
       console.warn('No matching row in public.users for user id:', authUser.id);
@@ -80,23 +87,19 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
         name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
         email: authUser.email || '',
         avatar_url: authUser.user_metadata?.avatar_url,
-        plan: 'free',
+        plan: trial?.plan || 'free',
+        trial_days: trial?.trial_days,
         phone: '',
         company: '',
         website: '',
       };
     }
 
-    // 3. Always use public.users fields for display
     return {
-      id: profile.id,
-      name: profile.name || profile.full_name || '',
-      email: profile.email || '',
-      avatar_url: profile.avatar_url || '',
-      plan: profile.plan || 'free',
-      phone: profile.phone || '',
-      company: profile.company || '',
-      website: profile.website || '',
+      ...profile,
+      plan: trial?.plan || profile.plan || 'free',
+      trial_days: trial?.trial_days,
+    };
     };
   } catch (error) {
     console.error('Error in getCurrentUser:', error);

@@ -46,7 +46,11 @@ const menuItems = [
   { name: "Billing", icon: <CreditCard className="h-5 w-5" />, path: "/billing" },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  locked?: boolean;
+}
+
+export default function Sidebar({ locked = false }: SidebarProps) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; ai: any } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<any>(null);
 
@@ -329,45 +333,52 @@ export default function Sidebar() {
               </div>
 
               {/* Main menu items */}
-              {menuItems.map((item) => (
-                <div key={item.name}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        href={item.path}
-                        className={cn(
-                          "flex items-center rounded-lg px-3 py-3 text-sm transition-colors",
-                          pathname === item.path ||
-                            (pathname.startsWith(item.path + "/") && item.path !== "/")
-                            ? "bg-white/20 font-medium"
-                            : "hover:bg-white/10",
-                          !expanded && !isHovering && "justify-center",
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "flex items-center",
-                            !expanded && !isHovering && "justify-center",
-                            (expanded || isHovering) && "w-full"
-                          )}
-                        >
-                          <span className={cn(!expanded && !isHovering && "w-5 h-5", "flex items-center")}>{item.icon}</span>
-                          {(expanded || isHovering) && (
-                            <div className="ml-3 flex w-full justify-between items-center">
-                              <span>{item.name}</span>
-                            </div>
-                          )}
-                        </div>
-                      </Link>
-                    </TooltipTrigger>
-                    {!expanded && !isHovering && (
-                      <TooltipContent side="right" className="border-none bg-gray-900 text-white">
-                        {item.name}
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
+              {menuItems.map((item) => {
+  const isBilling = item.name === "Billing";
+  const isDisabled = locked && !isBilling;
+  return (
+    <div key={item.name}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            href={item.path}
+            tabIndex={isDisabled ? -1 : 0}
+            className={cn(
+              "flex items-center rounded-lg px-3 py-3 text-sm transition-colors",
+              pathname === item.path ||
+                (pathname.startsWith(item.path + "/") && item.path !== "/")
+                ? "bg-white/20 font-medium"
+                : "hover:bg-white/10",
+              !expanded && !isHovering && "justify-center",
+              isDisabled && "opacity-50 pointer-events-none select-none cursor-not-allowed"
+            )}
+            aria-disabled={isDisabled ? "true" : undefined}
+          >
+            <div
+              className={cn(
+                "flex items-center",
+                !expanded && !isHovering && "justify-center",
+                (expanded || isHovering) && "w-full"
+              )}
+            >
+              <span className={cn(!expanded && !isHovering && "w-5 h-5", "flex items-center")}>{item.icon}</span>
+              {(expanded || isHovering) && (
+                <div className="ml-3 flex w-full justify-between items-center">
+                  <span>{item.name}</span>
                 </div>
-              ))}
+              )}
+            </div>
+          </Link>
+        </TooltipTrigger>
+        {!expanded && !isHovering && (
+          <TooltipContent side="right" className="border-none bg-gray-900 text-white">
+            {item.name}
+          </TooltipContent>
+        )}
+      </Tooltip>
+    </div>
+  );
+})}
             </nav>
           </div>
 
