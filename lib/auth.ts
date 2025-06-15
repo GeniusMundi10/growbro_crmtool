@@ -100,7 +100,7 @@ export async function getCurrentUser(): Promise<UserProfile & { plan?: string; t
       plan: trial?.plan || profile.plan || 'free',
       trial_days: trial?.trial_days,
     };
-    };
+
   } catch (error) {
     console.error('Error in getCurrentUser:', error);
     return null;
