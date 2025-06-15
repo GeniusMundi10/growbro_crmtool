@@ -52,7 +52,7 @@ const tourSteps = [
     content: () => "Get the embed code and add it to your website to start engaging with visitors and capturing leads.",
     action: {
       label: "Get Embed Code",
-      href: "/dashboard/info"
+      href: "/ai-code/embed-code"
     }
   }
 ]
