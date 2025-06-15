@@ -328,10 +328,9 @@ export default function Sidebar({ locked }: SidebarProps) {
                   aria-label="Add New AI"
                 >
                   <PlusCircle className="h-5 w-5 mr-2" />
-                </div>
-              "flex items-center rounded-lg p-2 hover:bg-white/10",
-              !expanded && !isHovering && "justify-center"
-            )}>
+                </Button>
+              </div>
+
               {loadingUserContext ? (
                 <div className="text-xs text-gray-300">Loading...</div>
               ) : user ? (
