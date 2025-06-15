@@ -62,6 +62,7 @@ export default function TourPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   // Load progress from localStorage
   useEffect(() => {
@@ -126,28 +127,69 @@ export default function TourPage() {
               exit={{ opacity: 0, y: -40 }}
               transition={{ duration: 0.4 }}
             >
-              <Card className="mb-8 overflow-hidden">
-                <div className="bg-gray-100 h-64 flex items-center justify-center border-b">
-                  {/* TODO: Replace with real image */}
-                  <img
+              <Card className="mb-8 overflow-visible shadow-2xl rounded-2xl border-0 bg-white">
+                <div className="flex flex-col items-center justify-center py-10 px-4 bg-gradient-to-b from-slate-50 to-white">
+                  <motion.img
+                    key={currentTourStep.image}
                     src={currentTourStep.image}
                     alt={currentTourStep.title}
-                    className="h-56 object-contain mx-auto"
+                    className="rounded-xl shadow-lg border border-gray-200 max-h-96 w-auto object-contain cursor-zoom-in transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{ duration: 0.5 }}
+                    tabIndex={0}
+                    aria-label="Expand image"
+                    onClick={() => setLightboxOpen(true)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setLightboxOpen(true); }}
                   />
                 </div>
-                <CardContent className="p-6">
-                  <p>{typeof currentTourStep.content === "function" ? currentTourStep.content(user) : currentTourStep.content}</p>
+                <CardContent className="p-8 text-center flex flex-col items-center">
+                  <h2 className="text-xl font-semibold mb-4 text-gray-800">{currentTourStep.title}</h2>
+                  <p className="text-base text-gray-600 mb-2">{currentTourStep.description}</p>
+                  <div className="text-lg text-gray-700 mb-4">
+                    {typeof currentTourStep.content === "function" ? currentTourStep.content(user) : currentTourStep.content}
+                  </div>
                   {currentTourStep.action && (
                     <Button
-                      className="mt-6"
-                      variant="outline"
+                      className="mt-4 text-base px-6 py-2"
+                      variant="default"
                       onClick={() => handleGoToFeature(currentTourStep.action.href)}
+                      aria-label={currentTourStep.action.label}
                     >
                       {currentTourStep.action.label}
                     </Button>
                   )}
                 </CardContent>
               </Card>
+              {/* Lightbox Modal for Image Zoom */}
+              {lightboxOpen && (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm"
+                  onClick={() => setLightboxOpen(false)}
+                  tabIndex={-1}
+                  aria-modal="true"
+                  role="dialog"
+                >
+                  <motion.img
+                    src={currentTourStep.image}
+                    alt={currentTourStep.title}
+                    className="max-h-[80vh] max-w-[90vw] rounded-2xl shadow-2xl border-4 border-white"
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.04 }}
+                    transition={{ duration: 0.3 }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <button
+                    className="absolute top-8 right-8 text-white bg-black bg-opacity-40 rounded-full p-2 hover:bg-opacity-70 transition"
+                    onClick={() => setLightboxOpen(false)}
+                    aria-label="Close image preview"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
 
