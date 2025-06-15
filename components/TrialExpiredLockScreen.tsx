@@ -10,7 +10,7 @@ export default function TrialExpiredLockScreen() {
         <CreditCard className="mx-auto mb-4 h-12 w-12 text-red-400 animate-pulse" />
         <h2 className="text-2xl font-bold mb-2 text-red-200">Your Free Trial Has Expired</h2>
         <p className="mb-4 text-red-100">To continue using Growbro CRM, please upgrade to a paid plan.</p>
-        <Link href="/billing/usage/">
+        <Link href="/billing/pricing-plans">
           <Button className="bg-red-700 hover:bg-red-800 text-white w-full">Upgrade Now</Button>
         </Link>
         <p className="mt-4 text-xs text-red-300">If you believe this is a mistake, please contact support.</p>
