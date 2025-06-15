@@ -7,6 +7,7 @@ import Header from "@/components/header"
 import { ChevronRight, ChevronLeft, CheckCircle, ThumbsUp, ThumbsDown } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useUser } from "@/context/UserContext"
+import confetti from "canvas-confetti";
 
 const tourSteps = [
   {
