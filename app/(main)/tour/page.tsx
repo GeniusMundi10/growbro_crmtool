@@ -184,14 +184,19 @@ export default function TourPage() {
                       aria-label={`Step ${currentStep + 1} of ${tourSteps.length}`}
                     />
                   </motion.div>
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.02 }}
-                    transition={{ duration: 0.5 }}
-                    tabIndex={0}
-                    aria-label="Expand image"
-                    onClick={() => setLightboxOpen(true)}
-                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setLightboxOpen(true); }}
-                  />
+                    <motion.img
+                      src={currentTourStep.image}
+                      alt={currentTourStep.title}
+                      className="mx-auto mb-4 rounded-xl shadow-lg cursor-pointer max-h-72"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 1.02 }}
+                      transition={{ duration: 0.5 }}
+                      tabIndex={0}
+                      aria-label="Expand image"
+                      onClick={() => setLightboxOpen(true)}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setLightboxOpen(true); }}
+                    />
                 </div>
                 <CardContent className="p-8 text-center flex flex-col items-center">
                   <h2 className="text-xl font-semibold mb-4 text-gray-800">{currentTourStep.title}</h2>
