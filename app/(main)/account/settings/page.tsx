@@ -52,7 +52,7 @@ export default function AccountPasswordSettings() {
       } else {
         toast({
           title: "Success",
-          description: "Password changed successfully.",
+          description: data.message || "Password changed successfully.",
           variant: "default",
         });
         setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
