@@ -114,6 +114,7 @@ export default function AccountPasswordSettings() {
           {saving ? "Saving..." : "Change Password"}
         </Button>
       </form>
-    </div>
+      </div>
+    </>
   );
 }
