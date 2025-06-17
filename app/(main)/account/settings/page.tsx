@@ -4,12 +4,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 import Header from "@/components/header";
 
 export default function AccountPasswordSettings() {
-  const { toast } = useToast();
+
   const [form, setForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -25,11 +25,7 @@ export default function AccountPasswordSettings() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.newPassword !== form.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "New passwords do not match.",
-        variant: "destructive",
-      });
+      toast.error("New passwords do not match.");
       return;
     }
     setSaving(true);
@@ -44,25 +40,13 @@ export default function AccountPasswordSettings() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data.error || 'Failed to change password.',
-          variant: "destructive",
-        });
+        toast.error(data.error || 'Failed to change password.');
       } else {
-        toast({
-          title: "Success",
-          description: data.message || "Password changed successfully.",
-          variant: "default",
-        });
+        toast.success(data.message || "Password changed successfully.");
         setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       }
     } catch (err) {
-      toast({
-        title: "Error",
-        description: 'Something went wrong. Please try again.',
-        variant: "destructive",
-      });
+      toast.error('Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }
