@@ -263,10 +263,14 @@ export default function Header({ title }: HeaderProps) {
     </a>
   </DropdownMenuItem>
 </Link>
-                <DropdownMenuItem className="rounded-lg cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4 text-slate-500" />
-                  <span>Account Settings</span>
-                </DropdownMenuItem>
+                <Link href="/account/settings" passHref legacyBehavior>
+  <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+    <a className="flex items-center w-full">
+      <Settings className="mr-2 h-4 w-4 text-slate-500" />
+      <span>Account Settings</span>
+    </a>
+  </DropdownMenuItem>
+</Link>
               </div>
               
               <div className="p-2 pt-0">
