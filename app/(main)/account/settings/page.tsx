@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 
+import Header from "@/components/header";
+
 export default function AccountPasswordSettings() {
   const { toast } = useToast();
   const [form, setForm] = useState({
@@ -67,7 +69,9 @@ export default function AccountPasswordSettings() {
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border max-w-md mx-auto mt-10">
+    <>
+      <Header title="Account Settings" />
+      <div className="bg-white rounded-lg p-6 shadow-sm border max-w-md mx-auto mt-10">
       <h2 className="text-xl font-bold mb-4">Change Password</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
