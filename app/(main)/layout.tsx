@@ -1,7 +1,7 @@
 "use client";
 
 import Sidebar from "@/components/sidebar";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { UserProvider, useUser } from "@/context/UserContext";
 import { usePathname, useRouter } from "next/navigation";
 import TrialExpiredLockScreen from "@/components/TrialExpiredLockScreen";
