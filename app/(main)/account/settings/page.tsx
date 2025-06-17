@@ -24,7 +24,9 @@ export default function AccountPasswordSettings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[DEBUG] handleSubmit called", form);
     if (form.newPassword !== form.confirmPassword) {
+      console.log("[DEBUG] Passwords do not match");
       toast.error("New passwords do not match.");
       return;
     }
@@ -38,19 +40,25 @@ export default function AccountPasswordSettings() {
           newPassword: form.newPassword,
         }),
       });
+      console.log("[DEBUG] API response status:", res.status);
       const data = await res.json();
+      console.log("[DEBUG] API response data:", data);
       if (!res.ok) {
+        console.log("[DEBUG] Showing error toast", data.error);
         toast.error(data.error || 'Failed to change password.');
       } else {
+        console.log("[DEBUG] Showing success toast", data.message);
         toast.success(data.message || "Password changed successfully.");
         setForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
       }
     } catch (err) {
+      console.log("[DEBUG] Exception caught", err);
       toast.error('Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }
   };
+
 
   return (
     <>
