@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,8 +7,9 @@ export async function POST(req: NextRequest) {
     if (!accessToken || !password) {
       return NextResponse.json({ error: "Missing token or password." }, { status: 400 });
     }
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password }, { accessToken });
+    // Use the API method for admin-like password reset with token
+    // @ts-ignore: auth.api is not in the types but exists in supabase-js
+    const { error } = await (supabase as any).auth.api.updateUser(accessToken, { password });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

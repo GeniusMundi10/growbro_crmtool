@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    const supabase = createClient();
     // Set your app's reset password redirect URL here
     const redirectTo = process.env.NEXT_PUBLIC_SITE_URL
       ? `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`
