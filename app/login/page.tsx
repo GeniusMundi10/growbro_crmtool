@@ -138,7 +138,7 @@ function LoginContent() {
             <Button type="submit" className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold" disabled={loading}>{loading ? "Logging in..." : "Login"}</Button>
           </form>
           <div className="text-right mt-2">
-            <a href="#" className="text-green-600 text-sm hover:underline">Forgot Password?</a>
+            <a href="/forgot-password" className="text-green-600 text-sm hover:underline">Forgot Password?</a>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-2 pb-6">
