@@ -1,122 +1,219 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import Header from "@/components/header";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Loader2 } from "lucide-react";
 
-// Wrapper component to handle the loading state
-function ResetPasswordForm() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-      </div>
-    }>
-      <ResetPasswordPageContent />
-    </Suspense>
-  );
-}
-
-// Main component with the form logic
-function ResetPasswordPageContent() {
+export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [status, setStatus] = useState<"verifying" | "valid" | "invalid">("verifying");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const supabase = createClientComponentClient();
 
-  // Get the access token from the URL hash fragment
+  // Handle the password reset token when the component mounts
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const token = params.get('access_token');
-      setAccessToken(token);
-      
-      // Clean up the URL
-      if (token) {
+    const handleResetPassword = async () => {
+      try {
+        // Get the access token from the URL hash
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const type = params.get('type');
+
+        if (type !== 'recovery' || !accessToken) {
+          throw new Error('Invalid or expired reset link');
+        }
+
+        // Set the session using the tokens from the URL
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken || ''
+        });
+
+        if (sessionError) throw sessionError;
+
+        // Clean up the URL
         window.history.replaceState({}, document.title, window.location.pathname);
+        setStatus("valid");
+      } catch (error) {
+        console.error('Error processing reset link:', error);
+        setStatus("invalid");
+        setError('Failed to process reset link. Please request a new one.');
       }
-    }
-  }, []);
+    };
+
+    handleResetPassword();
+  }, [supabase.auth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessToken) {
-      toast.error("Invalid or missing reset token.");
+    
+    if (status !== 'valid') {
+      setError('Invalid or expired reset link');
       return;
     }
+
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
+      setError('Passwords do not match');
       return;
     }
-    setLoading(true);
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessToken, password }),
+      setLoading(true);
+      setError(null);
+      
+      // Update the user's password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
       });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to reset password.");
-      } else {
-        toast.success("Password reset successfully! Please login.");
-        setPassword("");
-        setConfirmPassword("");
-        setTimeout(() => router.push("/login"), 2000);
-      }
-    } catch (err) {
-      toast.error("Something went wrong. Please try again.");
+
+      if (updateError) throw updateError;
+
+      toast.success('Password updated successfully! Redirecting to login...');
+      
+      // Sign out and redirect to login
+      await supabase.auth.signOut();
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
+      
+    } catch (error: any) {
+      console.error('Error updating password:', error);
+      setError(error.message || 'An error occurred while updating your password');
     } finally {
       setLoading(false);
     }
   };
 
+  // Show loading state while verifying the token
+  if (status === 'verifying') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        </div>
+        <p className="mt-4 text-sm text-gray-600">Verifying your reset link...</p>
+      </div>
+    );
+  }
+
+  // Show error if token is invalid
+  if (status === 'invalid') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="w-full max-w-md space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Invalid Reset Link
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              The password reset link is invalid or has expired. Please request a new one.
+            </p>
+          </div>
+          <div className="mt-6">
+            <Button
+              onClick={() => router.push('/forgot-password')}
+              className="group relative flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+            >
+              Request New Reset Link
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show the password reset form
   return (
-    <>
-      <Header title="Reset Password" />
-      <div className="bg-white rounded-lg p-6 shadow-sm border max-w-md mx-auto mt-10">
-        <h2 className="text-xl font-bold mb-4">Set a New Password</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <Label htmlFor="password">New Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Enter new password"
-              required
-              className="mt-1"
-            />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Reset your password
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Enter your new password below
+          </p>
+        </div>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4 rounded-md shadow-sm">
+            <div>
+              <Label htmlFor="password" className="sr-only">
+                New Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="relative block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                placeholder="New Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword" className="sr-only">
+                Confirm Password
+              </Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                className="relative block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                placeholder="Confirm New Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="mb-4">
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
-            <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-              required
-              className="mt-1"
-            />
+
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-red-800">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <Button
+              type="submit"
+              className="group relative flex w-full justify-center rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Password'
+              )}
+            </Button>
           </div>
-          <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
-            {loading ? "Resetting..." : "Reset Password"}
-          </Button>
         </form>
       </div>
-    </>
+    </div>
   );
 }
-
-export default ResetPasswordForm;
