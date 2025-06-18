@@ -31,19 +31,13 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  console.log('Middleware triggered for path:', request.nextUrl.pathname);
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req: request, res });
   const { pathname } = request.nextUrl;
-  
-  console.log('Pathname:', pathname);
-  console.log('Is public route:', publicRoutes.some(route => 
-    pathname === route || pathname.startsWith(route.replace(/\*$/, ''))
-  ));
 
   // If it's a public route, allow access
   if (isPublicPath(pathname)) {
-    console.log(`Allowing access to public route: ${pathname}`);
+
     return res;
   }
 
