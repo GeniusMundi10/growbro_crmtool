@@ -1,14 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import Header from "@/components/header";
+import { Loader2 } from "lucide-react";
 
-export default function ResetPasswordPage() {
+// Wrapper component to handle the loading state
+function ResetPasswordForm() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+      </div>
+    }>
+      <ResetPasswordPageContent />
+    </Suspense>
+  );
+}
+
+// Main component with the form logic
+function ResetPasswordPageContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -90,3 +105,5 @@ export default function ResetPasswordPage() {
     </>
   );
 }
+
+export default ResetPasswordForm;
