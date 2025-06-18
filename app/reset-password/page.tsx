@@ -33,13 +33,16 @@ function ResetPasswordPageContent() {
   // Get the access token from the URL hash fragment
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      console.log('URL hash:', window.location.hash);
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
       const token = params.get('access_token');
+      console.log('Extracted token:', token ? 'Token found' : 'No token found');
       setAccessToken(token);
       
       // Clean up the URL
       if (token) {
+        console.log('Cleaning up URL');
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }

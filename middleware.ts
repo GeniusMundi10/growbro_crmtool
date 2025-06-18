@@ -15,35 +15,42 @@ const publicRoutes = [
 ];
 
 export async function middleware(request: NextRequest) {
+  console.log('Middleware triggered for path:', request.nextUrl.pathname);
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req: request, res });
-
-  // Refresh session if expired - required for Server Components
-  const { data: { session } } = await supabase.auth.getSession();
   const { pathname } = request.nextUrl;
+  
+  console.log('Pathname:', pathname);
+  console.log('Is public route:', publicRoutes.some(route => 
+    pathname === route || pathname.startsWith(route.replace(/\*$/, ''))
+  ));
 
-  // If user is authenticated and tries to access auth pages, redirect to /dashboard
-  if (session && publicRoutes.includes(pathname)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Check if the current path is public
+  const isPublicRoute = publicRoutes.some(route => {
+    // For exact matches
+    if (pathname === route) return true;
+    // For path prefixes (like /api/auth/...)
+    if (route.endsWith('*') && pathname.startsWith(route.slice(0, -1))) return true;
+    return false;
+  });
+
+  // If it's a public route, allow access
+  if (isPublicRoute) {
+    return res;
   }
 
-  // Allow access to public routes
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
-    // Special handling for reset-password - allow access regardless of session
-    if (pathname === '/reset-password') {
-      return res;
-    }
+  // For non-public routes, check authentication
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // If user is authenticated, allow access
+  if (session) {
     return res;
   }
 
   // If not authenticated and trying to access protected route, redirect to login
-  if (!session) {
-    const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('redirectedFrom', pathname);
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  return res;
+  const redirectUrl = new URL('/login', request.url);
+  redirectUrl.searchParams.set('redirectedFrom', pathname);
+  return NextResponse.redirect(redirectUrl);
 }
 
 export const config = {

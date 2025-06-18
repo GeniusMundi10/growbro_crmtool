@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,21 +12,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify the OTP token using the existing client
-    const { data, error } = await supabase.auth.verifyOtp({
+    // Create a new Supabase client for this request
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+
+    // First, exchange the access token for a session
+    const { data: { session }, error: sessionError } = await supabase.auth.verifyOtp({
       token_hash: accessToken,
       type: 'recovery',
     });
 
-    if (error) {
-      console.error('Error verifying reset token:', error);
+    if (sessionError || !session) {
+      console.error('Error verifying reset token:', sessionError);
       return NextResponse.json(
         { error: "Invalid or expired reset link. Please request a new one." },
         { status: 400 }
       );
     }
 
-    // At this point, the client is authenticated with Supabase
     // Now update the password
     const { error: updateError } = await supabase.auth.updateUser({
       password: password
