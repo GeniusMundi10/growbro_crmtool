@@ -2,7 +2,17 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicRoutes = ['/login', '/signup', '/verify', '/favicon.ico', '/_next', '/api/auth', '/api/public'];
+const publicRoutes = [
+  '/login',
+  '/signup',
+  '/verify',
+  '/forgot-password',
+  '/reset-password',
+  '/favicon.ico',
+  '/_next',
+  '/api/auth',
+  '/api/public'
+];
 
 export async function middleware(request: NextRequest) {
   const res = NextResponse.next();
