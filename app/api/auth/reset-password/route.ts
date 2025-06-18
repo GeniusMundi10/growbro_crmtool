@@ -5,16 +5,47 @@ export async function POST(req: NextRequest) {
   try {
     const { accessToken, password } = await req.json();
     if (!accessToken || !password) {
-      return NextResponse.json({ error: "Missing token or password." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing token or password." },
+        { status: 400 }
+      );
     }
-    // Use the API method for admin-like password reset with token
-    // @ts-ignore: auth.api is not in the types but exists in supabase-js
-    const { error } = await (supabase as any).auth.api.updateUser(accessToken, { password });
+
+    // Exchange the access token for a session using the existing client
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: accessToken,
+      type: 'recovery',
+    });
+
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error verifying reset token:', error);
+      return NextResponse.json(
+        { error: "Invalid or expired reset link. Please request a new one." },
+        { status: 400 }
+      );
     }
+
+    // Update the user's password using the authenticated session
+    const { error: updateError } = await supabase.auth.updateUser({
+      // @ts-ignore - The token is valid at this point
+      access_token: accessToken,
+      password: password,
+    });
+
+    if (updateError) {
+      console.error('Error updating password:', updateError);
+      return NextResponse.json(
+        { error: updateError.message },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    console.error('Unexpected error in reset-password:', err);
+    return NextResponse.json(
+      { error: "An unexpected error occurred. Please try again." },
+      { status: 500 }
+    );
   }
 }

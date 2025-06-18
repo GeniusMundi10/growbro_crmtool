@@ -8,13 +8,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    // Set your app's reset password redirect URL here
+    // Set your app's reset password redirect URL
     const redirectTo = process.env.NEXT_PUBLIC_SITE_URL
       ? `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`
-      : undefined;
+      : 'http://localhost:3000/reset-password';
 
+    // Send the password reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
+      redirectTo: redirectTo
     });
 
     if (error) {

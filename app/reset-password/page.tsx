@@ -27,10 +27,23 @@ function ResetPasswordPageContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const searchParams = useSearchParams();
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const router = useRouter();
 
-  const accessToken = searchParams.get("access_token");
+  // Get the access token from the URL hash fragment
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const token = params.get('access_token');
+      setAccessToken(token);
+      
+      // Clean up the URL
+      if (token) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
