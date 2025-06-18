@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,11 +139,11 @@ function LoginContent() {
             <Button type="submit" className="w-full bg-green-700 hover:bg-green-800 text-white font-semibold" disabled={loading}>{loading ? "Logging in..." : "Login"}</Button>
           </form>
           <div className="text-right mt-2">
-            <a href="/forgot-password" className="text-green-600 text-sm hover:underline">Forgot Password?</a>
+            <Link href="/forgot-password" className="text-green-600 text-sm hover:underline">Forgot Password?</Link>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-center gap-2 pb-6">
-          <span className="text-sm text-gray-600">No account? <a href="/signup" className="text-green-700 font-semibold hover:underline">Sign up</a></span>
+          <span className="text-sm text-gray-600">No account? <Link href="/signup" className="text-green-700 font-semibold hover:underline">Sign up</Link></span>
         </CardFooter>
       </Card>
     </div>
