@@ -29,9 +29,9 @@ export async function middleware(request: NextRequest) {
 
   // Allow access to public routes
   if (publicRoutes.some(route => pathname.startsWith(route))) {
-    // If this is a reset password URL with a hash, we need to preserve it
-    if (pathname === '/reset-password' && request.url.includes('#')) {
-      return NextResponse.redirect(new URL(request.url));
+    // Special handling for reset-password - allow access regardless of session
+    if (pathname === '/reset-password') {
+      return res;
     }
     return res;
   }

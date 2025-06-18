@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Exchange the access token for a session using the existing client
+    // Verify the OTP token using the existing client
     const { data, error } = await supabase.auth.verifyOtp({
       token_hash: accessToken,
       type: 'recovery',
@@ -25,11 +25,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update the user's password using the authenticated session
+    // At this point, the client is authenticated with Supabase
+    // Now update the password
     const { error: updateError } = await supabase.auth.updateUser({
-      // @ts-ignore - The token is valid at this point
-      access_token: accessToken,
-      password: password,
+      password: password
     });
 
     if (updateError) {
@@ -39,6 +38,9 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Sign out after password reset
+    await supabase.auth.signOut();
 
     return NextResponse.json({ success: true });
   } catch (err) {
