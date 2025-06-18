@@ -8,10 +8,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    // Set your app's reset password redirect URL
-    const redirectTo = process.env.NEXT_PUBLIC_SITE_URL
-      ? `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`
-      : 'http://localhost:3000/reset-password';
+    // Get the base URL for the reset password link
+    // Use Vercel's environment variables if available, otherwise fall back to NEXT_PUBLIC_SITE_URL or localhost
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      
+    const redirectTo = `${baseUrl}/reset-password`;
+    console.log('Sending password reset email with redirect URL:', redirectTo);
 
     // Send the password reset email
     const { error } = await supabase.auth.resetPasswordForEmail(email, {

@@ -10,9 +10,25 @@ const publicRoutes = [
   '/reset-password',
   '/favicon.ico',
   '/_next',
-  '/api/auth',
+  '/api/auth/request-password-reset',
+  '/api/auth/reset-password',
   '/api/public'
 ];
+
+// Helper function to check if a path is public
+function isPublicPath(pathname: string): boolean {
+  // Check exact matches
+  if (publicRoutes.includes(pathname)) return true;
+  
+  // Check path prefixes
+  return publicRoutes.some(route => {
+    // For paths that should match exactly
+    if (!route.endsWith('*') && pathname === route) return true;
+    // For paths that should match a prefix
+    if (route.endsWith('*') && pathname.startsWith(route.slice(0, -1))) return true;
+    return false;
+  });
+}
 
 export async function middleware(request: NextRequest) {
   console.log('Middleware triggered for path:', request.nextUrl.pathname);
@@ -25,17 +41,9 @@ export async function middleware(request: NextRequest) {
     pathname === route || pathname.startsWith(route.replace(/\*$/, ''))
   ));
 
-  // Check if the current path is public
-  const isPublicRoute = publicRoutes.some(route => {
-    // For exact matches
-    if (pathname === route) return true;
-    // For path prefixes (like /api/auth/...)
-    if (route.endsWith('*') && pathname.startsWith(route.slice(0, -1))) return true;
-    return false;
-  });
-
   // If it's a public route, allow access
-  if (isPublicRoute) {
+  if (isPublicPath(pathname)) {
+    console.log(`Allowing access to public route: ${pathname}`);
     return res;
   }
 
