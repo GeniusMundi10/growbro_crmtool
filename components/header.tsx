@@ -274,12 +274,15 @@ export default function Header({ title }: HeaderProps) {
               </div>
               
               <div className="p-2 pt-0">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start rounded-lg py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
-                >
-                  Upgrade to Pro
-                </Button>
+                <Link href="/billing/pricing-plans" passHref legacyBehavior>
+  <Button 
+    asChild
+    variant="ghost" 
+    className="w-full justify-start rounded-lg py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+  >
+    <a>Upgrade to Pro</a>
+  </Button>
+</Link>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   className="rounded-lg cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
