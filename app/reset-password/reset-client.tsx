@@ -104,8 +104,30 @@ export default function ResetClient() {
         <div className="text-red-500">{error || 'Invalid or expired reset link.'}</div>
       )}
       {status === 'valid' && (
-        <form>
-          {/* Your password form fields here */}
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setLoading(true);
+          setError(null);
+          if (password !== confirmPassword) {
+            setError("Passwords do not match.");
+            setLoading(false);
+            return;
+          }
+          if (password.length < 8) {
+            setError("Password must be at least 8 characters.");
+            setLoading(false);
+            return;
+          }
+          const { error: updateError } = await supabase.auth.updateUser({ password });
+          if (updateError) {
+            setError(updateError.message || "Failed to update password.");
+            setLoading(false);
+            return;
+          }
+          toast("Password updated successfully! Please log in with your new password.");
+          setLoading(false);
+          router.push("/login");
+        }}>
           <Label htmlFor="password">New password</Label>
           <Input
             id="password"
