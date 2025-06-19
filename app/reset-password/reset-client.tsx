@@ -58,21 +58,22 @@ export default function ResetClient() {
           throw new Error('Invalid or expired reset link');
         }
 
-        console.log('Setting session with tokens...');
+        console.log('Verifying OTP for password recovery...');
         
-        // Set the session using the tokens from the URL
-        const { data, error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        });
+        // Extract email for verifyOtp
+        const email = params.get('email') || searchParams.get('email');
+        // Use verifyOtp instead of setSession
+        const verifyOtpParams: any = {
+          type: 'recovery',
+          token: accessToken,
+        };
+        if (email) verifyOtpParams.email = email;
+        const { data, error: otpError } = await supabase.auth.verifyOtp(verifyOtpParams);
 
-        console.log('Session set response:', { 
-          data: data ? 'Session data received' : 'No session data',
-          error: sessionError ? sessionError.message : 'No error'
-        });
+        console.log('OTP verification response:', { data, error: otpError });
 
-        if (sessionError) {
-          console.error('Error setting session:', sessionError);
+        if (otpError) {
+          console.error('Error verifying OTP:', otpError);
           throw new Error('Failed to verify reset link. Please request a new one.');
         }
 
