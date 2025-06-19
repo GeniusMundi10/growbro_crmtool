@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,6 +8,10 @@ export async function POST(req: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
+
+    // Create a Supabase client
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
     // Get the base URL for the reset password link
     // Use Vercel's environment variables if available, otherwise fall back to NEXT_PUBLIC_SITE_URL or localhost
@@ -18,16 +23,28 @@ export async function POST(req: NextRequest) {
     console.log('Sending password reset email with redirect URL:', redirectTo);
 
     // Send the password reset email
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectTo
     });
 
+    console.log('Password reset response:', { data, error });
+
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: error.message || 'Failed to send password reset email' }, 
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ 
+      success: true,
+      message: 'Password reset email sent. Please check your inbox.' 
+    });
   } catch (err) {
-    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
+    console.error('Error in password reset request:', err);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred. Please try again later.' }, 
+      { status: 500 }
+    );
   }
 }

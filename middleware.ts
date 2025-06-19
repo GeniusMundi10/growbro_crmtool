@@ -11,21 +11,23 @@ const publicRoutes = [
   '/favicon.ico',
   '/_next',
   '/api/auth/request-password-reset',
-  '/api/auth/reset-password',
   '/api/public'
 ];
 
 // Helper function to check if a path is public
 function isPublicPath(pathname: string): boolean {
+  // Normalize the pathname by removing any query parameters or hash fragments
+  const normalizedPath = pathname.split('?')[0].split('#')[0];
+  
   // Check exact matches
-  if (publicRoutes.includes(pathname)) return true;
+  if (publicRoutes.includes(normalizedPath)) return true;
   
   // Check path prefixes
   return publicRoutes.some(route => {
     // For paths that should match exactly
-    if (!route.endsWith('*') && pathname === route) return true;
+    if (!route.endsWith('*') && normalizedPath === route) return true;
     // For paths that should match a prefix
-    if (route.endsWith('*') && pathname.startsWith(route.slice(0, -1))) return true;
+    if (route.endsWith('*') && normalizedPath.startsWith(route.slice(0, -1))) return true;
     return false;
   });
 }

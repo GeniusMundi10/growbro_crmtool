@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,28 +16,58 @@ export default function ResetPasswordPage() {
   const [status, setStatus] = useState<"verifying" | "valid" | "invalid">("verifying");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClientComponentClient();
 
   // Handle the password reset token when the component mounts
   useEffect(() => {
     const handleResetPassword = async () => {
       try {
-        // Get the access token from the URL hash
+        setLoading(true);
+        setStatus('verifying');
+        setError(null);
+
+        // Get the access token from the URL hash or query params
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
+        const accessToken = params.get('access_token') || searchParams.get('access_token');
+        const refreshToken = params.get('refresh_token') || searchParams.get('refresh_token');
         const type = params.get('type');
+        const next = searchParams.get('next') || '/dashboard';
+
+        console.log('Reset password params:', { 
+          accessToken: accessToken ? '***' : 'missing', 
+          refreshToken: refreshToken ? '***' : 'missing',
+          type,
+          next
+        });
 
         if (type !== 'recovery' || !accessToken) {
+          const errorMsg = !accessToken ? 'Missing access token' : `Invalid type: ${type}`;
+          console.error('Invalid reset link:', errorMsg);
           throw new Error('Invalid or expired reset link');
         }
 
+        console.log('Setting session with tokens...');
+        
         // Set the session using the tokens from the URL
-        const { error: sessionError } = await supabase.auth.setSession({
+        const { data, error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || ''
         });
+
+        console.log('Session set response:', { 
+          data: data ? 'Session data received' : 'No session data',
+          error: sessionError ? sessionError.message : 'No error'
+        });
+
+        if (sessionError) {
+          console.error('Error setting session:', sessionError);
+          throw new Error('Failed to verify reset link. Please request a new one.');
+        }
+
+        // Clear the URL hash/query params after successful session set
+        window.history.replaceState({}, document.title, '/reset-password');
 
         if (sessionError) throw sessionError;
 
@@ -52,7 +82,7 @@ export default function ResetPasswordPage() {
     };
 
     handleResetPassword();
-  }, [supabase.auth]);
+  }, [supabase.auth, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,24 +106,40 @@ export default function ResetPasswordPage() {
       setLoading(true);
       setError(null);
       
-      // Update the user's password
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password
+      console.log('Attempting to update password...');
+      
+      // First verify we still have a valid session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Your session has expired. Please request a new password reset link.');
+      }
+      
+      // Update the password
+      const { error } = await supabase.auth.updateUser({
+        password: password,
       });
 
-      if (updateError) throw updateError;
-
-      toast.success('Password updated successfully! Redirecting to login...');
+      if (error) throw error;
       
-      // Sign out and redirect to login
+      console.log('Password updated successfully');
+      toast.success("Password updated successfully! You can now log in with your new password.");
+      
+      // Sign out the user after password reset
       await supabase.auth.signOut();
+      
+      // Redirect to login after a short delay
       setTimeout(() => {
-        router.push('/login');
+        router.push("/login");
       }, 2000);
       
     } catch (error: any) {
-      console.error('Error updating password:', error);
-      setError(error.message || 'An error occurred while updating your password');
+      console.error("Error updating password:", error);
+      const errorMessage = error.message.includes('invalid_grant') 
+        ? 'Your password reset link has expired. Please request a new one.'
+        : error.message || 'An error occurred while updating your password';
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
