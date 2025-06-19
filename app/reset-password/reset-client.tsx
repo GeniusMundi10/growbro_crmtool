@@ -35,6 +35,14 @@ export default function ResetClient() {
         const type = params.get('type');
         const next = searchParams.get('next') || '/dashboard';
 
+        // DEBUG LOGGING
+        console.log('DEBUG: accessToken:', accessToken);
+        console.log('DEBUG: refreshToken:', refreshToken);
+        console.log('DEBUG: type:', type);
+        console.log('DEBUG: full window.location.href:', window.location.href);
+        console.log('DEBUG: full window.location.hash:', window.location.hash);
+        console.log('DEBUG: full searchParams:', searchParams.toString());
+
         console.log('Reset password params:', { 
           accessToken: accessToken ? '***' : 'missing', 
           refreshToken: refreshToken ? '***' : 'missing',
