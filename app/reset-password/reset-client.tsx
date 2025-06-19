@@ -94,17 +94,17 @@ export default function ResetClient() {
   // For brevity, not including the full form markup here, but you should move it from your original page.tsx
 
   return (
-    <div>
-      {/* Render your password reset form and status here */}
-      {/* Example status handling: */}
-      {status === 'verifying' && (
-        <div className="flex items-center gap-2"><Loader2 className="animate-spin" /> Verifying link…</div>
-      )}
-      {status === 'invalid' && (
-        <div className="text-red-500">{error || 'Invalid or expired reset link.'}</div>
-      )}
-      {status === 'valid' && (
-        <form onSubmit={async (e) => {
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-8 flex flex-col gap-6">
+        <h1 className="text-2xl font-bold text-center mb-2">Reset your password</h1>
+        {status === 'verifying' && (
+          <div className="flex items-center gap-2 justify-center text-gray-500"><Loader2 className="animate-spin" /> Verifying link…</div>
+        )}
+        {status === 'invalid' && (
+          <div className="text-red-500 text-center">{error || 'Invalid or expired reset link.'}</div>
+        )}
+        {status === 'valid' && (
+          <form className="flex flex-col gap-4" onSubmit={async (e) => {
           e.preventDefault();
           setLoading(true);
           setError(null);
@@ -149,6 +149,7 @@ export default function ResetClient() {
           </Button>
         </form>
       )}
+      </div>
     </div>
   );
 }
