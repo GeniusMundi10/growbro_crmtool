@@ -27,13 +27,15 @@ export default function ResetClient() {
         setStatus('verifying');
         setError(null);
 
-        // Get the access token from the URL hash or query params
+        // Robustly get parameters from both hash and query string
         const hash = window.location.hash.substring(1);
         const params = new URLSearchParams(hash);
+
         const accessToken = params.get('access_token') || searchParams.get('access_token');
-        const refreshToken = params.get('refresh_token') || searchParams.get('refresh_token');
-        const type = params.get('type');
-        const next = searchParams.get('next') || '/dashboard';
+        let refreshToken = params.get('refresh_token') || searchParams.get('refresh_token');
+        if (refreshToken === "") refreshToken = null;
+        const type = params.get('type') || searchParams.get('type');
+        const next = params.get('next') || searchParams.get('next') || '/dashboard';
 
         // DEBUG LOGGING
         console.log('DEBUG: accessToken:', accessToken);
