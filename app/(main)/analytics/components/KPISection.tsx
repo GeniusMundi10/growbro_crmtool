@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { MessageSquare, Users, User, Clock } from "lucide-react";
+import { MessageSquare, Users, User, Clock, ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface KPISectionProps {
   totalMessages: number;
@@ -8,6 +8,8 @@ interface KPISectionProps {
   totalLeads: number;
   avgConversationDuration: number;
   period: string;
+  goodChats: number;
+  badChats: number;
   trendMessages?: number;
   trendConversations?: number;
   trendLeads?: number;
@@ -22,13 +24,15 @@ const KPISection: React.FC<KPISectionProps> = ({
   totalLeads,
   avgConversationDuration,
   period,
+  goodChats,
+  badChats,
   trendMessages,
   trendConversations,
   trendLeads,
   trendDuration,
 }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
       <Card>
         <CardHeader>
           <CardTitle>Total Messages ({period})</CardTitle>
@@ -87,6 +91,26 @@ const KPISection: React.FC<KPISectionProps> = ({
               {trendDuration <= 0 ? `${trendDuration}` : `+${trendDuration}`}
             </span>
           )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Good Chats</CardTitle>
+          <CardDescription>Conversations rated positively</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center gap-3">
+          <ThumbsUp className="w-8 h-8 text-green-500" />
+          <span className="text-2xl font-bold">{goodChats}</span>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Bad Chats</CardTitle>
+          <CardDescription>Conversations rated negatively</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center gap-3">
+          <ThumbsDown className="w-8 h-8 text-red-500" />
+          <span className="text-2xl font-bold">{badChats}</span>
         </CardContent>
       </Card>
     </div>

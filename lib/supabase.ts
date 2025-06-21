@@ -1209,6 +1209,17 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
   return endUserIds.length;
 }
 
+// Fetch feedback stats (good/bad/none) for a given AI and period
+export async function getDashboardFeedbackStats(aiId: string, fromDate: string, toDate: string): Promise<{ up: number; down: number; none: number }> {
+  // Compose query params
+  const params = new URLSearchParams({ ai_id: aiId });
+  if (fromDate) params.append('from_date', fromDate);
+  if (toDate) params.append('to_date', toDate);
+  const res = await fetch(`${process.env.NEXT_PUBLIC_WHATSAPP_AGENT_API_URL || ''}/api/analytics/feedback?${params.toString()}`);
+  if (!res.ok) throw new Error('Failed to fetch feedback stats');
+  return await res.json();
+}
+
 // Get user segment distribution: counts of new vs. returning users for a given AI and period
 // New: user's first conversation is in the period; Returning: first conversation is before period but has a conversation in the period
 export async function getUserSegmentDistribution(agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {

@@ -69,7 +69,12 @@ export default function AnalyticsPage() {
     totalConversations: number;
     totalLeads: number;
     avgConversationDuration: number;
+    trendMessages?: number;
+    trendConversations?: number;
+    trendLeads?: number;
+    trendDuration?: number;
   } | null>(null);
+  const [feedbackStats, setFeedbackStats] = useState<{ up: number; down: number; none: number }>({ up: 0, down: 0, none: 0 });
   const [userSegment, setUserSegment] = useState<{ newUsers: number; returningUsers: number } | null>(null);
   // Funnel data
   const [funnelData, setFunnelData] = useState<{ startedCount: number; engagedCount: number; leadsCount: number } | null>(null);
@@ -121,7 +126,7 @@ export default function AnalyticsPage() {
           prevFromDate = prevMonthAgo.toISOString().slice(0, 10)
           prevToDate = monthAgo.toISOString().slice(0, 10)
         }
-        const [kpi, prevKpi, segment] = await Promise.all([
+        const [kpi, prevKpi, segment, feedback] = await Promise.all([
           getDashboardKPIStats({
             aiId: selectedAIId,
             fromDate: fromDate!,
@@ -132,7 +137,8 @@ export default function AnalyticsPage() {
             fromDate: prevFromDate!,
             toDate: prevToDate!
           }),
-          getUserSegmentDistribution(selectedAIId, fromDate!, toDate!)
+          getUserSegmentDistribution(selectedAIId, fromDate!, toDate!),
+          getDashboardFeedbackStats(selectedAIId, fromDate!, toDate!)
         ]);
         setKpiStats({ 
           totalMessages: kpi.totalMessages,
@@ -144,6 +150,7 @@ export default function AnalyticsPage() {
           trendLeads: kpi.totalLeads - (prevKpi?.totalLeads ?? 0),
           trendDuration: kpi.avgConversationDuration - (prevKpi?.avgConversationDuration ?? 0)
         });
+        setFeedbackStats(feedback);
         let rows: DashboardMessageSummary[] = [];
         let uniqueLeads = 0;
         if (selectedAIId === "__all__") {
@@ -261,14 +268,16 @@ export default function AnalyticsPage() {
       </div>
       <div className="mx-auto py-8 max-w-2xl md:max-w-3xl xl:max-w-5xl 2xl:max-w-7xl">
         <KPISection
-          totalMessages={kpiStats?.totalMessages ?? 0}
-          totalConversations={kpiStats?.totalConversations ?? 0}
-          totalLeads={uniqueLeadsCount ?? 0}
-          avgConversationDuration={kpiStats?.avgConversationDuration ?? 0}
+          totalMessages={kpiStats?.totalMessages || 0}
+          totalConversations={kpiStats?.totalConversations || 0}
+          totalLeads={kpiStats?.totalLeads || 0}
+          avgConversationDuration={kpiStats?.avgConversationDuration || 0}
           period={period}
+          goodChats={feedbackStats.up}
+          badChats={feedbackStats.down}
           trendMessages={kpiStats?.trendMessages}
           trendConversations={kpiStats?.trendConversations}
-          trendLeads={uniqueLeadsCount - (prevUniqueLeadsCount ?? 0)}
+          trendLeads={kpiStats?.trendLeads}
           trendDuration={kpiStats?.trendDuration}
         />
         {/* Pie Charts Side by Side */}
