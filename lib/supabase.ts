@@ -1211,13 +1211,23 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
 
 // Fetch feedback stats (good/bad/none) for a given AI and period
 export async function getDashboardFeedbackStats(aiId: string, fromDate: string, toDate: string): Promise<{ up: number; down: number; none: number }> {
-  // Compose query params
-  const params = new URLSearchParams({ ai_id: aiId });
-  if (fromDate) params.append('from_date', fromDate);
-  if (toDate) params.append('to_date', toDate);
-  const res = await fetch(`${process.env.NEXT_PUBLIC_WHATSAPP_AGENT_API_URL || ''}/api/analytics/feedback?${params.toString()}`);
-  if (!res.ok) throw new Error('Failed to fetch feedback stats');
-  return await res.json();
+  let query = supabase
+    .from('conversations')
+    .select('feedback')
+    .gte('started_at', fromDate)
+    .lte('started_at', toDate);
+  if (aiId && aiId !== '__all__') {
+    query = query.eq('ai_id', aiId);
+  }
+  const { data, error } = await query;
+  if (error) throw error;
+  let up = 0, down = 0, none = 0;
+  (data || []).forEach((row: any) => {
+    if (row.feedback === 'up') up += 1;
+    else if (row.feedback === 'down') down += 1;
+    else none += 1;
+  });
+  return { up, down, none };
 }
 
 // Get user segment distribution: counts of new vs. returning users for a given AI and period
