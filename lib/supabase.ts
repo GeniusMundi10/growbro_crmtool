@@ -1321,7 +1321,7 @@ export async function getUserSegmentDistribution(agentId: string, fromDate: stri
   // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
-    .select('end_user_id, timestamp')
+    .select('conversation_id, timestamp')
     .eq('sender', 'user')
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
