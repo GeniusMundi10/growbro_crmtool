@@ -1144,15 +1144,16 @@ export async function getFunnelData(agentId: string, fromDate: string, toDate: s
   if (agentId !== '__all__') {
     convoQuery = convoQuery.eq('ai_id', agentId);
   }
-  const { data: conversations, error: convoError } = await convoQuery;
+  const { data: startedConvos, error: convoError } = await convoQuery;
   if (convoError) throw convoError;
-  const startedCount = (conversations || []).length;
+  const startedConvoIds = (startedConvos || []).map((c: any) => c.id);
+  const startedCount = startedConvoIds.length;
 
-  // 2. Engaged Conversations: >1 user message
+  // 2. Engaged Conversations: >1 user message (ONLY for startedConvos)
   let msgQueryEngaged = supabase
     .from('messages')
     .select('conversation_id, sender')
-    .in('conversation_id', convoIdsWithMessages)
+    .in('conversation_id', startedConvoIds)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId !== '__all__') {
@@ -1172,7 +1173,7 @@ export async function getFunnelData(agentId: string, fromDate: string, toDate: s
   const engagedCount = engagedConvoIds.length;
 
   // 3. Leads: unique end_user_ids from engaged conversations
-  const engagedConvos = (conversations || []).filter((c: any) => engagedConvoIds.includes(c.id));
+  const engagedConvos = (startedConvos || []).filter((c: any) => engagedConvoIds.includes(c.id));
   const uniqueLeads = Array.from(new Set(engagedConvos.map((c: any) => c.end_user_id).filter(Boolean)));
   const leadsCount = uniqueLeads.length;
 
