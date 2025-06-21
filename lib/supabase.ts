@@ -1328,16 +1328,27 @@ export async function getUserSegmentDistribution(agentId: string, fromDate: stri
   if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
   const { data: msgsInPeriod, error: msgErr } = await msgQuery;
   if (msgErr) throw msgErr;
-  const userIdsInPeriod = Array.from(new Set((msgsInPeriod || []).map((m: any) => m.end_user_id).filter(Boolean)));
-  if (userIdsInPeriod.length === 0) return { newUsers: 0, returningUsers: 0 };
+  // Get unique conversation_ids for user messages in period
+  const convoIdsInPeriod = Array.from(new Set((msgsInPeriod || []).map((m: any) => m.conversation_id)));
+  if (convoIdsInPeriod.length === 0) return { newUsers: 0, returningUsers: 0 };
+  // Join to conversations to get end_user_id
+  const { data: convos, error: convoErr } = await supabase
+    .from('conversations')
+    .select('id, end_user_id')
+    .in('id', convoIdsInPeriod);
+  if (convoErr) throw convoErr;
+  const userIdsInPeriod = Array.from(new Set((convos || []).map((c: any) => c.end_user_id).filter(Boolean)));
   let newUsers = 0, returningUsers = 0;
-  // For each user, find their first-ever user message
+  // For each user, find their first-ever user message (via all conversations)
   for (const userId of userIdsInPeriod) {
+    // Get all conversations for this user
+    const userConvos = (convos || []).filter((c: any) => c.end_user_id === userId).map((c: any) => c.id);
+    // Get all user messages for this user (across all time, all their conversations)
     let allMsgQuery = supabase
       .from('messages')
       .select('timestamp')
       .eq('sender', 'user')
-      .eq('end_user_id', userId)
+      .in('conversation_id', userConvos)
       .order('timestamp', { ascending: true })
       .limit(1);
     if (agentId && agentId !== '__all__') allMsgQuery = allMsgQuery.eq('ai_id', agentId);
