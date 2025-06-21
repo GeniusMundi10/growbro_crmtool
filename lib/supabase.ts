@@ -529,48 +529,57 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
 
 // Fetch KPI stats (totals and averages) for dashboard cards
 // Unified KPI stats: all stats computed from conversations/messages, not view
+// Unified KPI: all stats based on conversations with at least one user message in the period
 export async function getDashboardKPIStats({ aiId, fromDate, toDate }: { aiId?: string, fromDate: string, toDate: string }) {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  // 1. Find conversations whose FIRST message is in the period
-  let convoQuery = supabase
-    .from('conversations')
-    .select('id, end_user_id, ai_id')
-    .gte('started_at', fromDate)
-    .lt('started_at', dayAfterToDate);
-  if (aiId && aiId !== '__all__') convoQuery = convoQuery.eq('ai_id', aiId);
-  const { data: startedConvos, error: convoErr } = await convoQuery;
-  if (convoErr) throw convoErr;
-  const startedConvoIds = (startedConvos || []).map((c: any) => c.id);
-
-  // 2. Messages in started conversations
+  // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
-    .select('id, conversation_id, sender, timestamp')
-    .in('conversation_id', startedConvoIds);
+    .select('conversation_id, sender, timestamp')
+    .eq('sender', 'user')
+    .gte('timestamp', fromDate)
+    .lt('timestamp', dayAfterToDate);
   if (aiId && aiId !== '__all__') msgQuery = msgQuery.eq('ai_id', aiId);
-  const { data: messages, error: msgErr } = await msgQuery;
+  const { data: userMessages, error: msgErr } = await msgQuery;
   if (msgErr) throw msgErr;
-
-  const totalMessages = messages?.length || 0;
+  // 2. Get unique started conversation IDs
+  const startedConvoIds = Array.from(new Set((userMessages || []).map((m: any) => m.conversation_id)));
+  if (startedConvoIds.length === 0) {
+    return { totalMessages: 0, totalConversations: 0, totalLeads: 0, avgConversationDuration: 0 };
+  }
+  // 3. Get all messages for started conversations (for duration)
+  let allMsgQuery = supabase
+    .from('messages')
+    .select('conversation_id, sender, timestamp')
+    .in('conversation_id', startedConvoIds);
+  if (aiId && aiId !== '__all__') allMsgQuery = allMsgQuery.eq('ai_id', aiId);
+  const { data: allMessages, error: allMsgErr } = await allMsgQuery;
+  if (allMsgErr) throw allMsgErr;
+  // 4. Get conversation details (for leads)
+  const { data: convos, error: convoErr } = await supabase
+    .from('conversations')
+    .select('id, end_user_id')
+    .in('id', startedConvoIds);
+  if (convoErr) throw convoErr;
+  // 5. Compute metrics
+  const totalMessages = allMessages?.length || 0;
   const totalConversations = startedConvoIds.length;
-  const uniqueLeads = Array.from(new Set((startedConvos || []).map((c: any) => c.end_user_id).filter(Boolean)));
+  const uniqueLeads = Array.from(new Set((convos || []).map((c: any) => c.end_user_id).filter(Boolean)));
   const totalLeads = uniqueLeads.length;
-
-  // Conversation duration: difference between first and last message timestamp per conversation
+  // Conversation duration (in minutes)
   let durationSum = 0;
   let countWithDuration = 0;
-  (startedConvoIds || []).forEach(cid => {
-    const convoMsgs = (messages || []).filter((m: any) => m.conversation_id === cid);
+  startedConvoIds.forEach(cid => {
+    const convoMsgs = (allMessages || []).filter((m: any) => m.conversation_id === cid);
     if (convoMsgs.length > 1) {
       const times = convoMsgs.map((m: any) => new Date(m.timestamp).getTime());
       const min = Math.min(...times);
       const max = Math.max(...times);
-      durationSum += (max - min) / 60000; // ms to min
+      durationSum += (max - min) / 60000;
       countWithDuration++;
     }
   });
   const avgConversationDuration = countWithDuration ? durationSum / countWithDuration : 0;
-
   return {
     totalMessages,
     totalConversations,
@@ -1202,48 +1211,41 @@ export async function fetchUsersDirectly() {
 
 // Conversation Engagement Funnel: Conversations Started, Engaged, Leads
 // Unified funnel: all steps based on conversations whose FIRST message is in period
+// Unified Funnel: same base as KPI (conversations w/ at least one user message in period)
 export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  // 1. Find conversations whose FIRST message is in the period
-  let convoQuery = supabase
-    .from('conversations')
-    .select('id, end_user_id')
-    .gte('started_at', fromDate)
-    .lt('started_at', dayAfterToDate);
-  if (agentId && agentId !== '__all__') convoQuery = convoQuery.eq('ai_id', agentId);
-  const { data: startedConvos, error: convoErr } = await convoQuery;
-  if (convoErr) throw convoErr;
-  const startedConvoIds = (startedConvos || []).map((c: any) => c.id);
-  const startedCount = startedConvoIds.length;
-
-  // 2. Engaged: those with >1 user message (in period)
+  // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
-    .select('conversation_id, sender, timestamp')
-    .in('conversation_id', startedConvoIds)
+    .select('conversation_id, sender')
+    .eq('sender', 'user')
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
-  const { data: messages, error: msgErr } = await msgQuery;
+  const { data: userMessages, error: msgErr } = await msgQuery;
   if (msgErr) throw msgErr;
+  // 2. Get unique started conversation IDs
+  const startedConvoIds = Array.from(new Set((userMessages || []).map((m: any) => m.conversation_id)));
+  if (startedConvoIds.length === 0) {
+    return { startedCount: 0, engagedCount: 0, leadsCount: 0 };
+  }
+  // 3. Engaged: started conversations with >1 user message in period
   const userMsgCount: Record<string, number> = {};
-  (messages || []).forEach((msg: any) => {
-    if (msg.sender === 'user') {
-      userMsgCount[msg.conversation_id] = (userMsgCount[msg.conversation_id] || 0) + 1;
-    }
+  (userMessages || []).forEach((msg: any) => {
+    userMsgCount[msg.conversation_id] = (userMsgCount[msg.conversation_id] || 0) + 1;
   });
   const engagedConvoIds = Object.keys(userMsgCount).filter(cid => userMsgCount[cid] > 1);
-  const engagedCount = engagedConvoIds.length;
-
-  // 3. Leads: unique end_user_id from engaged conversations
-  const engagedConvos = (startedConvos || []).filter((c: any) => engagedConvoIds.includes(c.id));
-  const uniqueLeads = Array.from(new Set(engagedConvos.map((c: any) => c.end_user_id).filter(Boolean)));
-  const leadsCount = uniqueLeads.length;
-
+  // 4. Leads: unique end_user_id from started conversations
+  const { data: convos, error: convoErr } = await supabase
+    .from('conversations')
+    .select('id, end_user_id')
+    .in('id', startedConvoIds);
+  if (convoErr) throw convoErr;
+  const leadsSet = new Set((convos || []).map((c: any) => c.end_user_id).filter(Boolean));
   return {
-    startedCount,
-    engagedCount,
-    leadsCount,
+    startedCount: startedConvoIds.length,
+    engagedCount: engagedConvoIds.length,
+    leadsCount: leadsSet.size,
   };
 }
 
@@ -1313,60 +1315,43 @@ export async function getDashboardFeedbackStats(aiId: string, fromDate: string, 
 
 // Get user segment distribution: counts of new vs. returning users for a given AI and period
 // New: user's first conversation is in the period; Returning: first conversation is before period but has a conversation in the period
+// User segment distribution: new vs returning users (based on user messages)
 export async function getUserSegmentDistribution(agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
-  // 1. Get all conversations for the AI (with end_user_id, started_at)
-  let query = supabase
-    .from('conversations')
-    .select('end_user_id, started_at')
-    .not('end_user_id', 'is', null);
-  if (agentId !== "__all__") {
-    query = query.eq('ai_id', agentId);
-  }
-  const { data: conversations, error } = await query;
-  if (error) throw error;
-  if (!conversations) return { newUsers: 0, returningUsers: 0 };
-
-  // 2. Build map: end_user_id -> [all their conversation dates]
-  const userConvoDates: Record<string, string[]> = {};
-  conversations.forEach((conv: any) => {
-    const { end_user_id, started_at } = conv;
-    if (!end_user_id) return;
-    if (!userConvoDates[end_user_id]) userConvoDates[end_user_id] = [];
-    userConvoDates[end_user_id].push(started_at);
-  });
-
-  let newUsers = 0;
-  let returningUsers = 0;
-  let from: Date;
-  let to: Date;
-  if (fromDate === toDate && /^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
-    // Day-level query: cover the entire day
-    from = new Date(fromDate + 'T00:00:00.000Z');
-    to = new Date(fromDate + 'T23:59:59.999Z');
-  } else {
-    from = new Date(fromDate);
-    to = new Date(toDate);
-  }
-
-  console.log('[DEBUG][User Segments] fromDate:', fromDate, 'toDate:', toDate);
-  Object.entries(userConvoDates).forEach(([userId, dates]) => {
-    const sorted = dates.slice().sort();
-    const firstDate = new Date(sorted[0]);
-    const allDates = dates.map(dateStr => new Date(dateStr));
-    const hasConvoInPeriod = allDates.some(dt => dt >= from && dt <= to);
-    console.log(`[DEBUG][User Segments] userId: ${userId}`);
-    console.log('  All conversation dates:', allDates);
-    console.log('  First conversation date:', firstDate);
-    console.log('  Has conversation in period:', hasConvoInPeriod);
-    if (!hasConvoInPeriod) return;
-    if (firstDate >= from && firstDate <= to) {
-      console.log('  => Counted as NEW user');
-      newUsers += 1;
-    } else if (firstDate < from) {
-      console.log('  => Counted as RETURNING user');
-      returningUsers += 1;
+  const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  // 1. Get all user messages in the period
+  let msgQuery = supabase
+    .from('messages')
+    .select('end_user_id, timestamp')
+    .eq('sender', 'user')
+    .gte('timestamp', fromDate)
+    .lt('timestamp', dayAfterToDate);
+  if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
+  const { data: msgsInPeriod, error: msgErr } = await msgQuery;
+  if (msgErr) throw msgErr;
+  const userIdsInPeriod = Array.from(new Set((msgsInPeriod || []).map((m: any) => m.end_user_id).filter(Boolean)));
+  if (userIdsInPeriod.length === 0) return { newUsers: 0, returningUsers: 0 };
+  let newUsers = 0, returningUsers = 0;
+  // For each user, find their first-ever user message
+  for (const userId of userIdsInPeriod) {
+    let allMsgQuery = supabase
+      .from('messages')
+      .select('timestamp')
+      .eq('sender', 'user')
+      .eq('end_user_id', userId)
+      .order('timestamp', { ascending: true })
+      .limit(1);
+    if (agentId && agentId !== '__all__') allMsgQuery = allMsgQuery.eq('ai_id', agentId);
+    const { data: earliestMsgs, error: earliestErr } = await allMsgQuery;
+    if (earliestErr) throw earliestErr;
+    if (earliestMsgs && earliestMsgs.length > 0) {
+      const firstMsgTime = new Date(earliestMsgs[0].timestamp);
+      if (firstMsgTime >= new Date(fromDate) && firstMsgTime < new Date(dayAfterToDate)) {
+        newUsers++;
+      } else if (firstMsgTime < new Date(fromDate)) {
+        returningUsers++;
+      }
     }
-  });
+  }
   return { newUsers, returningUsers };
 }
 
