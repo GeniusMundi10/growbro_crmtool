@@ -1133,6 +1133,10 @@ export async function getFunnelData(agentId: string, fromDate: string, toDate: s
 
 // Conversation Engagement Funnel: Conversations Started, Engaged, Leads
 export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
+  // Calculate the day after toDate to include the entire last day in the period
+  const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
   // 1. Get all conversations started in the period
   let convoQuery = supabase
     .from('conversations')
