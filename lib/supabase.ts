@@ -505,7 +505,11 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
     // 3. Compute stats
     const message_count = userMessages?.length || 0;
     const conversation_count = convoIds.length;
-    const total_leads = Array.from(new Set((convos || []).map((c: any) => c.end_user_id).filter(Boolean))).length;
+    // LEADS: unique end_user_id for this day
+    const leadsForDay = Array.from(new Set((convos || []).map((c: any) => c.end_user_id).filter(Boolean)));
+    const total_leads = leadsForDay.length;
+    // For daily leads bar chart: this is the correct per-day value
+    const new_leads = total_leads;
     // Duration: for each conversation, use first and last user message timestamps in that day
     let min_conversation_duration = null;
     let max_conversation_duration = null;
@@ -534,7 +538,7 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
       message_count,
       conversation_count,
       total_leads,
-      new_leads: 0, // Not computed here
+      new_leads,
       first_message_time: null,
       last_message_time: null,
       min_conversation_duration,
