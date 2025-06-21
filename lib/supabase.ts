@@ -464,37 +464,57 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
   const results: DashboardMessageSummary[] = [];
   for (const day of days) {
     const dayAfter = new Date(new Date(day).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    // Conversations whose FIRST message is on this day
-    let convoQuery = supabase
-      .from('conversations')
-      .select('id, end_user_id, ai_id, started_at')
-      .gte('started_at', day)
-      .lt('started_at', dayAfter);
-    if (agentId && agentId !== '__all__') convoQuery = convoQuery.eq('ai_id', agentId);
-    const { data: convos, error: convErr } = await convoQuery;
-    if (convErr) throw convErr;
-    const convoIds = (convos || []).map((c: any) => c.id);
-    // Messages for those convos
+    // 1. Get all user messages in this day
     let msgQuery = supabase
       .from('messages')
       .select('id, conversation_id, sender, timestamp')
-      .in('conversation_id', convoIds);
+      .eq('sender', 'user')
+      .gte('timestamp', day)
+      .lt('timestamp', dayAfter);
     if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
-    const { data: messages, error: msgErr } = await msgQuery;
+    const { data: userMessages, error: msgErr } = await msgQuery;
     if (msgErr) throw msgErr;
-    // Compute stats
-    const message_count = messages?.length || 0;
+    // Unique conversations with at least one user message this day
+    const convoIds = Array.from(new Set((userMessages || []).map((m: any) => m.conversation_id)));
+    if (convoIds.length === 0) {
+      results.push({
+        agent_id: agentId,
+        client_id: '',
+        ai_name: '',
+        day,
+        message_count: 0,
+        conversation_count: 0,
+        total_leads: 0,
+        new_leads: 0,
+        first_message_time: null,
+        last_message_time: null,
+        min_conversation_duration: null,
+        max_conversation_duration: null,
+        avg_conversation_duration: null,
+        avg_messages_per_conversation: null,
+        avg_messages_per_lead: null,
+      });
+      continue;
+    }
+    // 2. Join to conversations to get user identity
+    const { data: convos, error: convErr } = await supabase
+      .from('conversations')
+      .select('id, end_user_id')
+      .in('id', convoIds);
+    if (convErr) throw convErr;
+    // 3. Compute stats
+    const message_count = userMessages?.length || 0;
     const conversation_count = convoIds.length;
     const total_leads = Array.from(new Set((convos || []).map((c: any) => c.end_user_id).filter(Boolean))).length;
-    // Duration
+    // Duration: for each conversation, use first and last user message timestamps in that day
     let min_conversation_duration = null;
     let max_conversation_duration = null;
     let avg_conversation_duration = null;
     const durations: number[] = [];
-    (convoIds || []).forEach(cid => {
-      const convoMsgs = (messages || []).filter((m: any) => m.conversation_id === cid);
-      if (convoMsgs.length > 1) {
-        const times = convoMsgs.map((m: any) => new Date(m.timestamp).getTime());
+    convoIds.forEach(cid => {
+      const msgs = (userMessages || []).filter((m: any) => m.conversation_id === cid);
+      if (msgs.length > 1) {
+        const times = msgs.map((m: any) => new Date(m.timestamp).getTime());
         const min = Math.min(...times);
         const max = Math.max(...times);
         const duration = (max - min) / 60000;
