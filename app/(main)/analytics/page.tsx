@@ -28,7 +28,7 @@ import LeaderboardTable from "./components/LeaderboardTable";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Header from "@/components/header"
 import { getCurrentUser } from "@/lib/auth";
-import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats, getUserSegmentDistribution, getFunnelData } from "@/lib/supabase"
+import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, getUniqueLeadsForPeriod, getDashboardKPIStats, getUserSegmentDistribution, getFunnelData, getDashboardFeedbackStats } from "@/lib/supabase"
 import KPISection from "./components/KPISection"
 import ConversationDurationPieChart from "./components/ConversationDurationPieChart"
 import UserSegmentPieChart from "./components/UserSegmentPieChart"
@@ -126,7 +126,14 @@ export default function AnalyticsPage() {
           prevFromDate = prevMonthAgo.toISOString().slice(0, 10)
           prevToDate = monthAgo.toISOString().slice(0, 10)
         }
-        const [kpi, prevKpi, segment, feedback] = await Promise.all([
+        let feedback = { up: 0, down: 0, none: 0 };
+        try {
+          feedback = await getDashboardFeedbackStats(selectedAIId, fromDate!, toDate!);
+        } catch (e) {
+          // If feedback stats fail, fallback to zeros
+          feedback = { up: 0, down: 0, none: 0 };
+        }
+        const [kpi, prevKpi, segment] = await Promise.all([
           getDashboardKPIStats({
             aiId: selectedAIId,
             fromDate: fromDate!,
@@ -137,8 +144,7 @@ export default function AnalyticsPage() {
             fromDate: prevFromDate!,
             toDate: prevToDate!
           }),
-          getUserSegmentDistribution(selectedAIId, fromDate!, toDate!),
-          getDashboardFeedbackStats(selectedAIId, fromDate!, toDate!)
+          getUserSegmentDistribution(selectedAIId, fromDate!, toDate!)
         ]);
         setKpiStats({ 
           totalMessages: kpi.totalMessages,
