@@ -1116,24 +1116,9 @@ export async function fetchUsersDirectly() {
 
 
 
-export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
-  // Calculate day after toDate for inclusive range
-  const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-  // 1. Conversations Started (only those with at least one message)
-  // Get all conversation IDs that have at least one message in the period
-  let msgQuery = supabase
-    .from('messages')
-    .select('conversation_id')
-    .gte('timestamp', fromDate)
-    .lt('timestamp', dayAfterToDate);
-  if (agentId !== '__all__') {
-    msgQuery = msgQuery.eq('ai_id', agentId);
-}
 
 // Conversation Engagement Funnel: Conversations Started, Engaged, Leads
-export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
-  // Calculate the day after toDate to include the entire last day in the period
+export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {  // Calculate the day after toDate to include the entire last day in the period
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 10);
