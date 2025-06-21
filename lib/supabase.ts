@@ -1116,31 +1116,15 @@ export async function fetchUsersDirectly() {
 
 
 
-// Conversation Engagement Funnel: Conversations Started, Engaged, Leads
 export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
   // Calculate day after toDate for inclusive range
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-  // 1. Conversations Started
-  let convoQuery = supabase
-    .from('conversations')
-    .select('id, end_user_id')
-    .gte('started_at', fromDate)
-    .lt('started_at', dayAfterToDate);
-  if (agentId !== '__all__') {
-    convoQuery = convoQuery.eq('ai_id', agentId);
-  }
-  const { data: conversations, error: convoError } = await convoQuery;
-  if (convoError) throw convoError;
-  const conversationIds = (conversations || []).map((c: any) => c.id);
-  const startedCount = conversationIds.length;
-
-  // 2. Engaged Conversations: >1 user message
+  // 1. Conversations Started (only those with at least one message)
+  // Get all conversation IDs that have at least one message in the period
   let msgQuery = supabase
     .from('messages')
-    .select('conversation_id, sender')
-    .in('conversation_id', conversationIds)
-    .eq('sender', 'user')
+    .select('conversation_id')
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId !== '__all__') {
@@ -1148,10 +1132,39 @@ export async function getFunnelData(agentId: string, fromDate: string, toDate: s
   }
   const { data: messages, error: msgError } = await msgQuery;
   if (msgError) throw msgError;
-  // Group by conversation_id and count user messages
+  const convoIdsWithMessages = Array.from(new Set((messages || []).map((msg: any) => msg.conversation_id)));
+
+  // Now get conversations started in period AND with at least one message
+  let convoQuery = supabase
+    .from('conversations')
+    .select('id, end_user_id')
+    .gte('started_at', fromDate)
+    .lt('started_at', dayAfterToDate)
+    .in('id', convoIdsWithMessages);
+  if (agentId !== '__all__') {
+    convoQuery = convoQuery.eq('ai_id', agentId);
+  }
+  const { data: conversations, error: convoError } = await convoQuery;
+  if (convoError) throw convoError;
+  const startedCount = (conversations || []).length;
+
+  // 2. Engaged Conversations: >1 user message
+  let msgQueryEngaged = supabase
+    .from('messages')
+    .select('conversation_id, sender')
+    .in('conversation_id', convoIdsWithMessages)
+    .gte('timestamp', fromDate)
+    .lt('timestamp', dayAfterToDate);
+  if (agentId !== '__all__') {
+    msgQueryEngaged = msgQueryEngaged.eq('ai_id', agentId);
+  }
+  const { data: engagedMessages, error: engagedMsgError } = await msgQueryEngaged;
+  if (engagedMsgError) throw engagedMsgError;
   const userMsgCount: Record<string, number> = {};
-  (messages || []).forEach((msg: any) => {
-    userMsgCount[msg.conversation_id] = (userMsgCount[msg.conversation_id] || 0) + 1;
+  (engagedMessages || []).forEach((msg: any) => {
+    if (msg.sender === 'user') {
+      userMsgCount[msg.conversation_id] = (userMsgCount[msg.conversation_id] || 0) + 1;
+    }
   });
   const engagedConvoIds = Object.keys(userMsgCount).filter(
     (cid) => userMsgCount[cid] > 1
