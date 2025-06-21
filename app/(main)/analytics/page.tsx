@@ -181,17 +181,23 @@ export default function AnalyticsPage() {
             }
           });
           rows = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
-          // For leaderboard: aggregate per-AI totals
-          const aiTotals = ais.map((ai: any, idx: number) => {
-            const aiRows = allRows[idx] || [];
+          // For leaderboard: get consistent stats for each AI using getDashboardKPIStats
+          // This ensures the lead counts match the KPI cards and funnel
+          const aiTotals = await Promise.all(ais.map(async (ai: any) => {
+            // Use getDashboardKPIStats for each AI to get consistent lead counts
+            const aiKpiStats = await getDashboardKPIStats({
+              aiId: ai.id,
+              fromDate: fromDate!,
+              toDate: toDate!
+            });
             return {
               aiId: ai.id,
               aiName: ai.label || ai.ai_name || ai.id,
-              message_count: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.message_count || 0), 0),
-              conversation_count: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.conversation_count || 0), 0),
-              new_leads: aiRows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.new_leads || 0), 0),
+              message_count: aiKpiStats.totalMessages,
+              conversation_count: aiKpiStats.totalConversations,
+              new_leads: aiKpiStats.totalLeads, // Use totalLeads for consistency
             };
-          });
+          }));
           setAISummaryRows(aiTotals);
           // For 'All AIs', sum unique leads for each AI (not deduplicated across AIs)
           const allCounts = await Promise.all(
@@ -205,14 +211,15 @@ export default function AnalyticsPage() {
           setPrevUniqueLeadsCount(prevAllCounts.reduce((sum: number, n: number) => sum + n, 0));
         } else {
           rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
-          // For leaderboard: single AI
+          // For leaderboard: single AI - use the same kpiStats object
+          // This ensures the lead counts match the KPI cards and funnel
           setAISummaryRows([
             {
               aiId: selectedAIId,
               aiName: ais.find((ai: any) => ai.id === selectedAIId)?.label || ais.find((ai: any) => ai.id === selectedAIId)?.ai_name || selectedAIId,
-              message_count: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.message_count || 0), 0),
-              conversation_count: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.conversation_count || 0), 0),
-              new_leads: rows.reduce((sum: number, row: DashboardMessageSummary) => sum + (row.new_leads || 0), 0),
+              message_count: kpi.totalMessages, // Use kpi values for consistency
+              conversation_count: kpi.totalConversations, // Use kpi values for consistency
+              new_leads: kpi.totalLeads, // Use kpi totalLeads for consistency
             }
           ]);
           uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);
