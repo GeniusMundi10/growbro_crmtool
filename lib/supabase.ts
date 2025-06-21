@@ -1211,11 +1211,15 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
 
 // Fetch feedback stats (good/bad/none) for a given AI and period
 export async function getDashboardFeedbackStats(aiId: string, fromDate: string, toDate: string): Promise<{ up: number; down: number; none: number }> {
+  // To include the full toDate, add one day and use .lt()
+  const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
   let query = supabase
     .from('conversations')
     .select('feedback')
     .gte('started_at', fromDate)
-    .lte('started_at', toDate);
+    .lt('started_at', dayAfterToDate);
   if (aiId && aiId !== '__all__') {
     query = query.eq('ai_id', aiId);
   }
