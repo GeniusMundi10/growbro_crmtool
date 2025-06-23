@@ -51,6 +51,7 @@ export default function BillingInfo() {
 
   // Function to fetch user subscription details
   const fetchSubscription = async () => {
+  console.log('[BillingInfo] user:', user);
     if (!user?.id) return
     
     try {
@@ -67,6 +68,7 @@ export default function BillingInfo() {
         .select('id, name, email, plan, created_at')
         .eq('id', user.id)
         .single()
+    console.log('[BillingInfo] userData:', userData, 'userError:', userError);
       
       if (userError) {
         console.error('Error fetching user:', userError)
@@ -101,7 +103,8 @@ export default function BillingInfo() {
           .from('plans')
           .select('*')
           .ilike('name', userData.plan)
-          .limit(1)
+          .limit(1);
+        console.log('[BillingInfo] planData:', planData, 'planError:', planError);
           
         if (planError) {
           console.log('Error fetching plan details:', JSON.stringify(planError, null, 2) || 'Unknown error')
