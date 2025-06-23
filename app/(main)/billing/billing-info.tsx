@@ -62,47 +62,25 @@ export default function BillingInfo() {
       
       console.log('Fetching user data for:', user.id)
       
-      // Directly fetch the user from the public.users table to get the current plan and created_at date
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, name, email, plan, created_at')
-        .eq('id', user.id)
-        .single()
-    console.log('[BillingInfo] userData:', userData, 'userError:', userError);
-      
-      if (userError) {
-        console.error('Error fetching user:', userError)
-        return
+      // Use plan and trial_days from context instead of querying users table
+      const planName = user?.plan ? user.plan.toLowerCase() : 'free';
+      const trialDays = typeof user?.trial_days === 'number' ? user.trial_days : null;
+
+      // Calculate days left in free trial (14 days total)
+      if (trialDays !== null) {
+        const daysLeft = Math.max(0, 14 - trialDays);
+        setDaysLeftInTrial(daysLeft);
+        console.log('Days left in trial (from context):', daysLeft);
       }
-          
-      console.log('User data from DB:', userData)
-      
-      // Calculate days left in free trial
-      if (userData?.created_at) {
-        const createdAt = new Date(userData.created_at)
-        const currentDate = new Date()
-        
-        // Calculate the difference in milliseconds
-        const diffTime = Math.abs(currentDate.getTime() - createdAt.getTime())
-        // Convert to days
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-        
-        // Calculate days left in trial (14 days total)
-        const daysLeft = Math.max(0, 14 - diffDays)
-        console.log('Days left in trial:', daysLeft)
-        
-        setDaysLeftInTrial(daysLeft)
-      }
-        
-      if (userData?.plan && userData.plan.toLowerCase() !== 'free') {
-        const planName = userData.plan.toLowerCase()
+
+      if (planName && planName !== 'free') {
         console.log('User has a plan set:', planName)
         
         // Get plan details based on the plan name
         const { data: planData, error: planError } = await supabase
           .from('plans')
           .select('*')
-          .ilike('name', userData.plan)
+          .ilike('name', planName)
           .limit(1);
         console.log('[BillingInfo] planData:', planData, 'planError:', planError);
           
