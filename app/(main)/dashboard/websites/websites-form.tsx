@@ -46,6 +46,7 @@ export default function WebsitesForm() {
   const loadWebsites = async () => {
     setLoading(true);
     const data = await getAIWebsites(aiId!);
+    console.log("[WebsitesForm] Fetched websites from Supabase:", data); // DEBUG LOG
     // Merge backend data into defaults by label
     let merged = DEFAULT_SLOTS.map((slot, i) => {
       const found = data?.find(w => w.label === slot.label);
