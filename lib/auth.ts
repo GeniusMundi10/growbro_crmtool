@@ -64,6 +64,7 @@ export async function getCurrentUser(): Promise<UserProfile & { plan?: string; t
     if (!session?.user) return null;
 
     const authUser = session.user;
+    console.log('[DEBUG] Supabase Auth User ID:', authUser.id);
 
     // 2. Fetch the user profile from public.users table
     const { data: profile, error: profileError } = await supabase
@@ -71,6 +72,7 @@ export async function getCurrentUser(): Promise<UserProfile & { plan?: string; t
       .select('*')
       .eq('id', authUser.id)
       .single();
+    console.log('[DEBUG] Supabase Profile Query:', { profile, profileError });
 
     // 3. Fetch trial info from user_trial_status view
     const { data: trial, error: trialError } = await supabase
