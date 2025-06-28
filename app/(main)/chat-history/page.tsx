@@ -231,9 +231,9 @@ export default function ChatHistoryPage() {
                   <TableRow key={chat.chat_id}>
                     <TableCell>{chat.chat_id}</TableCell>
                     <TableCell>{chat.ai_name}</TableCell>
-                    <TableCell className="font-medium">{chat.name}</TableCell>
-                    <TableCell>{chat.email}</TableCell>
-                    <TableCell>{chat.phone}</TableCell>
+                    <TableCell className="font-medium">{chat.name ? chat.name : "Anonymous"}</TableCell>
+                    <TableCell>{chat.email ? chat.email : "Anonymous"}</TableCell>
+                    <TableCell>{chat.phone ? chat.phone : "Anonymous"}</TableCell>
                     <TableCell>{format(parseISO(chat.date), "yyyy-MM-dd")}</TableCell>
                     <TableCell>{chat.duration}</TableCell>
                     <TableCell>{chat.messages_count}</TableCell>
