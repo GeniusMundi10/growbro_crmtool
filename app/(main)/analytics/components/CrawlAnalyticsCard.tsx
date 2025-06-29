@@ -30,7 +30,7 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
   const [showAll, setShowAll] = useState(false);
   const visibleUrls = showAll ? urlsCrawled : urlsCrawled.slice(0, 7);
   return (
-    <div className="w-full max-w-none bg-white rounded-xl shadow p-6">
+    <div className="bg-white rounded shadow p-4 mb-6">
       <h3 className="font-semibold text-lg mb-4">Knowledge Base Crawl Analytics</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <MetricCard icon="🔗" label="Links Crawled" value={urlsCrawled?.length ?? 0} loading={loading} />
