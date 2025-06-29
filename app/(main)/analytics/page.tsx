@@ -32,6 +32,7 @@ import { getDashboardMessageSummary, DashboardMessageSummary, getAIsForUser, get
 import KPISection from "./components/KPISection"
 import ConversationDurationPieChart from "./components/ConversationDurationPieChart"
 import UserSegmentPieChart from "./components/UserSegmentPieChart"
+import CrawlAnalyticsCard from "./components/CrawlAnalyticsCard";
 
 const SEGMENT_COLORS = ["#60a5fa", "#34d399"];
 
@@ -78,8 +79,67 @@ export default function AnalyticsPage() {
   const [userSegment, setUserSegment] = useState<{ newUsers: number; returningUsers: number } | null>(null);
   // Funnel data
   const [funnelData, setFunnelData] = useState<{ startedCount: number; engagedCount: number; leadsCount: number } | null>(null);
+  // Crawl analytics state
+  const [crawlAnalytics, setCrawlAnalytics] = useState<{
+    totalPagesCrawled: number;
+    filesIndexed: number;
+    urlsCrawled: string[];
+    loading: boolean;
+  }>({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
 
   useEffect(() => {
+    async function fetchCrawlAnalytics() {
+      setCrawlAnalytics(prev => ({ ...prev, loading: true }));
+      try {
+        if (selectedAIId === "__all__") {
+          if (!ais || ais.length === 0) {
+            setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
+            return;
+          }
+          const mod = await import("@/lib/supabase");
+          const infos = await Promise.all(ais.map((ai: any) => mod.getBusinessInfo(ai.id)));
+          let totalPagesCrawled = 0;
+          let filesIndexed = 0;
+          let urlsSet = new Set<string>();
+          for (const info of infos) {
+            if (!info) continue;
+            totalPagesCrawled += info.total_pages_crawled ?? 0;
+            filesIndexed += info.files_indexed ?? 0;
+            let urls: string[] = Array.isArray(info.urls_crawled)
+              ? info.urls_crawled
+              : (typeof info.urls_crawled === "string" && info.urls_crawled.startsWith("[")
+                  ? JSON.parse(info.urls_crawled)
+                  : []);
+            urls.forEach((u: string) => urlsSet.add(u));
+          }
+          setCrawlAnalytics({
+            totalPagesCrawled,
+            filesIndexed,
+            urlsCrawled: Array.from(urlsSet),
+            loading: false,
+          });
+        } else if (selectedAIId) {
+          const mod = await import("@/lib/supabase");
+          const info = await mod.getBusinessInfo(selectedAIId);
+          setCrawlAnalytics({
+            totalPagesCrawled: info?.total_pages_crawled ?? 0,
+            filesIndexed: info?.files_indexed ?? 0,
+            urlsCrawled: Array.isArray(info?.urls_crawled)
+              ? info.urls_crawled
+              : (typeof info?.urls_crawled === "string" && info?.urls_crawled.startsWith("[")
+                  ? JSON.parse(info.urls_crawled)
+                  : []),
+            loading: false,
+          });
+        } else {
+          setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
+        }
+      } catch {
+        setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
+      }
+    }
+    fetchCrawlAnalytics();
+
     async function loadUserAndAIs() {
       setLoading(true)
       try {
@@ -529,6 +589,18 @@ export default function AnalyticsPage() {
         </Card>
       </div>
       {/* End max-w-4xl container */}
+      </div>
+
+      {/* --- Crawl Analytics Card (after KPIs) --- */}
+      <div className="my-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CrawlAnalyticsCard
+            totalPagesCrawled={crawlAnalytics.totalPagesCrawled}
+            filesIndexed={crawlAnalytics.filesIndexed}
+            urlsCrawled={crawlAnalytics.urlsCrawled}
+            loading={crawlAnalytics.loading}
+          />
+        </div>
       </div>
     </div>
   );

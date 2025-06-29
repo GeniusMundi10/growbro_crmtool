@@ -91,6 +91,10 @@ export type BusinessInfo = {
   widget_color?: string
   send_button_color?: string
   start_minimized?: boolean
+  // --- Analytics fields ---
+  total_pages_crawled?: number;
+  files_indexed?: number;
+  urls_crawled?: string[] | string;
   created_at: string
   updated_at: string
 }
