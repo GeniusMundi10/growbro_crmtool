@@ -98,6 +98,7 @@ export default function AnalyticsPage() {
           }
           const mod = await import("@/lib/supabase");
           const infos = await Promise.all(ais.map((ai: any) => mod.getBusinessInfo(ai.id)));
+          console.log('[CrawlAnalytics] All AIs fetched business_info:', infos);
           let totalPagesCrawled = 0;
           let filesIndexed = 0;
           let urlsSet = new Set<string>();
@@ -121,6 +122,7 @@ export default function AnalyticsPage() {
         } else if (selectedAIId) {
           const mod = await import("@/lib/supabase");
           const info = await mod.getBusinessInfo(selectedAIId);
+          console.log('[CrawlAnalytics] Single AI fetched business_info:', info);
           setCrawlAnalytics({
             totalPagesCrawled: info?.total_pages_crawled ?? 0,
             filesIndexed: info?.files_indexed ?? 0,
