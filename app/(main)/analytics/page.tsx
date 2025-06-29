@@ -55,8 +55,6 @@ function groupByWeekday(rows: DashboardMessageSummary[], valueKey: keyof Dashboa
 }
 
 export default function AnalyticsPage() {
-  console.log('[CrawlAnalytics] AnalyticsPage rendered');
-  console.log('[CrawlAnalytics] AnalyticsPage rendered');
   const [user, setUser] = useState<{ id: string } | null>(null)
   const [loading, setLoading] = useState(true)
   // Always default to 'week' filter, even on remount or navigation
@@ -89,6 +87,7 @@ export default function AnalyticsPage() {
     loading: boolean;
   }>({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
 
+  // Effect for fetching crawl analytics data - runs when selectedAIId or ais changes
   useEffect(() => {
     async function fetchCrawlAnalytics() {
       setCrawlAnalytics(prev => ({ ...prev, loading: true }));
@@ -143,7 +142,10 @@ export default function AnalyticsPage() {
       }
     }
     fetchCrawlAnalytics();
-
+  }, [selectedAIId, ais]);
+  
+  // Effect for initial user and AIs loading - runs only once on mount
+  useEffect(() => {
     async function loadUserAndAIs() {
       setLoading(true)
       try {
@@ -357,6 +359,19 @@ export default function AnalyticsPage() {
           trendLeads={kpiStats?.trendLeads}
           trendDuration={kpiStats?.trendDuration}
         />
+
+        {/* --- Crawl Analytics Card (after KPIs) --- */}
+        <div className="my-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CrawlAnalyticsCard
+              totalPagesCrawled={crawlAnalytics.totalPagesCrawled}
+              filesIndexed={crawlAnalytics.filesIndexed}
+              urlsCrawled={crawlAnalytics.urlsCrawled}
+              loading={crawlAnalytics.loading}
+            />
+          </div>
+        </div>
+        
         {/* Pie Charts Side by Side */}
         <div className="flex flex-col lg:flex-row gap-8 justify-center items-stretch mb-8">
           <div className="flex-1 min-w-[280px]">
@@ -592,19 +607,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-      {/* End max-w-4xl container */}
-      </div>
-
-      {/* --- Crawl Analytics Card (after KPIs) --- */}
-      <div className="my-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <CrawlAnalyticsCard
-            totalPagesCrawled={crawlAnalytics.totalPagesCrawled}
-            filesIndexed={crawlAnalytics.filesIndexed}
-            urlsCrawled={crawlAnalytics.urlsCrawled}
-            loading={crawlAnalytics.loading}
-          />
-        </div>
+      {/* End max-w container */}
       </div>
     </div>
   );
