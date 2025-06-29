@@ -88,14 +88,14 @@ export default function AnalyticsPage() {
   }>({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
 
   useEffect(() => {
+    if (selectedAIId === "__all__" && (!ais || ais.length === 0)) {
+      console.log('[CrawlAnalytics] Skipping fetch, AIs not loaded', { selectedAIId, ais });
+      return;
+    }
     async function fetchCrawlAnalytics() {
       setCrawlAnalytics(prev => ({ ...prev, loading: true }));
       try {
         if (selectedAIId === "__all__") {
-          if (!ais || ais.length === 0) {
-            setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
-            return;
-          }
           const mod = await import("@/lib/supabase");
           const infos = await Promise.all(ais.map((ai: any) => mod.getBusinessInfo(ai.id)));
           console.log('[CrawlAnalytics] All AIs fetched business_info:', infos);
@@ -136,7 +136,8 @@ export default function AnalyticsPage() {
         } else {
           setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
         }
-      } catch {
+      } catch (e) {
+        console.error('[CrawlAnalytics] fetchCrawlAnalytics error', e);
         setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
       }
     }
