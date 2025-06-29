@@ -1,5 +1,9 @@
 
 
+"use client";
+
+import React, { useState } from "react";
+
 interface CrawlAnalyticsCardProps {
   totalPagesCrawled: number;
   filesIndexed: number;
