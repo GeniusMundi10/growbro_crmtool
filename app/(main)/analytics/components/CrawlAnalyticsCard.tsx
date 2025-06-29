@@ -30,16 +30,15 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
   const [showAll, setShowAll] = useState(false);
   const visibleUrls = showAll ? urlsCrawled : urlsCrawled.slice(0, 7);
   return (
-    <div className="bg-white rounded-xl shadow p-6">
+    <div className="w-full max-w-none bg-white rounded-xl shadow p-6">
       <h3 className="font-semibold text-lg mb-4">Knowledge Base Crawl Analytics</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <MetricCard icon="📄" label="Pages Crawled" value={totalPagesCrawled ?? 0} loading={loading} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <MetricCard icon="🔗" label="Links Crawled" value={urlsCrawled?.length ?? 0} loading={loading} />
         <MetricCard icon="📁" label="Files Indexed" value={filesIndexed ?? 0} loading={loading} />
-        <MetricCard icon="🔗" label="Pages/Links" value={urlsCrawled?.length ?? 0} loading={loading} />
       </div>
       <div>
         <div className="font-semibold mb-2 flex items-center">
-          <span className="mr-2">Pages/Links Crawled</span>
+          <span className="mr-2">Links Crawled</span>
           <span className="text-xs text-gray-400">({urlsCrawled?.length ?? 0})</span>
         </div>
         {loading ? (
@@ -50,19 +49,33 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
           </div>
         ) : urlsCrawled && urlsCrawled.length > 0 ? (
           <ul className="list-none pl-0 space-y-1">
-            {visibleUrls.map((url, idx) => (
-              <li key={idx} className="flex items-center group">
-                <span className="mr-2 text-blue-400">🔗</span>
-                <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline break-all hover:text-blue-900 transition-all text-sm flex-1">{url}</a>
-                <button
-                  className="ml-2 text-gray-400 hover:text-gray-700 transition"
-                  title="Copy URL"
-                  onClick={() => navigator.clipboard.writeText(url)}
-                >
-                  📋
-                </button>
-              </li>
-            ))}
+            {visibleUrls.map((url, idx) => {
+              // Extract domain for branding
+              let domain = '';
+              try { domain = new URL(url).hostname.replace('www.', ''); } catch {}
+              return (
+                <li key={idx} className="flex items-center group bg-gray-50 hover:bg-[#e6faed] rounded-lg px-2 py-1 transition">
+                  <span className="mr-2 text-[#16a34a] text-lg">🔗</span>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#16a34a] font-semibold hover:underline transition break-all text-sm flex-1"
+                  >
+                    <span className="font-bold mr-1">{domain}</span>
+                    <span className="text-gray-700">{url.length > 50 ? url.slice(0, 47) + '…' : url}</span>
+                  </a>
+                  <button
+                    className="ml-2 px-2 py-1 rounded-full bg-[#16a34a]/10 text-[#16a34a] text-xs font-medium hover:bg-[#16a34a]/20 transition shadow-sm"
+                    title="Copy URL"
+                    aria-label="Copy URL"
+                    onClick={() => navigator.clipboard.writeText(url)}
+                  >
+                    Copy
+                  </button>
+                </li>
+              );
+            })}
             {urlsCrawled.length > 7 && (
               <li>
                 <button
