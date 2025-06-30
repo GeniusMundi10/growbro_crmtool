@@ -53,9 +53,27 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
               // Extract domain for branding
               let domain = '';
               try { domain = new URL(url).hostname.replace('www.', ''); } catch {}
+              // State for favicon fallback
+              const [faviconError, setFaviconError] = useState(false);
               return (
                 <li key={idx} className="flex items-center group bg-gray-50 hover:bg-[#e6faed] rounded-lg px-2 py-1 transition">
-                  <span className="mr-2 text-[#16a34a] text-lg">🔗</span>
+                  {/* Favicon or fallback */}
+                  {faviconError ? (
+                    <span className="w-5 h-5 mr-2 flex items-center justify-center text-[#16a34a]" style={{ minWidth: 20 }}>
+                      {/* Clip SVG icon */}
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l7.07-7.07a4 4 0 10-5.657-5.657l-7.07 7.07a6 6 0 108.485 8.485L19 13" />
+                      </svg>
+                    </span>
+                  ) : (
+                    <img
+                      src={`https://www.google.com/s2/favicons?domain=${domain}`}
+                      alt="favicon"
+                      className="w-5 h-5 mr-2 rounded"
+                      style={{ minWidth: 20 }}
+                      onError={() => setFaviconError(true)}
+                    />
+                  )}
                   <a
                     href={url}
                     target="_blank"
