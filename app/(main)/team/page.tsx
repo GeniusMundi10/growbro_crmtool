@@ -1,3 +1,5 @@
+"use client"
+
 import Header from "@/components/header"
 import TeamManagement from "./team-management"
 import UpgradePrompt from "@/components/UpgradePrompt"
