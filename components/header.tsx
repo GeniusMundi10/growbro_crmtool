@@ -16,9 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  Bell,
   Search,
-  HelpCircle,
   Settings,
   User,
   Calendar,
@@ -126,7 +124,7 @@ export default function Header({ title }: HeaderProps) {
                   variant="ghost"
                   size="icon"
                   className="rounded-full text-slate-500 hover:bg-slate-100"
-                  onClick={() => setSearchOpen(true)}
+                  onClick={() => setSearchOpen((open) => !open)}
                 >
                   <Search className="h-5 w-5" />
                 </Button>
@@ -134,32 +132,10 @@ export default function Header({ title }: HeaderProps) {
             </AnimatePresence>
           </div>
 
-          {/* Help Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full text-slate-500 hover:bg-slate-100"
-          >
-            <HelpCircle className="h-5 w-5" />
-          </Button>
-
           {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost" 
-                size="icon"
-                className="rounded-full text-slate-500 hover:bg-slate-100 relative"
-              >
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <Badge 
-                    className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 p-0 text-[10px] text-white"
-                  >
-                    {unreadCount}
-                  </Badge>
-                )}
-              </Button>
+              
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 mt-1 p-0 overflow-hidden border-none shadow-lg rounded-xl">
               <div className="bg-gradient-to-r from-emerald-700 to-green-600 p-4 text-white">
