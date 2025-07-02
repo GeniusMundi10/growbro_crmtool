@@ -28,6 +28,11 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
   loading,
 }) => {
   const [showAll, setShowAll] = useState(false);
+  // Track favicon error state by URL index
+  const [faviconErrors, setFaviconErrors] = useState<{ [idx: number]: boolean }>({});
+  const handleFaviconError = (idx: number) => {
+    setFaviconErrors((prev) => ({ ...prev, [idx]: true }));
+  };
   const visibleUrls = showAll ? urlsCrawled : urlsCrawled.slice(0, 7);
   return (
     <div className="bg-white rounded shadow p-4 mb-6">
@@ -49,18 +54,24 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
           </div>
         ) : urlsCrawled && urlsCrawled.length > 0 ? (
           <ul className="list-none pl-0 space-y-1">
+            {/* Track favicon error state by URL index */}
             {visibleUrls.map((url, idx) => {
-              // Extract domain for branding
               let domain = '';
-              try { domain = new URL(url).hostname.replace('www.', ''); } catch {}
-              // State for favicon fallback
-              const [faviconError, setFaviconError] = useState(false);
+              try {
+                domain = new URL(url).hostname.replace('www.', '');
+              } catch (e) {
+                domain = '';
+              }
+
+              // Use a parent-level state object for favicon errors
+              // (see above component for useState)
+              // fallback: if faviconErrors[idx] is true, show fallback icon
+              const faviconError = faviconErrors[idx] || false;
+
               return (
                 <li key={idx} className="flex items-center group bg-gray-50 hover:bg-[#e6faed] rounded-lg px-2 py-1 transition">
-                  {/* Favicon or fallback */}
                   {faviconError ? (
                     <span className="w-5 h-5 mr-2 flex items-center justify-center text-[#16a34a]" style={{ minWidth: 20 }}>
-                      {/* Clip SVG icon */}
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l7.07-7.07a4 4 0 10-5.657-5.657l-7.07 7.07a6 6 0 108.485 8.485L19 13" />
                       </svg>
@@ -71,7 +82,7 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
                       alt="favicon"
                       className="w-5 h-5 mr-2 rounded"
                       style={{ minWidth: 20 }}
-                      onError={() => setFaviconError(true)}
+                      onError={() => handleFaviconError(idx)}
                     />
                   )}
                   <a
@@ -94,6 +105,7 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
                 </li>
               );
             })}
+
             {urlsCrawled.length > 7 && (
               <li>
                 <button
