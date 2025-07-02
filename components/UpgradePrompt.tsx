@@ -10,7 +10,7 @@ export default function UpgradePrompt() {
         Please upgrade your plan to unlock team management and collaboration features.
       </p>
       <Button className="bg-green-600 hover:bg-green-700 px-6 py-2 text-lg" asChild>
-        <a href="/settings/billing">Upgrade Plan</a>
+        <a href="/billing/pricing-plans">Upgrade Plan</a>
       </Button>
     </div>
   );
