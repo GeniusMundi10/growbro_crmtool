@@ -66,57 +66,8 @@ export default function SignupPage() {
     }
     const user = data?.user;
     if (user && user.id) {
-      // Insert into public.users
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          id: user.id,
-          name: `${form.firstName} ${form.lastName}`.trim(),
-          email: form.email,
-          avatar_url: user.user_metadata?.avatar_url || null,
-          plan: 'free',
-          billing_info: null,
-          email_verified: false,
-          company: form.company,
-          phone: form.phone,
-          website: form.website,
-        }
-      ]);
-      if (insertError) {
-        setLoading(false);
-        setError(insertError.message);
-        return;
-      }
-
-      // Insert into business_info (AI) with mapped fields and defaults
-      const aiName = `${form.firstName} ${form.lastName}`.trim() || form.email.split('@')[0] + "'s AI";
-      const { error: businessInfoError } = await supabase.from("business_info").insert([
-        {
-          user_id: user.id,
-          ai_name: aiName,
-          company_name: form.company,
-          website: form.website,
-          email: form.email,
-          calendar_link: null,
-          phone_number: form.phone,
-          agent_type: "information-education",
-          branding: null,
-          heading_title_color: "#FFFFFF",
-          heading_background_color: "#4285F4",
-          ai_message_color: "#000000",
-          ai_message_background_color: "#F1F1F1",
-          user_message_color: "#FFFFFF",
-          user_message_background_color: "#4285F4",
-          widget_color: "#4285F4",
-          send_button_color: "#4285F4",
-          start_minimized: false,
-          vectorstore_ready: false,
-        }
-      ]);
-      setLoading(false);
-      if (businessInfoError) {
-        setError(businessInfoError.message);
-        return;
-      }
+      // Do not insert into public.users or business_info here. This avoids RLS issues. Only redirect to /verify.
+      router.push("/verify");
       router.push("/verify");
     } else {
       setLoading(false);
