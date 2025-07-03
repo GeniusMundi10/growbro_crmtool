@@ -87,63 +87,70 @@ function LoginContent() {
         const userId = data.session.user.id;
         const userEmail = data.session.user.email;
         const userMeta = data.session.user.user_metadata || {};
+        console.log('[LOGIN] Session user:', { userId, userEmail, userMeta });
         // 1. Check if user already exists in public.users
         const { data: userRow, error: userError } = await supabase
           .from('users')
           .select('id')
           .eq('id', userId)
           .single();
+        console.log('[LOGIN] userRow:', userRow, 'userError:', userError);
         if ((!userRow && !userError) || (userError && userError.code === 'PGRST116')) { // PGRST116: No rows found
+          console.log('[LOGIN] No user row found, attempting insert...');
           // Insert user profile
-          const { error: insertError } = await supabase.from('users').insert([
-            {
-              id: userId,
-              name: userMeta.first_name || userMeta.full_name || userEmail?.split('@')[0] || 'User',
-              email: userEmail,
-              avatar_url: userMeta.avatar_url || null,
-              plan: 'free',
-              billing_info: null,
-              email_verified: true,
-              company: userMeta.company || '',
-              phone: userMeta.phone || '',
-              website: userMeta.website || '',
-            }
-          ]);
+          const insertPayload = {
+            id: userId,
+            name: userMeta.first_name || userMeta.full_name || userEmail?.split('@')[0] || 'User',
+            email: userEmail,
+            avatar_url: userMeta.avatar_url || null,
+            plan: 'free',
+            billing_info: null,
+            email_verified: true,
+            company: userMeta.company || '',
+            phone: userMeta.phone || '',
+            website: userMeta.website || '',
+          };
+          console.log('[LOGIN] Insert payload for users:', insertPayload);
+          const { error: insertError } = await supabase.from('users').insert([insertPayload]);
           if (insertError) {
+            console.error('[LOGIN] Profile creation failed:', insertError);
             setLoading(false);
             setError('Profile creation failed: ' + insertError.message);
             return;
           }
+          console.log('[LOGIN] User profile insert successful.');
           // Insert default business_info
           const aiName = userMeta.full_name || (userEmail?.split('@')[0] + "'s AI");
-          const { error: businessInfoError } = await supabase.from('business_info').insert([
-            {
-              user_id: userId,
-              ai_name: aiName,
-              company_name: userMeta.company || '',
-              website: userMeta.website || '',
-              email: userEmail,
-              calendar_link: null,
-              phone_number: userMeta.phone || '',
-              agent_type: 'information-education',
-              branding: null,
-              heading_title_color: '#FFFFFF',
-              heading_background_color: '#4285F4',
-              ai_message_color: '#000000',
-              ai_message_background_color: '#F1F1F1',
-              user_message_color: '#FFFFFF',
-              user_message_background_color: '#4285F4',
-              widget_color: '#4285F4',
-              send_button_color: '#4285F4',
-              start_minimized: false,
-              vectorstore_ready: false,
-            }
-          ]);
+          const businessInfoPayload = {
+            user_id: userId,
+            ai_name: aiName,
+            company_name: userMeta.company || '',
+            website: userMeta.website || '',
+            email: userEmail,
+            calendar_link: null,
+            phone_number: userMeta.phone || '',
+            agent_type: 'information-education',
+            branding: null,
+            heading_title_color: '#FFFFFF',
+            heading_background_color: '#4285F4',
+            ai_message_color: '#000000',
+            ai_message_background_color: '#F1F1F1',
+            user_message_color: '#FFFFFF',
+            user_message_background_color: '#4285F4',
+            widget_color: '#4285F4',
+            send_button_color: '#4285F4',
+            start_minimized: false,
+            vectorstore_ready: false,
+          };
+          console.log('[LOGIN] Insert payload for business_info:', businessInfoPayload);
+          const { error: businessInfoError } = await supabase.from('business_info').insert([businessInfoPayload]);
           if (businessInfoError) {
+            console.error('[LOGIN] Business info creation failed:', businessInfoError);
             setLoading(false);
             setError('Business info creation failed: ' + businessInfoError.message);
             return;
           }
+          console.log('[LOGIN] Business info insert successful.');
         }
         // Continue with dashboard redirect
         const { data: aiRows, error: aiError } = await supabase
@@ -152,6 +159,7 @@ function LoginContent() {
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(1);
+        console.log('[LOGIN] aiRows:', aiRows, 'aiError:', aiError);
         if (aiRows && aiRows.length > 0) {
           router.replace(`/dashboard/info?aiId=${aiRows[0].id}`);
         } else {
