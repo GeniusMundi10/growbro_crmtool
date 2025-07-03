@@ -98,7 +98,7 @@ function LoginContent() {
           const { error: insertError } = await supabase.from('users').insert([
             {
               id: userId,
-              name: userMeta.full_name || userEmail?.split('@')[0] || 'User',
+              name: userMeta.first_name || userMeta.full_name || userEmail?.split('@')[0] || 'User',
               email: userEmail,
               avatar_url: userMeta.avatar_url || null,
               plan: 'free',
