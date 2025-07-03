@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import React, { useState, useEffect } from "react"
+import { useUser } from "@/context/UserContext"
 import { toast } from "sonner"
 import {
   ChevronDown,
@@ -58,6 +59,7 @@ type LeadRow = {
 import { supabase } from "@/lib/supabase";
 
 export default function SalesLeadsPage() {
+  const { user, loading: userLoading } = useUser();
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [aiOptions, setAIOptions] = useState<{ value: string; label: string }[]>([{ value: "all", label: "All AI" }]);
   const [aiFilter, setAIFilter] = useState("all");
@@ -65,10 +67,12 @@ export default function SalesLeadsPage() {
 
   // Memoized fetch function for use in both useEffect and refresh button
   const fetchLeadsAndAIs = React.useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("chat_history")
-      .select("chat_id, ai_name, name, email, phone");
+      .select("chat_id, ai_name, name, email, phone")
+      .eq("user_id", user.id);
 
     // Debug: log both error and data
     if (error) {
@@ -101,8 +105,10 @@ export default function SalesLeadsPage() {
   }, []);
 
   useEffect(() => {
-    fetchLeadsAndAIs();
-  }, [fetchLeadsAndAIs]);
+    if (!userLoading && user?.id) {
+      fetchLeadsAndAIs();
+    }
+  }, [fetchLeadsAndAIs, userLoading, user]);
 
   const filteredLeads = leads.filter(row => aiFilter === "all" || row.ai_name === aiFilter);
 

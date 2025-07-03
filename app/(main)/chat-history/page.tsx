@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { useUser } from "@/context/UserContext";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format, parseISO, isWithinInterval } from "date-fns";
 
 function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void }) {
+  const { user } = useUser();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,6 +26,7 @@ function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void 
         .from("messages")
         .select("*")
         .eq("conversation_id", trimmedId)
+        .eq("user_id", user?.id)
         .order("timestamp", { ascending: true });
       
       
@@ -62,6 +65,7 @@ function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void 
 }
 
 export default function ChatHistoryPage() {
+  const { user, loading: userLoading } = useUser();
   const [aiOptions, setAIOptions] = useState<{ value: string; label: string }[]>([{ value: "all", label: "All AI" }]);
   const [chats, setChats] = useState<any[]>([]);
   const [aiFilter, setAIFilter] = useState("all");
@@ -70,9 +74,11 @@ export default function ChatHistoryPage() {
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
 
   useEffect(() => {
-    fetchChats();
+    if (!userLoading && user?.id) {
+      fetchChats();
+    }
     // eslint-disable-next-line
-  }, [aiFilter, dateRange.from, dateRange.to]);
+  }, [aiFilter, dateRange.from, dateRange.to, userLoading, user]);
 
   useEffect(() => {
     async function fetchAIs() {
@@ -92,8 +98,9 @@ export default function ChatHistoryPage() {
   }, []);
 
   async function fetchChats() {
+    if (!user?.id) return;
     setLoading(true);
-    let query = (await import("@/lib/supabase")).supabase.from("chat_history").select("*").order("date", { ascending: false });
+    let query = (await import("@/lib/supabase")).supabase.from("chat_history").select("*").eq("user_id", user.id).order("date", { ascending: false });
     if (aiFilter !== "all") {
       query = query.eq("ai_name", aiFilter);
     }
