@@ -148,6 +148,24 @@ function LoginContent() {
             if (pending) {
               try {
                 const parsed = JSON.parse(pending);
+                // Map company to company_name if present
+                if (parsed.company) {
+                  parsed.company_name = parsed.company;
+                  delete parsed.company;
+                }
+                // Only allow keys that exist in business_info schema
+                const allowedKeys = [
+                  "user_id", "ai_name", "company_name", "website", "email", "calendar_link",
+                  "phone_number", "agent_type", "branding", "heading_title_color", "heading_background_color",
+                  "ai_message_color", "ai_message_background_color", "user_message_color",
+                  "user_message_background_color", "widget_color", "send_button_color",
+                  "start_minimized", "vectorstore_ready"
+                ];
+                Object.keys(parsed).forEach(key => {
+                  if (!allowedKeys.includes(key)) {
+                    delete parsed[key];
+                  }
+                });
                 businessInfoPayload = {
                   ...businessInfoPayload,
                   ...parsed,
