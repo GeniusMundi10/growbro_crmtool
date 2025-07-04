@@ -66,8 +66,11 @@ export default function SignupPage() {
     }
     const user = data?.user;
     if (user && user.id) {
+      // Persist signup form values for use after login
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('pendingBusinessInfo', JSON.stringify(form));
+      }
       // Do not insert into public.users or business_info here. This avoids RLS issues. Only redirect to /verify.
-      router.push("/verify");
       router.push("/verify");
     } else {
       setLoading(false);

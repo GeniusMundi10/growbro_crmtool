@@ -121,15 +121,16 @@ function LoginContent() {
           console.log('[LOGIN] User profile insert successful.');
           // Insert default business_info
           const aiName = userMeta.full_name || (userEmail?.split('@')[0] + "'s AI");
-          const businessInfoPayload = {
+          // Use pendingBusinessInfo from localStorage if available
+          let businessInfoPayload = {
             user_id: userId,
-            ai_name: aiName,
-            company_name: userMeta.company || '',
-            website: userMeta.website || '',
+            ai_name: userMeta.first_name || userEmail.split('@')[0] + "'s AI",
+            company_name: userMeta.company || "",
+            website: userMeta.website || "",
             email: userEmail,
             calendar_link: null,
-            phone_number: userMeta.phone || '',
-            agent_type: 'information-education',
+            phone_number: userMeta.phone || "",
+            agent_type: "information-education",
             branding: null,
             heading_title_color: '#FFFFFF',
             heading_background_color: '#4285F4',
@@ -142,6 +143,21 @@ function LoginContent() {
             start_minimized: false,
             vectorstore_ready: false,
           };
+          if (typeof window !== 'undefined') {
+            const pending = localStorage.getItem('pendingBusinessInfo');
+            if (pending) {
+              try {
+                const parsed = JSON.parse(pending);
+                businessInfoPayload = {
+                  ...businessInfoPayload,
+                  ...parsed,
+                };
+                localStorage.removeItem('pendingBusinessInfo');
+              } catch (e) {
+                console.warn('Could not parse pendingBusinessInfo:', e);
+              }
+            }
+          }
           console.log('[LOGIN] Insert payload for business_info:', businessInfoPayload);
           const { error: businessInfoError } = await supabase.from('business_info').insert([businessInfoPayload]);
           if (businessInfoError) {
