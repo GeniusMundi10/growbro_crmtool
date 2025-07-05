@@ -44,6 +44,7 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
     phone_number: "",
     agent_type: "information-education",
     vectorstore_ready: false,
+    session_cookie: "", // Add session_cookie to state
   })
   // Track the initial website to detect changes
   const [initialWebsite, setInitialWebsite] = useState<string>("");
@@ -105,6 +106,7 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
       if (name === "website" && prev.website !== value) {
         return { ...prev, [name]: value, vectorstore_ready: false };
       }
+      // No special handling for session_cookie
       return { ...prev, [name]: value };
     });
   }
@@ -310,6 +312,36 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500">Determines how your AI interacts with visitors</p>
+                  </div>
+                  <div className="col-span-2 space-y-2">
+                    <Label htmlFor="session_cookie">
+                      Session Cookie for Authenticated Crawling
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="ml-1 text-gray-400 cursor-pointer align-middle"><Info className="inline h-4 w-4" /></span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            <span>
+                              Paste your session cookie here <br />if you want to crawl private/authenticated content.<br />
+                              <span className="text-amber-600 font-semibold">Never share this unless you trust the destination.</span>
+                            </span>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </Label>
+                    <Input
+                      id="session_cookie"
+                      name="session_cookie"
+                      type="text"
+                      value={businessInfo.session_cookie || ""}
+                      onChange={handleChange}
+                      placeholder="e.g., sessionid=abc123; ..."
+                      autoComplete="off"
+                    />
+                    <p className="text-xs text-gray-500">
+                      Optional. Used only for authenticated/private websites. <span className="text-amber-600">Do not share sensitive cookies unless necessary.</span>
+                    </p>
                   </div>
                 </div>
                 

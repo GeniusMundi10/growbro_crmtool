@@ -72,6 +72,7 @@ export type User = {
 }
 
 export type BusinessInfo = {
+  session_cookie?: string; // Optional field for authenticated crawling
   id: string
   user_id: string
   ai_name: string
@@ -845,7 +846,9 @@ export async function getBusinessInfo(id: string): Promise<BusinessInfo | null> 
 
 export async function updateBusinessInfo(businessInfo: Partial<BusinessInfo>): Promise<boolean> {
   try {
-    const { error } = await supabase.from("business_info").update(businessInfo).eq("id", businessInfo.id)
+    const { error } = await supabase.from("business_info")
+      .update({ ...businessInfo, session_cookie: businessInfo.session_cookie })
+      .eq("id", businessInfo.id);
 
     if (error) {
       // Don't log the error to console to avoid the error message
@@ -863,7 +866,7 @@ export async function createBusinessInfo(userId: string, businessInfo: Partial<B
   try {
     const { data, error } = await supabase
       .from("business_info")
-      .insert([{ user_id: userId, ...businessInfo }])
+      .insert([{ user_id: userId, session_cookie: businessInfo.session_cookie, ...businessInfo }])
       .select()
       .single()
 
@@ -1410,7 +1413,7 @@ export async function getAIsForUser(userId: string) {
 export async function createAIForUser(userId: string, aiData: Partial<BusinessInfo>) {
   const { data, error } = await supabase
     .from("business_info")
-    .insert([{ user_id: userId, ...aiData }])
+    .insert([{ user_id: userId, session_cookie: aiData.session_cookie, ...aiData }])
     .select()
     .single();
   if (error) throw error;
