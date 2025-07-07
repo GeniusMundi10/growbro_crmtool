@@ -458,7 +458,7 @@ export type DashboardMessageSummary = {
 };
 
 // Unified daily summary: compute per-day stats from conversations/messages, not view
-export async function getDashboardMessageSummary(agentId: string, fromDate?: string, toDate?: string): Promise<DashboardMessageSummary[]> {
+export async function getDashboardMessageSummary(clientId: string, agentId: string, fromDate?: string, toDate?: string): Promise<DashboardMessageSummary[]> {
   // Build daily buckets
   const start = new Date(fromDate as string);
   const end = new Date(toDate as string);
@@ -474,6 +474,7 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
       .from('messages')
       .select('id, conversation_id, sender, timestamp')
       .eq('sender', 'user')
+      .eq('client_id', clientId)
       .gte('timestamp', day)
       .lt('timestamp', dayAfter);
     if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
@@ -559,13 +560,14 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
 // Fetch KPI stats (totals and averages) for dashboard cards
 // Unified KPI stats: all stats computed from conversations/messages, not view
 // Unified KPI: all stats based on conversations with at least one user message in the period
-export async function getDashboardKPIStats({ aiId, fromDate, toDate }: { aiId?: string, fromDate: string, toDate: string }) {
+export async function getDashboardKPIStats({ clientId, aiId, fromDate, toDate }: { clientId: string, aiId?: string, fromDate: string, toDate: string }) {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
     .select('conversation_id, sender, timestamp')
     .eq('sender', 'user')
+    .eq('client_id', clientId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (aiId && aiId !== '__all__') msgQuery = msgQuery.eq('ai_id', aiId);
@@ -1243,13 +1245,14 @@ export async function fetchUsersDirectly() {
 // Conversation Engagement Funnel: Conversations Started, Engaged, Leads
 // Unified funnel: all steps based on conversations whose FIRST message is in period
 // Unified Funnel: same base as KPI (conversations w/ at least one user message in period)
-export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
+export async function getFunnelData(clientId: string, agentId: string, fromDate: string, toDate: string) {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
     .select('conversation_id, sender')
     .eq('sender', 'user')
+    .eq('client_id', clientId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
@@ -1281,7 +1284,7 @@ export async function getFunnelData(agentId: string, fromDate: string, toDate: s
 }
 
 // Get unique leads for an AI and period (across all days in the range)
-export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string, toDate: string): Promise<number> {
+export async function getUniqueLeadsForPeriod(clientId: string, agentId: string, fromDate: string, toDate: string): Promise<number> {
   // Calculate the day after toDate to include the entire last day in the period
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
@@ -1290,6 +1293,7 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
     .from('messages')
     .select('conversation_id')
     .eq('ai_id', agentId)
+    .eq('client_id', clientId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   console.log('[DEBUG] [Step 1] messages:', { agentId, fromDate, toDate, messages, msgError });
@@ -1320,7 +1324,7 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
 }
 
 // Fetch feedback stats (good/bad/none) for a given AI and period
-export async function getDashboardFeedbackStats(aiId: string, fromDate: string, toDate: string): Promise<{ up: number; down: number; none: number }> {
+export async function getDashboardFeedbackStats(clientId: string, aiId: string, fromDate: string, toDate: string): Promise<{ up: number; down: number; none: number }> {
   // To include the full toDate, add one day and use .lt()
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
@@ -1328,6 +1332,7 @@ export async function getDashboardFeedbackStats(aiId: string, fromDate: string, 
   let query = supabase
     .from('conversations')
     .select('feedback')
+    .eq('client_id', clientId)
     .gte('started_at', fromDate)
     .lt('started_at', dayAfterToDate);
   if (aiId && aiId !== '__all__') {
@@ -1347,13 +1352,14 @@ export async function getDashboardFeedbackStats(aiId: string, fromDate: string, 
 // Get user segment distribution: counts of new vs. returning users for a given AI and period
 // New: user's first conversation is in the period; Returning: first conversation is before period but has a conversation in the period
 // User segment distribution: new vs returning users (based on user messages)
-export async function getUserSegmentDistribution(agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
+export async function getUserSegmentDistribution(clientId: string, agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
     .select('conversation_id, timestamp')
     .eq('sender', 'user')
+    .eq('client_id', clientId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
