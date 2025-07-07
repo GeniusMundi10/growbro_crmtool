@@ -26,7 +26,7 @@ function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void 
         .from("messages")
         .select("*")
         .eq("conversation_id", trimmedId)
-        .eq("user_id", user?.id)
+        .eq("client_id", user?.id)
         .order("timestamp", { ascending: true });
       
       
@@ -100,7 +100,7 @@ export default function ChatHistoryPage() {
   async function fetchChats() {
     if (!user?.id) return;
     setLoading(true);
-    let query = (await import("@/lib/supabase")).supabase.from("chat_history").select("*").eq("user_id", user.id).order("date", { ascending: false });
+    let query = (await import("@/lib/supabase")).supabase.from("chat_history").select("*").eq("client_id", user.id).order("date", { ascending: false });
     if (aiFilter !== "all") {
       query = query.eq("ai_name", aiFilter);
     }
