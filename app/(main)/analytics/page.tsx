@@ -194,7 +194,7 @@ export default function AnalyticsPage() {
         }
         let feedback = { up: 0, down: 0, none: 0 };
         try {
-          feedback = await getDashboardFeedbackStats(selectedAIId, fromDate!, toDate!);
+          feedback = await getDashboardFeedbackStats(user.id, selectedAIId, fromDate!, toDate!);
         } catch (e) {
           // If feedback stats fail, fallback to zeros
           feedback = { up: 0, down: 0, none: 0 };
@@ -210,7 +210,7 @@ export default function AnalyticsPage() {
             fromDate: prevFromDate!,
             toDate: prevToDate!
           }),
-          getUserSegmentDistribution(selectedAIId, fromDate!, toDate!)
+          getUserSegmentDistribution(user.id, selectedAIId, fromDate!, toDate!)
         ]);
         setKpiStats({ 
           totalMessages: kpi.totalMessages,
@@ -228,7 +228,7 @@ export default function AnalyticsPage() {
         if (selectedAIId === "__all__") {
           // Aggregate all AIs
           const allRows = await Promise.all(
-            ais.map((ai: any) => getDashboardMessageSummary(ai.id, fromDate, toDate))
+            ais.map((ai: any) => getDashboardMessageSummary(user.id, ai.id, fromDate, toDate))
           );
           // Per-day aggregation for charts
           const byDay: { [day: string]: DashboardMessageSummary } = {};
@@ -267,16 +267,16 @@ export default function AnalyticsPage() {
           setAISummaryRows(aiTotals);
           // For 'All AIs', sum unique leads for each AI (not deduplicated across AIs)
           const allCounts = await Promise.all(
-            ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, fromDate!, toDate!))
+            ais.map((ai: any) => getUniqueLeadsForPeriod(user.id, ai.id, fromDate!, toDate!))
           );
           uniqueLeads = allCounts.reduce((sum: number, n: number) => sum + n, 0);
           // Previous period unique leads
           const prevAllCounts = await Promise.all(
-            ais.map((ai: any) => getUniqueLeadsForPeriod(ai.id, prevFromDate!, prevToDate!))
+            ais.map((ai: any) => getUniqueLeadsForPeriod(user.id, ai.id, prevFromDate!, prevToDate!))
           );
           setPrevUniqueLeadsCount(prevAllCounts.reduce((sum: number, n: number) => sum + n, 0));
         } else {
-          rows = await getDashboardMessageSummary(selectedAIId, fromDate, toDate)
+          rows = await getDashboardMessageSummary(user.id, selectedAIId, fromDate, toDate)
           // For leaderboard: single AI - use the same kpiStats object
           // This ensures the lead counts match the KPI cards and funnel
           setAISummaryRows([
@@ -288,15 +288,15 @@ export default function AnalyticsPage() {
               new_leads: kpi.totalLeads, // Use kpi totalLeads for consistency
             }
           ]);
-          uniqueLeads = await getUniqueLeadsForPeriod(selectedAIId, fromDate!, toDate!);
+          uniqueLeads = await getUniqueLeadsForPeriod(user.id, selectedAIId, fromDate!, toDate!);
           // Previous period unique leads for single AI
-          setPrevUniqueLeadsCount(await getUniqueLeadsForPeriod(selectedAIId, prevFromDate!, prevToDate!));
+          setPrevUniqueLeadsCount(await getUniqueLeadsForPeriod(user.id, selectedAIId, prevFromDate!, prevToDate!));
         }
         setSummaryRows(rows)
         setUniqueLeadsCount(uniqueLeads)
         setUserSegment(segment);
         // Fetch funnel data for new funnel chart
-        const funnel = await getFunnelData(selectedAIId, fromDate!, toDate!);
+        const funnel = await getFunnelData(user.id, selectedAIId, fromDate!, toDate!);
         setFunnelData(funnel);
       } catch {
         setSummaryRows([])

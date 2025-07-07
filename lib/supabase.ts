@@ -458,7 +458,11 @@ export type DashboardMessageSummary = {
 };
 
 // Unified daily summary: compute per-day stats from conversations/messages, not view
-export async function getDashboardMessageSummary(agentId: string, fromDate?: string, toDate?: string): Promise<DashboardMessageSummary[]> {
+/**
+ * Unified daily summary: compute per-day stats from conversations/messages, not view
+ * Always filtered by userId for strict privacy
+ */
+export async function getDashboardMessageSummary(userId: string, agentId: string, fromDate?: string, toDate?: string): Promise<DashboardMessageSummary[]> {
   // Build daily buckets
   const start = new Date(fromDate as string);
   const end = new Date(toDate as string);
@@ -474,6 +478,7 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
       .from('messages')
       .select('id, conversation_id, sender, timestamp')
       .eq('sender', 'user')
+      .eq('user_id', userId)
       .gte('timestamp', day)
       .lt('timestamp', dayAfter);
     if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
@@ -559,13 +564,17 @@ export async function getDashboardMessageSummary(agentId: string, fromDate?: str
 // Fetch KPI stats (totals and averages) for dashboard cards
 // Unified KPI stats: all stats computed from conversations/messages, not view
 // Unified KPI: all stats based on conversations with at least one user message in the period
-export async function getDashboardKPIStats({ aiId, fromDate, toDate }: { aiId?: string, fromDate: string, toDate: string }) {
+/**
+ * Fetch KPI stats (totals and averages) for dashboard cards, always filtered by userId
+ */
+export async function getDashboardKPIStats({ userId, aiId, fromDate, toDate }: { userId: string, aiId?: string, fromDate: string, toDate: string }) {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
     .select('conversation_id, sender, timestamp')
     .eq('sender', 'user')
+    .eq('user_id', userId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (aiId && aiId !== '__all__') msgQuery = msgQuery.eq('ai_id', aiId);
@@ -1243,13 +1252,17 @@ export async function fetchUsersDirectly() {
 // Conversation Engagement Funnel: Conversations Started, Engaged, Leads
 // Unified funnel: all steps based on conversations whose FIRST message is in period
 // Unified Funnel: same base as KPI (conversations w/ at least one user message in period)
-export async function getFunnelData(agentId: string, fromDate: string, toDate: string) {
+/**
+ * Conversation Engagement Funnel: Conversations Started, Engaged, Leads, always filtered by userId
+ */
+export async function getFunnelData(userId: string, agentId: string, fromDate: string, toDate: string) {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
     .select('conversation_id, sender')
     .eq('sender', 'user')
+    .eq('user_id', userId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
@@ -1281,7 +1294,10 @@ export async function getFunnelData(agentId: string, fromDate: string, toDate: s
 }
 
 // Get unique leads for an AI and period (across all days in the range)
-export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string, toDate: string): Promise<number> {
+/**
+ * Get unique leads for an AI and period (across all days in the range), always filtered by userId for privacy
+ */
+export async function getUniqueLeadsForPeriod(userId: string, agentId: string, fromDate: string, toDate: string): Promise<number> {
   // Calculate the day after toDate to include the entire last day in the period
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
@@ -1289,6 +1305,7 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
   const { data: messages, error: msgError } = await supabase
     .from('messages')
     .select('conversation_id')
+    .eq('user_id', userId)
     .eq('ai_id', agentId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
@@ -1320,7 +1337,10 @@ export async function getUniqueLeadsForPeriod(agentId: string, fromDate: string,
 }
 
 // Fetch feedback stats (good/bad/none) for a given AI and period
-export async function getDashboardFeedbackStats(aiId: string, fromDate: string, toDate: string): Promise<{ up: number; down: number; none: number }> {
+/**
+ * Fetch feedback stats (good/bad/none) for a given AI and period, always filtered by userId
+ */
+export async function getDashboardFeedbackStats(userId: string, aiId: string, fromDate: string, toDate: string): Promise<{ up: number; down: number; none: number }> {
   // To include the full toDate, add one day and use .lt()
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
@@ -1328,6 +1348,7 @@ export async function getDashboardFeedbackStats(aiId: string, fromDate: string, 
   let query = supabase
     .from('conversations')
     .select('feedback')
+    .eq('user_id', userId)
     .gte('started_at', fromDate)
     .lt('started_at', dayAfterToDate);
   if (aiId && aiId !== '__all__') {
@@ -1347,13 +1368,17 @@ export async function getDashboardFeedbackStats(aiId: string, fromDate: string, 
 // Get user segment distribution: counts of new vs. returning users for a given AI and period
 // New: user's first conversation is in the period; Returning: first conversation is before period but has a conversation in the period
 // User segment distribution: new vs returning users (based on user messages)
-export async function getUserSegmentDistribution(agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
+/**
+ * Get user segment distribution: counts of new vs. returning users for a given AI and period, always filtered by userId
+ */
+export async function getUserSegmentDistribution(userId: string, agentId: string, fromDate: string, toDate: string): Promise<{ newUsers: number; returningUsers: number }> {
   const dayAfterToDate = new Date(new Date(toDate).getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   // 1. Get all user messages in the period
   let msgQuery = supabase
     .from('messages')
     .select('conversation_id, timestamp')
     .eq('sender', 'user')
+    .eq('user_id', userId)
     .gte('timestamp', fromDate)
     .lt('timestamp', dayAfterToDate);
   if (agentId && agentId !== '__all__') msgQuery = msgQuery.eq('ai_id', agentId);
@@ -1366,6 +1391,7 @@ export async function getUserSegmentDistribution(agentId: string, fromDate: stri
   const { data: convos, error: convoErr } = await supabase
     .from('conversations')
     .select('id, end_user_id')
+    .eq('user_id', userId)
     .in('id', convoIdsInPeriod);
   if (convoErr) throw convoErr;
   const userIdsInPeriod = Array.from(new Set((convos || []).map((c: any) => c.end_user_id).filter(Boolean)));
