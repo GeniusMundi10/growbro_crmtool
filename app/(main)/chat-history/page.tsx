@@ -82,9 +82,11 @@ export default function ChatHistoryPage() {
 
   useEffect(() => {
     async function fetchAIs() {
+      if (!user || !user.id) return;
       const { data, error } = await (await import("@/lib/supabase")).supabase
         .from("chat_history")
         .select("ai_name")
+        .eq("client_id", user.id)
         .neq("ai_name", null);
       if (!error && data) {
         const uniqueNames = Array.from(new Set(data.map((row: any) => row.ai_name))).filter(Boolean);
@@ -95,7 +97,7 @@ export default function ChatHistoryPage() {
       }
     }
     fetchAIs();
-  }, []);
+  }, [user]);
 
   async function fetchChats() {
     if (!user?.id) return;
