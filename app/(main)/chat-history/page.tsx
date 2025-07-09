@@ -6,7 +6,7 @@ import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Filter, Download, Eye } from "lucide-react";
+import { Search, Filter, Download, Eye, Mail } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, parseISO, isWithinInterval } from "date-fns";
 
@@ -273,14 +273,14 @@ export default function ChatHistoryPage() {
   </button>
   <button
     className={`p-2 hover:bg-gray-100 rounded ${sendingSummaryId === chat.chat_id ? 'opacity-60 cursor-not-allowed' : ''}`}
-    title="Email Summary"
+    title="Email Conversation Summary"
     disabled={sendingSummaryId === chat.chat_id}
     onClick={() => sendSummaryEmail(chat)}
   >
     {sendingSummaryId === chat.chat_id ? (
       <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
     ) : (
-      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 12H8m0 0l4-4m-4 4l4 4" /><rect x="2" y="4" width="20" height="16" rx="2" ry="2" stroke="currentColor" /></svg>
+      <Mail className="w-4 h-4 text-blue-600" />
     )}
   </button>
 </TableCell>
