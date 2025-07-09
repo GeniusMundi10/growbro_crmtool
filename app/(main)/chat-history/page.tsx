@@ -65,6 +65,20 @@ function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void 
 }
 
 export default function ChatHistoryPage() {
+  const [sendingSummaryId, setSendingSummaryId] = useState<string | null>(null);
+
+  async function sendSummaryEmail(chat: any) {
+    setSendingSummaryId(chat.chat_id);
+    try {
+      // Placeholder: Will POST to backend endpoint in future
+      await new Promise(res => setTimeout(res, 1200)); // Simulate network delay
+      alert(`Summary email for conversation ${chat.chat_id} sent! (Backend integration coming soon)`);
+    } catch (e) {
+      alert(`Failed to send summary email for conversation ${chat.chat_id}`);
+    } finally {
+      setSendingSummaryId(null);
+    }
+  }
   const { user, loading: userLoading } = useUser();
   const [aiOptions, setAIOptions] = useState<{ value: string; label: string }[]>([{ value: "all", label: "All AI" }]);
   const [chats, setChats] = useState<any[]>([]);
@@ -247,17 +261,29 @@ export default function ChatHistoryPage() {
                     <TableCell>{chat.duration}</TableCell>
                     <TableCell>{chat.messages_count}</TableCell>
                     <TableCell className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleView(chat.chat_id)} title="View Conversation">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <button
-                        className="p-2 hover:bg-gray-100 rounded"
-                        title="Download Conversation"
-                        onClick={() => handleDownload(chat.chat_id)}
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </TableCell>
+  <Button variant="ghost" size="sm" onClick={() => handleView(chat.chat_id)} title="View Conversation">
+    <Eye className="h-4 w-4" />
+  </Button>
+  <button
+    className="p-2 hover:bg-gray-100 rounded"
+    title="Download Conversation"
+    onClick={() => handleDownload(chat.chat_id)}
+  >
+    <Download className="w-4 h-4" />
+  </button>
+  <button
+    className={`p-2 hover:bg-gray-100 rounded ${sendingSummaryId === chat.chat_id ? 'opacity-60 cursor-not-allowed' : ''}`}
+    title="Email Summary"
+    disabled={sendingSummaryId === chat.chat_id}
+    onClick={() => sendSummaryEmail(chat)}
+  >
+    {sendingSummaryId === chat.chat_id ? (
+      <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+    ) : (
+      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 12H8m0 0l4-4m-4 4l4 4" /><rect x="2" y="4" width="20" height="16" rx="2" ry="2" stroke="currentColor" /></svg>
+    )}
+  </button>
+</TableCell>
                   </TableRow>
                 ))
               )}
