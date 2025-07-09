@@ -70,11 +70,22 @@ export default function ChatHistoryPage() {
   async function sendSummaryEmail(chat: any) {
     setSendingSummaryId(chat.chat_id);
     try {
-      // Placeholder: Will POST to backend endpoint in future
-      await new Promise(res => setTimeout(res, 1200)); // Simulate network delay
-      alert(`Summary email for conversation ${chat.chat_id} sent! (Backend integration coming soon)`);
+      const response = await fetch("https://growbro-backend.fly.dev/api/conversation/summary-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: chat.chat_id,
+          ai_id: chat.ai_id || chat.aiId || chat.aiID // fallback for various naming
+        })
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        alert(`Summary email for conversation ${chat.chat_id} sent successfully!`);
+      } else {
+        alert(`Failed to send summary email for conversation ${chat.chat_id}: ${result.error || 'Unknown error'}`);
+      }
     } catch (e) {
-      alert(`Failed to send summary email for conversation ${chat.chat_id}`);
+      alert(`Failed to send summary email for conversation ${chat.chat_id}: ${e.message}`);
     } finally {
       setSendingSummaryId(null);
     }
