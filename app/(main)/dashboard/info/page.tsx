@@ -41,11 +41,14 @@ const itemVariants = {
 }
 
 // Component that uses useSearchParams wrapped in Suspense
+import { useVectorstoreReadyPolling } from "@/hooks/useVectorstoreReadyPolling";
+
 function BusinessInfoPageContent() {
   const router = useRouter();
   const { user, loading } = useUser();
   const searchParams = useSearchParams();
   const aiId = searchParams.get('aiId');
+  useVectorstoreReadyPolling(aiId || undefined);
   const isNew = searchParams.get('new') === 'true';
   const [businessInfo, setBusinessInfo] = useState<any>(null);
   const [loadingAI, setLoadingAI] = useState(false);

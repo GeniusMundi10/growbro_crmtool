@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { signOut } from "@/lib/auth"
 import { useUser } from "@/context/UserContext"
+import { useNotifications } from "@/context/NotificationContext"
 
 interface HeaderProps {
   title: string
@@ -35,14 +36,8 @@ interface HeaderProps {
 export default function Header({ title }: HeaderProps) {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false)
-  const [notifications, setNotifications] = useState([
-    { id: 1, content: "New lead captured", unread: true, time: "10m ago" },
-    { id: 2, content: "5 new messages in your chat", unread: true, time: "30m ago" },
-    { id: 3, content: "Weekly analytics report available", unread: false, time: "2h ago" },
-    { id: 4, content: "Meeting scheduled with John Doe", unread: false, time: "Yesterday", icon: <Calendar className="h-4 w-4 text-blue-500" /> },
-    { id: 5, content: "Task completed: Update contact list", unread: false, time: "2 days ago", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
-  ])
-  
+  const { notifications, markAllRead } = useNotifications();
+
   const { user, loading: loadingUser } = useUser();
   
   const userFullName = "GrowBro User"
@@ -135,7 +130,14 @@ export default function Header({ title }: HeaderProps) {
           {/* Notifications */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              
+              <Button variant="ghost" className="relative rounded-full p-2" aria-label="Open notifications">
+                <Bell className="h-6 w-6 text-slate-500" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80 mt-1 p-0 overflow-hidden border-none shadow-lg rounded-xl">
               <div className="bg-gradient-to-r from-emerald-700 to-green-600 p-4 text-white">
