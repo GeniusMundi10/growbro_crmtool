@@ -24,6 +24,7 @@ import {
   Clock,
   Menu,
   LogOut,
+  Bell,
 } from "lucide-react"
 import { signOut } from "@/lib/auth"
 import { useUser } from "@/context/UserContext"
