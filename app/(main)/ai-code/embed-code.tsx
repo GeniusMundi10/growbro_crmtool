@@ -26,8 +26,8 @@ function EmbedCodeContent() {
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Generate code snippets with the selected AI ID
-  const htmlCode = `<script defer src="https://growbro-chatbox-widget.vercel.app/assets/chatbox-widget-bundle.js" data-ai-id="${selectedAI}"></script>`
-  const iframeCode = `<iframe src="https://growbro-chatbox-widget.vercel.app/iframe.html?agentId=${selectedAI}" width="450" height="650"></iframe>`
+  const htmlCode = `<script defer src="https://chatbox.growbro.ai/assets/chatbox-widget-bundle.js" data-ai-id="${selectedAI}"></script>`
+  const iframeCode = `<iframe src="https://chatbox.growbro.ai/iframe.html?agentId=${selectedAI}" width="450" height="650"></iframe>`
   
   // Load user's AIs on component mount
   useEffect(() => {
@@ -110,7 +110,7 @@ function EmbedCodeContent() {
       </head>
       <body>
         <div class="container">
-          <script defer src="https://growbro-chatbox-widget.vercel.app/assets/chatbox-widget-bundle.js" data-ai-id="${aiId}"></script>
+          <script defer src="https://chatbox.growbro.ai/assets/chatbox-widget-bundle.js" data-ai-id="${aiId}"></script>
         </div>
       </body>
       </html>
