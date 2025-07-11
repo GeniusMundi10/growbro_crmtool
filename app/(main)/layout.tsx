@@ -32,16 +32,12 @@ function MainLayoutInner({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { NotificationProvider } from "@/context/NotificationContext";
-
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <UserProvider>
-      <NotificationProvider>
-        <div className="min-h-screen bg-background font-sans antialiased">
-          <MainLayoutInner>{children}</MainLayoutInner>
-        </div>
-      </NotificationProvider>
+      <div className="min-h-screen bg-background font-sans antialiased">
+        <MainLayoutInner>{children}</MainLayoutInner>
+      </div>
     </UserProvider>
   );
 }
