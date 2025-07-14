@@ -96,6 +96,7 @@ export type BusinessInfo = {
   total_pages_crawled?: number;
   files_indexed?: number;
   urls_crawled?: string[] | string;
+  vectorstore_ready?: boolean;
   created_at: string
   updated_at: string
 }

@@ -9,6 +9,8 @@ interface CrawlAnalyticsCardProps {
   filesIndexed: number;
   urlsCrawled: string[];
   loading: boolean;
+  aiId: string;
+  onUrlsRemoved?: () => void;
 }
 
 const MetricCard = ({ icon, label, value, loading }: { icon: string; label: string; value: number; loading: boolean }) => (
@@ -21,19 +23,55 @@ const MetricCard = ({ icon, label, value, loading }: { icon: string; label: stri
   </div>
 );
 
+interface CrawlAnalyticsCardProps {
+  totalPagesCrawled: number;
+  filesIndexed: number;
+  urlsCrawled: string[];
+  loading: boolean;
+  aiId: string;
+  onRemoveUrls: (newUrls: string[]) => Promise<void>;
+}
+
 const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
   totalPagesCrawled,
   filesIndexed,
   urlsCrawled,
   loading,
+  aiId,
+  onRemoveUrls
 }) => {
   const [showAll, setShowAll] = useState(false);
   // Track favicon error state by URL index
   const [faviconErrors, setFaviconErrors] = useState<{ [idx: number]: boolean }>({});
+  const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+  const [removing, setRemoving] = useState(false);
+
   const handleFaviconError = (idx: number) => {
     setFaviconErrors((prev) => ({ ...prev, [idx]: true }));
   };
   const visibleUrls = showAll ? urlsCrawled : urlsCrawled.slice(0, 7);
+
+  const handleCheckboxChange = (url: string) => {
+    setSelectedUrls((prev) =>
+      prev.includes(url) ? prev.filter(u => u !== url) : [...prev, url]
+    );
+  };
+
+  const handleRemove = async () => {
+    if (!aiId || selectedUrls.length === 0) return;
+    setRemoving(true);
+    try {
+      const newUrls = urlsCrawled.filter(url => !selectedUrls.includes(url));
+      await onRemoveUrls(newUrls);
+      setSelectedUrls([]);
+    } catch (e) {
+      alert("Failed to remove URLs. Please try again.");
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+
   return (
     <div className="bg-white rounded shadow p-4 mb-6">
       <h3 className="font-semibold text-lg mb-4">Knowledge Base Crawl Analytics</h3>
@@ -56,6 +94,7 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
           <ul className="list-none pl-0 space-y-1">
             {/* Track favicon error state by URL index */}
             {visibleUrls.map((url, idx) => {
+              const checked = selectedUrls.includes(url);
               let domain = '';
               try {
                 domain = new URL(url).hostname.replace('www.', '');
@@ -70,6 +109,13 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
 
               return (
                 <li key={idx} className="flex items-center group bg-gray-50 hover:bg-[#e6faed] rounded-lg px-2 py-1 transition">
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={checked}
+                    onChange={() => handleCheckboxChange(url)}
+                    aria-label={`Select ${url}`}
+                  />
                   {faviconError ? (
                     <span className="w-5 h-5 mr-2 flex items-center justify-center text-[#16a34a]" style={{ minWidth: 20 }}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
@@ -113,6 +159,17 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
                   onClick={() => setShowAll(s => !s)}
                 >
                   {showAll ? 'Show Less' : `Show All (${urlsCrawled.length})`}
+                </button>
+              </li>
+            )}
+            {urlsCrawled.length > 0 && (
+              <li>
+                <button
+                  className="mt-2 px-3 py-1 bg-red-500 text-white rounded shadow text-xs font-semibold disabled:opacity-50"
+                  disabled={selectedUrls.length === 0 || removing}
+                  onClick={handleRemove}
+                >
+                  {removing ? 'Removing...' : `Remove Selected (${selectedUrls.length})`}
                 </button>
               </li>
             )}

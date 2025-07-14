@@ -6,6 +6,7 @@ export const dynamicParams = true;
 
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { updateBusinessInfo } from "@/lib/supabase";
 import {
   BarChart,
   Bar,
@@ -364,14 +365,31 @@ export default function AnalyticsPage() {
         />
 
         {/* --- Crawl Analytics Card (after KPIs) --- */}
-        <div className="my-8">
-          <CrawlAnalyticsCard
-            totalPagesCrawled={crawlAnalytics.totalPagesCrawled}
-            filesIndexed={crawlAnalytics.filesIndexed}
-            urlsCrawled={crawlAnalytics.urlsCrawled}
-            loading={crawlAnalytics.loading}
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <CrawlAnalyticsCard
+          totalPagesCrawled={crawlAnalytics.totalPagesCrawled}
+          filesIndexed={crawlAnalytics.filesIndexed}
+          urlsCrawled={crawlAnalytics.urlsCrawled}
+          loading={crawlAnalytics.loading}
+          aiId={selectedAIId === "__all__" ? (ais[0]?.id ?? "") : selectedAIId}
+          onRemoveUrls={async (newUrls) => {
+            try {
+              await updateBusinessInfo({
+  id: selectedAIId === "__all__" ? (ais[0]?.id ?? "") : selectedAIId,
+  urls_crawled: newUrls,
+  vectorstore_ready: false
+});
+              toast.success("Selected URLs removed and KB rebuild triggered.");
+              // Wait for backend to process, then refetch analytics
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            } catch (e) {
+              toast.error("Failed to remove URLs. Please try again.");
+            }
+          }}
+        />
+      </div>
         
         {/* Pie Charts Side by Side */}
         <div className="flex flex-col lg:flex-row gap-8 justify-center items-stretch mb-8">
