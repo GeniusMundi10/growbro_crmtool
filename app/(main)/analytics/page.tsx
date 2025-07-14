@@ -365,7 +365,7 @@ export default function AnalyticsPage() {
         />
 
         {/* --- Crawl Analytics Card (after KPIs) --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="my-8">
         <CrawlAnalyticsCard
           totalPagesCrawled={crawlAnalytics.totalPagesCrawled}
           filesIndexed={crawlAnalytics.filesIndexed}
