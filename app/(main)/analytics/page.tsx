@@ -372,21 +372,9 @@ export default function AnalyticsPage() {
           urlsCrawled={crawlAnalytics.urlsCrawled}
           loading={crawlAnalytics.loading}
           aiId={selectedAIId === "__all__" ? (ais[0]?.id ?? "") : selectedAIId}
-          onRemoveUrls={async (newUrls) => {
-            try {
-              await updateBusinessInfo({
-  id: selectedAIId === "__all__" ? (ais[0]?.id ?? "") : selectedAIId,
-  urls_crawled: newUrls,
-  vectorstore_ready: false
-});
-              toast.success("Selected URLs removed and KB rebuild triggered.");
-              // Wait for backend to process, then refetch analytics
-              setTimeout(() => {
-                window.location.reload();
-              }, 1500);
-            } catch (e) {
-              toast.error("Failed to remove URLs. Please try again.");
-            }
+          onUrlsRemoved={async () => {
+            await fetchCrawlAnalytics();
+            toast.success("Selected URLs removed and knowledge base updated.");
           }}
         />
       </div>

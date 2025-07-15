@@ -29,7 +29,7 @@ interface CrawlAnalyticsCardProps {
   urlsCrawled: string[];
   loading: boolean;
   aiId: string;
-  onRemoveUrls: (newUrls: string[]) => Promise<void>;
+  onUrlsRemoved?: () => void;
 }
 
 const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
@@ -38,7 +38,7 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
   urlsCrawled,
   loading,
   aiId,
-  onRemoveUrls
+  onUrlsRemoved
 }) => {
   const [showAll, setShowAll] = useState(false);
   // Track favicon error state by URL index
@@ -61,9 +61,15 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
     if (!aiId || selectedUrls.length === 0) return;
     setRemoving(true);
     try {
-      const newUrls = urlsCrawled.filter(url => !selectedUrls.includes(url));
-      await onRemoveUrls(newUrls);
+      const response = await fetch("https://growbro-vectorstore-worker.fly.dev/remove-urls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ai_id: aiId, urls_to_remove: selectedUrls })
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Unknown error");
       setSelectedUrls([]);
+      if (typeof onUrlsRemoved === "function") onUrlsRemoved();
     } catch (e) {
       alert("Failed to remove URLs. Please try again.");
     } finally {
