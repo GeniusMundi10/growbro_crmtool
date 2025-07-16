@@ -102,7 +102,7 @@ export default function BillingInfo() {
           const defaultPlans = {
             'starter': {
               name: 'Starter',
-              chat_messages: 25000,
+              chat_messages: 5000,
               voice_messages: 0,
               ai_agents: 1,
               custom_branding: false,
@@ -110,7 +110,7 @@ export default function BillingInfo() {
             },
             'basic': {
               name: 'Basic',
-              chat_messages: 100000,
+              chat_messages: 20000,
               voice_messages: 0,
               ai_agents: 2,
               custom_branding: false,
@@ -118,7 +118,7 @@ export default function BillingInfo() {
             },
             'pro': {
               name: 'Pro',
-              chat_messages: 250000,
+              chat_messages: 50000,
               voice_messages: 300,
               ai_agents: 4,
               custom_branding: true,
@@ -126,7 +126,7 @@ export default function BillingInfo() {
             },
             'growth': {
               name: 'Growth',
-              chat_messages: 500000,
+              chat_messages: 100000,
               voice_messages: 400,
               ai_agents: 7,
               custom_branding: true,
@@ -134,7 +134,7 @@ export default function BillingInfo() {
             },
             'advanced': {
               name: 'Advanced',
-              chat_messages: 2000000,
+              chat_messages: 250000,
               voice_messages: 600,
               ai_agents: 10,
               custom_branding: true,
@@ -219,7 +219,7 @@ export default function BillingInfo() {
                 <>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>
-                    <span>100 chat minutes</span>
+                    <span>100 chat messages</span>
                   </li>
                   <li className="flex items-center">
                     <span className="mr-2">•</span>

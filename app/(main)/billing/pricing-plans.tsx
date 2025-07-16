@@ -51,10 +51,10 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Starter",
       description: "For entrepreneurs",
-      price: billingCycle === "monthly" ? "₹8000" : "₹80000",
+      price: billingCycle === "monthly" ? "$29" : "$24",
       features: [
-        "25000 chat messages",
-        "₹8 per additional 1000 messages",
+        "5,000 chat messages",
+        "$1 per additional 1,000 messages",
         "Voice not included",
         "1 AI Agent",
         "Unlimited Sales Leads",
@@ -64,11 +64,11 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     },
     {
       name: "Basic",
-      description: "For new startups",
-      price: billingCycle === "monthly" ? "₹16999" : "₹169990",
+      description: "For startups",
+      price: billingCycle === "monthly" ? "$49" : "$41",
       features: [
-        "100000 chat messages",
-        "₹8 per additional 1000 messages",
+        "20,000 chat messages",
+        "$1 per additional 1,000 messages",
         "Voice not included",
         "2 AI Agents",
         "Unlimited Sales Leads",
@@ -79,12 +79,12 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Pro",
       description: "For small businesses",
-      price: billingCycle === "monthly" ? "₹29699" : "₹296990",
+      price: billingCycle === "monthly" ? "$99" : "$82",
       features: [
-        "250000 chat messages",
-        "₹8 per additional 1000 messages",
+        "50,000 chat messages",
+        "$1 per additional 1,000 messages",
         "300 voice messages",
-        "₹35 per additional voice minute",
+        "$1 per additional voice minute",
         "4 AI Agents",
         "Unlimited Sales Leads",
         "Remove Growbro watermark",
@@ -94,12 +94,12 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Growth",
       description: "For growing businesses",
-      price: billingCycle === "monthly" ? "₹55199" : "₹551990",
+      price: billingCycle === "monthly" ? "$129" : "$107",
       features: [
-        "500000 chat messages",
-        "₹6 per additional 1000 messages",
+        "100,000 chat messages",
+        "$1 per additional 1,000 messages",
         "400 voice messages",
-        "₹34 per additional voice minute",
+        "$1 per additional voice minute",
         "7 AI Agents",
         "Unlimited Sales Leads",
         "Remove Growbro watermark",
@@ -108,13 +108,13 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
     {
       name: "Advanced",
       description: "For scaling teams",
-      price: billingCycle === "monthly" ? "₹101999" : "₹1019990",
+      price: billingCycle === "monthly" ? "$349" : "$290",
       features: [
-        "2000000 chat messages",
-        "₹5 per additional 1000 messages",
-        "600 voice messages",
-        "₹32 per additional voice minute",
-        "10 AI Agents",
+        "250,000 chat messages",
+        "$1 per additional 1,000 messages",
+        "1,000 voice messages",
+        "$1 per additional voice minute",
+        "11 AI Agents",
         "Unlimited Sales Leads",
         "Remove Growbro watermark",
       ],
@@ -138,17 +138,15 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
       <p className="text-center mb-6">Select the plan that fits your needs</p>
 
       <div className="flex items-center justify-center mb-8">
-        <div className="flex items-center space-x-2">
-          <Label htmlFor="billing-cycle" className={billingCycle === "monthly" ? "font-bold" : ""}>
-            Monthly
-          </Label>
+        <div className="flex items-center justify-center mb-8 gap-3">
           <Switch
             id="billing-cycle"
             checked={billingCycle === "yearly"}
             onCheckedChange={(checked) => setBillingCycle(checked ? "yearly" : "monthly")}
+            className="mx-2"
           />
-          <Label htmlFor="billing-cycle" className={billingCycle === "yearly" ? "font-bold" : ""}>
-            Yearly
+          <Label htmlFor="billing-cycle" className="flex items-center gap-1 cursor-pointer select-none text-lg">
+            <span className={billingCycle === "yearly" ? "font-bold text-green-600" : ""}>Annual (17% Discount)</span>
           </Label>
         </div>
       </div>
@@ -163,7 +161,12 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
             <CardContent className="pt-6">
               <div className="text-center mb-4">
                 <span className="text-3xl font-bold">{plan.price}</span>
-                <span className="text-gray-500">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
+                <span className="text-gray-500">/mo</span>
+                {billingCycle === "yearly" && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    ${parseFloat(plan.price.replace(/[^\d.]/g, "")) * 12}/yr
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-2 mb-6">
@@ -195,8 +198,15 @@ export default function PricingPlans({ onClose }: PricingPlansProps) {
                   }
                   setLoadingPlan(plan.name);
                   try {
-                    // 1. Create Razorpay order
-                    const amount = parseInt(plan.price.replace(/[^\d]/g, ""), 10);
+                    // 1. Calculate INR amount based on toggle
+                    const usdPrice = parseFloat(plan.price.replace(/[^\d.]/g, ""));
+                    let amount = 0;
+                    if (billingCycle === "monthly") {
+                      amount = Math.round(usdPrice * 86);
+                    } else {
+                      amount = Math.round(usdPrice * 12 * 86);
+                    }
+                    // 2. Create Razorpay order
                     const res = await fetch("/api/payments/razorpay", {
                       method: "POST",
                       headers: { "Content-Type": "application/json" },
