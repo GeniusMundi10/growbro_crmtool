@@ -75,11 +75,6 @@ export default function WebsitesForm() {
     if (value.trim() === "" && aiId && user?.id) {
       const deleted = await deleteAIWebsiteByLabel(user.id, aiId, target.label);
       if (deleted) {
-        // Set vectorstore_ready to false after delete
-        await supabase
-          .from("business_info")
-          .update({ vectorstore_ready: false })
-          .eq("id", aiId);
         // For custom slots, remove from state; for default, just clear url
         if (target.isCustom) {
           setWebsites(websites.filter((website) => website.id !== id));
@@ -117,14 +112,37 @@ export default function WebsitesForm() {
     }
     setSaving(true);
     try {
+      // Step 1: Save to Supabase ai_website table
       await upsertAIWebsites(aiId, user.id, websites);
-      // Set vectorstore_ready to false after any save
-      await supabase
-        .from("business_info")
-        .update({ vectorstore_ready: false })
-        .eq("id", aiId);
-      toast.success("Websites saved!");
+      
+      // Step 2: Extract non-empty URLs to add to vectorstore
+      const validUrls = websites
+        .filter(w => w.url?.trim())
+        .map(w => w.url.trim());
+      
+      if (validUrls.length > 0) {
+        // Step 3: Call our new API endpoint to incrementally add links to vectorstore
+        try {
+          // Import the new addLinksToVectorstore function at the top of the file
+          const { addLinksToVectorstore } = await import("@/lib/supabase");
+          const result = await addLinksToVectorstore(aiId, validUrls);
+          
+          if (result.success) {
+            toast.success("Websites saved and added to AI knowledge!");
+          } else {
+            // If adding to vectorstore fails, inform the user but don't trigger a rebuild
+            console.error("Error adding links to vectorstore:", result.message);
+            toast.success("Websites saved! Changes will be available soon.");
+          }
+        } catch (e) {
+          console.error("Error with incremental update:", e);
+          toast.success("Websites saved! Changes will be available soon.");
+        }
+      } else {
+        toast.success("Websites saved!");
+      }
     } catch (error) {
+      console.error("Failed to save websites:", error);
       toast.error("Failed to save websites");
     }
     setSaving(false);
@@ -151,11 +169,6 @@ export default function WebsitesForm() {
     if (aiId && user?.id) {
       const deleted = await deleteAIWebsiteByLabel(user.id, aiId, website.label);
       if (deleted) {
-        // Set vectorstore_ready to false after delete
-        await supabase
-          .from("business_info")
-          .update({ vectorstore_ready: false })
-          .eq("id", aiId);
         setWebsites(websites.filter((_, i) => i !== idx));
         toast.success("Website entry deleted");
       } else {

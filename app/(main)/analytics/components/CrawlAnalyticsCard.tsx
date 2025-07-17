@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState } from "react";
@@ -10,6 +8,7 @@ interface CrawlAnalyticsCardProps {
   urlsCrawled: string[];
   loading: boolean;
   aiId: string;
+  urlToAiMap?: Record<string, string>; // Maps URLs to their AI IDs
   onUrlsRemoved?: () => void;
 }
 
@@ -38,6 +37,7 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
   urlsCrawled,
   loading,
   aiId,
+  urlToAiMap = {}, // Default to empty object if not provided
   onUrlsRemoved
 }) => {
   const [showAll, setShowAll] = useState(false);
@@ -58,19 +58,52 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
   };
 
   const handleRemove = async () => {
-    if (!aiId || selectedUrls.length === 0) return;
+    if (selectedUrls.length === 0) return;
     setRemoving(true);
+    
     try {
-      const response = await fetch("https://growbro-vectorstore-worker.fly.dev/remove-urls", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ai_id: aiId, urls_to_remove: selectedUrls })
+      // Group URLs by their AI ID for efficient removal
+      const urlsByAi: Record<string, string[]> = {};
+      
+      // For each selected URL, determine which AI it belongs to
+      for (const url of selectedUrls) {
+        // If we have a urlToAiMap and this URL is in it, use that AI ID
+        // Otherwise fall back to the provided aiId (single AI case)
+        const targetAiId = urlToAiMap[url] || aiId;
+        
+        // Initialize the array if this is the first URL for this AI
+        if (!urlsByAi[targetAiId]) {
+          urlsByAi[targetAiId] = [];
+        }
+        
+        // Add this URL to the correct AI's list
+        urlsByAi[targetAiId].push(url);
+      }
+      
+      // Make a separate API call for each AI's URLs
+      const promises = Object.entries(urlsByAi).map(([aiId, urls]) => {
+        console.log(`Removing ${urls.length} URLs from AI: ${aiId}`);
+        return fetch("https://growbro-vectorstore-worker.fly.dev/remove-urls", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ai_id: aiId, urls_to_remove: urls })
+        }).then(res => res.json());
       });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.message || "Unknown error");
+      
+      // Wait for all removals to complete
+      const results = await Promise.all(promises);
+      
+      // Check if any removal failed
+      const anyFailed = results.some(result => result.status !== "success");
+      
+      if (anyFailed) {
+        throw new Error("Some URLs could not be removed. Please try again.");
+      }
+      
       setSelectedUrls([]);
       if (typeof onUrlsRemoved === "function") onUrlsRemoved();
     } catch (e) {
+      console.error("Failed to remove URLs:", e);
       alert("Failed to remove URLs. Please try again.");
     } finally {
       setRemoving(false);

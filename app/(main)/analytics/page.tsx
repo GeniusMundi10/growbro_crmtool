@@ -85,8 +85,9 @@ export default function AnalyticsPage() {
     totalPagesCrawled: number;
     filesIndexed: number;
     urlsCrawled: string[];
+    urlToAiMap: Record<string, string>; // Maps each URL to its AI ID
     loading: boolean;
-  }>({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
+  }>({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], urlToAiMap: {}, loading: false });
 
   // Effect for fetching crawl analytics data - runs when selectedAIId or ais changes
   useEffect(() => {
@@ -95,7 +96,7 @@ export default function AnalyticsPage() {
       try {
         if (selectedAIId === "__all__") {
           if (!ais || ais.length === 0) {
-            setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
+            setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], urlToAiMap: {}, loading: false });
             return;
           }
           const mod = await import("@/lib/supabase");
@@ -104,45 +105,65 @@ export default function AnalyticsPage() {
           let totalPagesCrawled = 0;
           let filesIndexed = 0;
           let urlsSet = new Set<string>();
+          let urlToAiMap: Record<string, string> = {};
+          
           for (const info of infos) {
-            if (!info) continue;
-            totalPagesCrawled += info.total_pages_crawled ?? 0;
-            filesIndexed += info.files_indexed ?? 0;
+            if (!info || !info.id) continue;
+            totalPagesCrawled += Number(info.total_pages_crawled) || 0;
+            filesIndexed += Number(info.files_indexed) || 0;
             let urls: string[] = Array.isArray(info.urls_crawled)
               ? info.urls_crawled
               : (typeof info.urls_crawled === "string" && info.urls_crawled.startsWith("[")
                   ? JSON.parse(info.urls_crawled)
                   : []);
-            urls.forEach((u: string) => urlsSet.add(u));
+                  
+            // Add URLs to set and map each URL to this AI's ID
+            urls.forEach((u: string) => {
+              urlsSet.add(u);
+              urlToAiMap[u] = info.id; // Map URL to AI ID
+            });
           }
+          
           setCrawlAnalytics({
             totalPagesCrawled,
             filesIndexed,
             urlsCrawled: Array.from(urlsSet),
+            urlToAiMap, // Store the URL to AI mapping
             loading: false,
           });
         } else if (selectedAIId) {
           const mod = await import("@/lib/supabase");
           const info = await mod.getBusinessInfo(selectedAIId);
           console.log('[CrawlAnalytics] Single AI fetched business_info:', info);
+          // For single AI, all URLs belong to this AI
+          const urls = Array.isArray(info?.urls_crawled)
+            ? info.urls_crawled
+            : (typeof info?.urls_crawled === "string" && info?.urls_crawled.startsWith("[")
+                ? JSON.parse(info.urls_crawled)
+                : []);
+          
+          // Create a mapping where all URLs map to this AI ID
+          const urlToAiMap: Record<string, string> = {};
+          urls.forEach((url: string) => urlToAiMap[url] = selectedAIId);
+          
           setCrawlAnalytics({
             totalPagesCrawled: info?.total_pages_crawled ?? 0,
             filesIndexed: info?.files_indexed ?? 0,
-            urlsCrawled: Array.isArray(info?.urls_crawled)
-              ? info.urls_crawled
-              : (typeof info?.urls_crawled === "string" && info?.urls_crawled.startsWith("[")
-                  ? JSON.parse(info.urls_crawled)
-                  : []),
+            urlsCrawled: urls,
+            urlToAiMap,
             loading: false,
           });
         } else {
-          setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
+          setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], urlToAiMap: {}, loading: false });
         }
       } catch {
-        setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], loading: false });
+        setCrawlAnalytics({ totalPagesCrawled: 0, filesIndexed: 0, urlsCrawled: [], urlToAiMap: {}, loading: false });
       }
     }
-    fetchCrawlAnalytics();
+    const fetchData = async () => {
+      await fetchCrawlAnalytics();
+    };
+    fetchData();
   }, [selectedAIId, ais]);
   
   // Effect for initial user and AIs loading - runs only once on mount
@@ -372,8 +393,73 @@ export default function AnalyticsPage() {
           urlsCrawled={crawlAnalytics.urlsCrawled}
           loading={crawlAnalytics.loading}
           aiId={selectedAIId === "__all__" ? (ais[0]?.id ?? "") : selectedAIId}
+          urlToAiMap={crawlAnalytics.urlToAiMap}
           onUrlsRemoved={async () => {
-            await fetchCrawlAnalytics();
+            // Call the same function that's used in the useEffect
+            const fetchData = async () => {
+              // Update business info and refresh crawl analytics
+              if (selectedAIId === "__all__") {
+                // Refresh all AIs data
+                const mod = await import("@/lib/supabase");
+                const aiIds = ais.map(ai => ai.id).filter(Boolean) as string[];
+                const infos = await Promise.all(aiIds.map(id => mod.getBusinessInfo(id)));
+                
+                let totalPagesCrawled = 0;
+                let filesIndexed = 0;
+                let urlsSet = new Set<string>();
+                let urlToAiMap: Record<string, string> = {};
+                
+                for (const info of infos) {
+                  if (!info || !info.id) continue;
+                  totalPagesCrawled += Number(info.total_pages_crawled) || 0;
+                  filesIndexed += Number(info.files_indexed) || 0;
+                  let urls: string[] = Array.isArray(info.urls_crawled)
+                    ? info.urls_crawled
+                    : (typeof info.urls_crawled === "string" && info.urls_crawled.startsWith("[")
+                        ? JSON.parse(info.urls_crawled)
+                        : []);
+                        
+                  // Add URLs to set and map each URL to this AI's ID
+                  urls.forEach((u: string) => {
+                    urlsSet.add(u);
+                    urlToAiMap[u] = info.id; // Map URL to AI ID
+                  });
+                }
+                
+                setCrawlAnalytics({
+                  totalPagesCrawled,
+                  filesIndexed,
+                  urlsCrawled: Array.from(urlsSet),
+                  urlToAiMap,
+                  loading: false,
+                });
+              } else if (selectedAIId) {
+                // Refresh single AI data
+                const mod = await import("@/lib/supabase");
+                const info = await mod.getBusinessInfo(selectedAIId);
+                
+                // For single AI, all URLs belong to this AI
+                const urls = Array.isArray(info?.urls_crawled)
+                  ? info.urls_crawled
+                  : (typeof info?.urls_crawled === "string" && info?.urls_crawled.startsWith("[")
+                      ? JSON.parse(info.urls_crawled)
+                      : []);
+                
+                // Create a mapping where all URLs map to this AI ID
+                const urlToAiMap: Record<string, string> = {};
+                urls.forEach((url: string) => urlToAiMap[url] = selectedAIId);
+                
+                setCrawlAnalytics({
+                  totalPagesCrawled: info?.total_pages_crawled ?? 0,
+                  filesIndexed: info?.files_indexed ?? 0,
+                  urlsCrawled: urls,
+                  urlToAiMap,
+                  loading: false,
+                });
+              }
+            };
+            
+            await fetchData();
             toast.success("Selected URLs removed and knowledge base updated.");
           }}
         />

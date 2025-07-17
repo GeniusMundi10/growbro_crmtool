@@ -192,6 +192,41 @@ export async function getAIWebsites(aiId: string): Promise<AIWebsite[]> {
   return data as AIWebsite[];
 }
 
+/**
+ * Calls the backend /add-links API endpoint to incrementally add new URLs to the vectorstore
+ * without rebuilding the entire index
+ */
+export async function addLinksToVectorstore(aiId: string, newUrls: string[]): Promise<{ success: boolean, message: string }> {
+  try {
+    // Call the worker API endpoint
+    const response = await fetch(`${process.env.NEXT_PUBLIC_WORKER_API_URL || 'https://growbro-vectorstore-worker.fly.dev'}/add-links`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ai_id: aiId,
+        new_urls: newUrls,
+      }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Error adding links to vectorstore:', data);
+      return { success: false, message: data.message || 'Failed to add links to vectorstore' };
+    }
+    
+    return { 
+      success: true, 
+      message: `Successfully added ${data.added_count || 0} new documents to vectorstore` 
+    };
+  } catch (error) {
+    console.error('Error calling /add-links API:', error);
+    return { success: false, message: 'Failed to connect to vectorstore API' };
+  }
+}
+
 export async function upsertAIWebsites(
   aiId: string,
   userId: string,
