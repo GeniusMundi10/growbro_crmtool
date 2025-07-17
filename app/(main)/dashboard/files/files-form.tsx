@@ -11,6 +11,9 @@ import HelpButton from "@/components/help-button";
 import ActionButtons from "@/components/action-buttons";
 import { Upload, Trash2 } from "lucide-react";
 
+// Define the worker API endpoint for incremental file addition
+const WORKER_API_URL = process.env.NEXT_PUBLIC_WORKER_API_URL || "https://growbro-vectorstore-worker.fly.dev";
+
 export default function FilesForm() {
   const searchParams = useSearchParams();
   const aiId = searchParams.get("aiId");
@@ -38,6 +41,10 @@ export default function FilesForm() {
     const filesList = e.target.files;
     if (!filesList || !aiId || !user?.id) return;
     setUploading(true);
+    
+    // Keep track of all uploaded file URLs to send to the /add-files endpoint
+    const uploadedFileUrls = [];
+    
     for (let i = 0; i < filesList.length; i++) {
       const file = filesList[i];
       const uploadResult = await uploadAIFileToStorage(aiId, file);
@@ -56,15 +63,44 @@ export default function FilesForm() {
         toast.error(`Failed to save file info: ${file.name}`);
       } else {
         toast.success(`Uploaded: ${file.name}`);
+        // Add the URL to our list for vectorstore processing
+        uploadedFileUrls.push(uploadResult.url);
       }
     }
-    // Set vectorstore_ready to false after any upload
-    if (aiId) {
-      await supabase
-        .from("business_info")
-        .update({ vectorstore_ready: false })
-        .eq("id", aiId);
+    
+    // Use the incremental /add-files endpoint instead of triggering a full rebuild
+    if (aiId && uploadedFileUrls.length > 0) {
+      try {
+        // Show processing toast
+        const processingToast = toast.loading("Processing files for your AI knowledge base...");
+        
+        const response = await fetch(`${WORKER_API_URL}/add-files`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ai_id: aiId,
+            file_urls: uploadedFileUrls
+          })
+        });
+        
+        const result = await response.json();
+        
+        // Dismiss processing toast
+        toast.dismiss(processingToast);
+        
+        if (result.status === "success") {
+          toast.success(`Added ${result.added_count} file(s) to your knowledge base`);
+        } else {
+          toast.error(`Failed to process files: ${result.message || "Unknown error"}`);
+        }
+      } catch (error) {
+        console.error("Error adding files to vectorstore:", error);
+        toast.error("Failed to process files. Please try again later.");
+      }
     }
+    
     await loadFiles();
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -75,6 +111,10 @@ export default function FilesForm() {
     if (!aiId || !user?.id) return;
     const filesList = e.dataTransfer.files;
     setUploading(true);
+    
+    // Keep track of all uploaded file URLs to send to the /add-files endpoint
+    const uploadedFileUrls = [];
+    
     for (let i = 0; i < filesList.length; i++) {
       const file = filesList[i];
       const uploadResult = await uploadAIFileToStorage(aiId, file);
@@ -93,35 +133,88 @@ export default function FilesForm() {
         toast.error(`Failed to save file info: ${file.name}`);
       } else {
         toast.success(`Uploaded: ${file.name}`);
+        // Add the URL to our list for vectorstore processing
+        uploadedFileUrls.push(uploadResult.url);
       }
     }
-    // Set vectorstore_ready to false after any upload
-    if (aiId) {
-      await supabase
-        .from("business_info")
-        .update({ vectorstore_ready: false })
-        .eq("id", aiId);
+    
+    // Use the incremental /add-files endpoint instead of triggering a full rebuild
+    if (aiId && uploadedFileUrls.length > 0) {
+      try {
+        // Show processing toast
+        const processingToast = toast.loading("Processing files for your AI knowledge base...");
+        
+        const response = await fetch(`${WORKER_API_URL}/add-files`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ai_id: aiId,
+            file_urls: uploadedFileUrls
+          })
+        });
+        
+        const result = await response.json();
+        
+        // Dismiss processing toast
+        toast.dismiss(processingToast);
+        
+        if (result.status === "success") {
+          toast.success(`Added ${result.added_count} file(s) to your knowledge base`);
+        } else {
+          toast.error(`Failed to process files: ${result.message || "Unknown error"}`);
+        }
+      } catch (error) {
+        console.error("Error adding files to vectorstore:", error);
+        toast.error("Failed to process files. Please try again later.");
+      }
     }
+    
     await loadFiles();
     setUploading(false);
   };
 
   const handleDelete = async (file: AIFile) => {
     setUploading(true);
+    
+    // First delete the file from storage and database
     const ok = await deleteAIFile(file.id, file.file_path);
-    if (ok) {
-      // Set vectorstore_ready to false after delete
-      if (aiId) {
-        await supabase
-          .from("business_info")
-          .update({ vectorstore_ready: false })
-          .eq("id", aiId);
-      }
-      toast.success("File deleted.");
-      await loadFiles();
-    } else {
-      toast.error("Failed to delete file.");
+    if (!ok) {
+      toast.error("Failed to delete file from storage.");
+      setUploading(false);
+      return;
     }
+    
+    // Then call the /remove-files endpoint to update the vectorstore
+    try {
+      const response = await fetch(`${WORKER_API_URL}/remove-files`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ai_id: aiId,
+          file_urls: [file.url] // Send the file URL to be removed from vectorstore
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.status === 'success') {
+        toast.success(`File deleted and removed from AI knowledge base. ${result.deleted_count} chunks removed.`);
+      } else {
+        console.error("Error removing file from vectorstore:", result);
+        toast.error("File deleted from storage but may still appear in AI responses.");
+      }
+      
+      await loadFiles();
+    } catch (error) {
+      console.error("Error calling /remove-files endpoint:", error);
+      toast.error("File deleted from storage but may still appear in AI responses.");
+      await loadFiles();
+    }
+    
     setUploading(false);
   };
 

@@ -11,6 +11,9 @@ import { Plus } from "lucide-react"
 import HelpButton from "@/components/help-button"
 import ActionButtons from "@/components/action-buttons"
 
+// Define the worker API endpoint for vectorstore updates
+const WORKER_API_URL = process.env.NEXT_PUBLIC_WORKER_API_URL || "https://growbro-vectorstore-worker.fly.dev"
+
 interface WebsiteEntry {
   id: string;
   label: string;
@@ -166,17 +169,58 @@ export default function WebsitesForm() {
   const handleRemoveWebsite = async (idx: number) => {
     const website = websites[idx];
     if (!website) return;
+    setSaving(true); // Show loading state
+    
     if (aiId && user?.id) {
+      // First delete the website from the database
       const deleted = await deleteAIWebsiteByLabel(user.id, aiId, website.label);
-      if (deleted) {
-        setWebsites(websites.filter((_, i) => i !== idx));
-        toast.success("Website entry deleted");
-      } else {
+      if (!deleted) {
         toast.error("Failed to delete website entry");
+        setSaving(false);
+        return;
       }
-    } else {
+      
+      // URL must not be empty to call /remove-urls
+      if (website.url && website.url.trim()) {
+        try {
+          // Then call /remove-urls to update the vectorstore
+          const response = await fetch(`${WORKER_API_URL}/remove-urls`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ai_id: aiId,
+              urls_to_remove: [website.url] // Send the URL to remove from vectorstore
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok && result.status === 'success') {
+            toast.success(`Website deleted and removed from AI knowledge base. ${result.deleted_count || 0} vectors removed.`);
+          } else {
+            console.error("Error removing website from vectorstore:", result);
+            toast.error("Website deleted from settings but may still appear in AI responses.");
+          }
+        } catch (error) {
+          console.error("Error calling /remove-urls endpoint:", error);
+          toast.error("Website deleted from settings but may still appear in AI responses.");
+        }
+      } else {
+        // If URL was empty, just show a simple success message
+        toast.success("Website entry deleted");
+      }
+      
+      // Update the UI
       setWebsites(websites.filter((_, i) => i !== idx));
+    } else {
+      // If no aiId or userId, just update UI
+      setWebsites(websites.filter((_, i) => i !== idx));
+      toast.success("Website entry deleted");
     }
+    
+    setSaving(false);
   };
 
   if (loading) {
