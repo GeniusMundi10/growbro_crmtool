@@ -42,9 +42,10 @@ export default function FilesForm() {
     if (!filesList || !aiId || !user?.id) return;
     setUploading(true);
     
-    // Keep track of all uploaded file URLs to send to the /add-files endpoint
-    const uploadedFileUrls = [];
+    // Track files that were successfully uploaded to storage
+    const uploadedFiles = [];
     
+    // Step 1: Upload all files to storage first
     for (let i = 0; i < filesList.length; i++) {
       const file = filesList[i];
       const uploadResult = await uploadAIFileToStorage(aiId, file);
@@ -52,27 +53,31 @@ export default function FilesForm() {
         toast.error(`Failed to upload file: ${file.name}`);
         continue;
       }
-      const dbResult = await upsertAIFile(aiId, user.id, {
-        url: uploadResult.url,
-        file_path: uploadResult.file_path,
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
+      
+      // Store file info for later DB insertion (after vectorstore processing)
+      uploadedFiles.push({
+        file,
+        uploadResult,
+        fileInfo: {
+          url: uploadResult.url,
+          file_path: uploadResult.file_path,
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+        }
       });
-      if (!dbResult) {
-        toast.error(`Failed to save file info: ${file.name}`);
-      } else {
-        toast.success(`Uploaded: ${file.name}`);
-        // Add the URL to our list for vectorstore processing
-        uploadedFileUrls.push(uploadResult.url);
-      }
+      
+      toast.success(`Uploaded to storage: ${file.name}`);
     }
     
-    // Use the incremental /add-files endpoint instead of triggering a full rebuild
-    if (aiId && uploadedFileUrls.length > 0) {
+    // Step 2: Process files with the vectorstore before adding to DB
+    if (aiId && uploadedFiles.length > 0) {
       try {
         // Show processing toast
         const processingToast = toast.loading("Processing files for your AI knowledge base...");
+        
+        // Extract just the URLs for the API call
+        const uploadedFileUrls = uploadedFiles.map(f => f.uploadResult.url);
         
         const response = await fetch(`${WORKER_API_URL}/add-files`, {
           method: "POST",
@@ -90,20 +95,40 @@ export default function FilesForm() {
         // Dismiss processing toast
         toast.dismiss(processingToast);
         
-        if (result.status === "success") {
-          toast.success(`Added ${result.added_count} file(s) to your knowledge base`);
+        if (response.ok) {
+          // Step 3: Only NOW add the files to the ai_files table AFTER successful vectorstore processing
+          let successCount = 0;
+          
+          for (const uploadedFile of uploadedFiles) {
+            const dbResult = await upsertAIFile(aiId, user.id, uploadedFile.fileInfo);
+            if (dbResult) {
+              successCount++;
+            } else {
+              toast.error(`Failed to save file info for: ${uploadedFile.file.name}`);
+            }
+          }
+          
+          // Show success message
+          toast.success(`Successfully processed ${result.analytics?.successfully_processed || 0} files and saved ${successCount} to database`);
+          // Refresh the file list
+          loadFiles();
         } else {
-          toast.error(`Failed to process files: ${result.message || "Unknown error"}`);
+          toast.error(`Error processing files: ${result.message || 'Unknown error'}`);
+          
+          // Notify user that files were uploaded to storage but not processed
+          toast.error('Files were uploaded to storage but not added to the knowledge base');
         }
       } catch (error) {
-        console.error("Error adding files to vectorstore:", error);
-        toast.error("Failed to process files. Please try again later.");
+        console.error('Error calling /add-files API:', error);
+        toast.error('Failed to process files for AI knowledge base');
       }
     }
     
-    await loadFiles();
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
