@@ -62,6 +62,9 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
     setRemoving(true);
     
     try {
+      // Import the deleteAIWebsiteByUrl function from supabase.ts
+      const { deleteAIWebsiteByUrl } = await import("@/lib/supabase");
+      
       // Group URLs by their AI ID for efficient removal
       const urlsByAi: Record<string, string[]> = {};
       
@@ -78,6 +81,15 @@ const CrawlAnalyticsCard: React.FC<CrawlAnalyticsCardProps> = ({
         
         // Add this URL to the correct AI's list
         urlsByAi[targetAiId].push(url);
+        
+        // Also delete the URL from the ai_website table to keep Websites tab in sync
+        try {
+          await deleteAIWebsiteByUrl(targetAiId, url);
+          console.log(`Removed URL ${url} from ai_website table for AI ${targetAiId}`);
+        } catch (err) {
+          // Log but continue - we still want to remove from vectorstore even if Websites sync fails
+          console.warn(`Failed to remove URL from ai_website table: ${err}`);
+        }
       }
       
       // Make a separate API call for each AI's URLs

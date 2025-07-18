@@ -266,13 +266,33 @@ export async function deleteAIWebsite(id: string): Promise<boolean> {
 
 // Delete a website entry by user_id, ai_id, and label (composite key)
 export async function deleteAIWebsiteByLabel(userId: string, aiId: string, label: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('ai_website')
-    .delete()
-    .eq('user_id', userId)
-    .eq('ai_id', aiId)
-    .eq('label', label);
-  return !error;
+  try {
+    const { error } = await supabase
+      .from('ai_website')
+      .delete()
+      .eq('user_id', userId)
+      .eq('ai_id', aiId)
+      .eq('label', label);
+    return !error;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Delete a website entry by ai_id and url
+// This is used to sync Analytics page URL removal with Websites tab
+export async function deleteAIWebsiteByUrl(aiId: string, url: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('ai_website')
+      .delete()
+      .eq('ai_id', aiId)
+      .eq('url', url);
+    return !error;
+  } catch (e) {
+    console.error('Error deleting website by URL:', e);
+    return false;
+  }
 }
 
 // AI File CRUD operations
