@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   authors: [{ name: "GrowBro.ai Team" }],
   creator: "GrowBro.ai",
   publisher: "GrowBro.ai",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
   formatDetection: {
     email: false,
     address: false,
