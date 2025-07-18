@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AnimatedLogoSprout from "@/components/AnimatedLogoSprout";
+// Next 13+ uses the app router which doesn't support next/head directly
 
 export default function SignupPage() {
   const router = useRouter();
@@ -80,6 +81,31 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 via-green-600 to-green-900">
+      {/* Mobile-specific styling to match desktop experience */}
+      <style jsx global>{`
+        /* Mobile-specific overrides to match desktop experience */
+        @media (max-width: 767px) {
+          /* Force inputs to have white background and dark text on mobile */
+          input, select, textarea {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #ffffff !important;
+            color: #111827 !important; /* text-gray-900 */
+            opacity: 1 !important;
+          }
+          
+          /* Fix autofill styling on mobile */
+          input:-webkit-autofill,
+          input:-webkit-autofill:hover,
+          input:-webkit-autofill:focus,
+          input:-webkit-autofill:active {
+            -webkit-text-fill-color: #111827 !important;
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+          }
+        }
+      `}</style>
       <Card className="w-full max-w-lg shadow-2xl rounded-2xl border-0 bg-white/90">
         <CardContent className="p-8">
           <div className="mb-8 text-center">
