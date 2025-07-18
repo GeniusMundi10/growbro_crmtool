@@ -19,8 +19,9 @@ export const metadata: Metadata = {
   creator: "GrowBro.ai",
   publisher: "GrowBro.ai",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: "/icon.ico",
+    shortcut: "/icon.ico",
+    apple: "/icon.ico",
   },
   formatDetection: {
     email: false,
