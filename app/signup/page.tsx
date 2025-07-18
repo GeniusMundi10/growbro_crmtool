@@ -115,6 +115,23 @@ export default function SignupPage() {
             color: #111827 !important; /* text-gray-900 */
             font-weight: 500 !important;
           }
+          
+          /* Fix duplicate checkbox issue on mobile */
+          .flex input[type="checkbox"]:not([role="checkbox"]) {
+            display: none !important;
+          }
+          
+          /* Ensure checkbox component displays correctly */
+          [role="checkbox"] {
+            background-color: white !important;
+            border: 1px solid #d1d5db !important;
+          }
+          
+          /* Fix checkbox alignment */
+          .flex.items-center.gap-2 {
+            align-items: center !important;
+            display: flex !important;
+          }
         }
       `}</style>
       <Card className="w-full max-w-lg shadow-2xl rounded-2xl border-0 bg-white/90">
