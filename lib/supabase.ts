@@ -1471,6 +1471,35 @@ export async function getAIsForUser(userId: string) {
   return data;
 }
 
+// Get plan's AI agent limit
+export function getPlanAILimit(plan: string | undefined): number {
+  switch(plan?.toLowerCase()) {
+    case 'starter': return 1;
+    case 'basic': return 2;
+    case 'pro': return 4;
+    case 'growth': return 7;
+    case 'advanced': return 10;
+    case 'free': 
+    default: return 1; // Free/trial plan or unknown plan defaults to 1
+  }
+}
+
+// Count user's existing AI agents
+export async function countUserAIs(userId: string): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from("business_info")
+      .select("*", { count: 'exact', head: true })
+      .eq("user_id", userId);
+      
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error("Error counting user AIs:", error);
+    return 0;
+  }
+}
+
 // Create a new AI
 export async function createAIForUser(userId: string, aiData: Partial<BusinessInfo>) {
   const { data, error } = await supabase

@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertCircle, Check, RefreshCw, Info } from "lucide-react"
-import { getBusinessInfo, createBusinessInfo, updateBusinessInfo } from "@/lib/supabase"
+import { getBusinessInfo, createBusinessInfo, updateBusinessInfo, countUserAIs, getPlanAILimit } from "@/lib/supabase"
 import type { BusinessInfo } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
+import { useUser } from "@/context/UserContext"
 
 const formSections = {
   "ai": "AI Configuration",
@@ -32,6 +33,7 @@ interface BusinessInfoFormProps {
 
 export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSaved }: BusinessInfoFormProps) {
   const router = useRouter()
+  const { user } = useUser() // Access user context to get plan info
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeSection, setActiveSection] = useState<keyof typeof formSections>("ai")
@@ -135,84 +137,87 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    
-    // Check if minimal required fields for AI are filled
-    const hasRequiredAIFields = businessInfo.ai_name?.trim();
-    
-    // If we're in AI tab but company name is missing, that's fine for initial save
-    if (activeSection === "ai" && !businessInfo.company_name) {
-      businessInfo.company_name = "My Company"; // Set a default value
-    }
-    
+    e.preventDefault();
     try {
-      let success = false
-      let result: BusinessInfo | null = null
+      setSaving(true);
       
-      if (mode === "edit" && businessInfo.id) {
+      // Basic form validation
+      if (!businessInfo.ai_name) {
+        toast.error("Please enter an AI name");
+        setSaving(false);
+        return;
+      }
+
+      // If we're in AI tab but company name is missing, that's fine for initial save
+      if (activeSection === "ai" && !businessInfo.company_name) {
+        businessInfo.company_name = "My Company"; // Set a default value
+      }
+      
+      // Logic path depends on whether we're creating or updating
+      if (mode === "create") {
+        // Check AI limit based on user's plan before creating a new AI
+        const aiCount = await countUserAIs(userId);
+        const planLimit = getPlanAILimit(user?.plan);
+        
+        if (aiCount >= planLimit) {
+          toast.error(`Your ${user?.plan || 'current'} plan allows a maximum of ${planLimit} AI agent${planLimit !== 1 ? 's' : ''}. Please upgrade your plan to create more AIs.`);
+          router.push('/billing/pricing-plans');
+          setSaving(false);
+          return;
+        }
+        
+        // Creating a new AI - within plan limits (always set vectorstore_ready: false on create)
+        const result = await createBusinessInfo(userId, { ...businessInfo, vectorstore_ready: false });
+        if (result) {
+          console.log("New AI created successfully:", result);
+          setBusinessInfo(prev => ({ ...prev, id: result.id }));
+          toast.success("AI created successfully!");
+          
+          // Set refresh flag for new AIs
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('refreshAIList', 'true');
+            window.dispatchEvent(new CustomEvent('refreshAIList'));
+          }
+          
+          if (onSaved) onSaved();
+          // Redirect to customization step with new AI ID
+          router.push(`/customize?aiId=${result.id}&new=true`);
+          return;
+        } else {
+          toast.error("Failed to create AI");
+        }
+      } else if (mode === "edit" && businessInfo.id) {
         // If website changed, also set vectorstore_ready: false in DB
         let updatePayload = { ...businessInfo };
         if (businessInfo.website !== initialWebsite) {
           updatePayload.vectorstore_ready = false;
         }
-        success = await updateBusinessInfo(updatePayload as BusinessInfo)
+        const success = await updateBusinessInfo(updatePayload as BusinessInfo);
         if (success) {
-          toast.success("AI updated successfully")
+          toast.success("AI updated successfully");
           // Trigger sidebar refresh with the updated AI name
           if (typeof window !== 'undefined') {
             sessionStorage.setItem('refreshAIList', 'true');
             window.dispatchEvent(new CustomEvent('refreshAIList'));
           }
-        } else {
-          toast.error("Failed to update AI")
-        }
-      } else {
-        // Always set vectorstore_ready: false on create
-        result = await createBusinessInfo(userId, { ...businessInfo, vectorstore_ready: false })
-        success = !!result
-        if (result) {
-          console.log("New AI created successfully:", result)
-          setBusinessInfo(prev => ({ ...prev, id: result?.id }))
-          toast.success("New AI created successfully")
-          // Update mode to edit after creation
-          mode = "edit";
-          // Set refresh flag for new AIs too
-          if (typeof window !== 'undefined') {
-            sessionStorage.setItem('refreshAIList', 'true');
-            window.dispatchEvent(new CustomEvent('refreshAIList'));
-          }
-          // Redirect to the new AI's info page so aiId is in the URL
-          if (result?.id) {
-            router.push(`/dashboard/info?aiId=${result.id}`);
-            return; // Prevent further execution so we don't move to next section with wrong context
-          }
+          
           // Move to next section after saving
           if (activeSection === "ai") {
             setActiveSection("company");
           } else if (activeSection === "company") {
             setActiveSection("contact");
           }
+          
+          if (onSaved) onSaved();
         } else {
-          toast.error("Failed to create AI")
-        }
-      }
-      
-      // If successful, call onSaved callback only if we're done with all sections
-      if ((success || (result !== null)) && activeSection === "contact") {
-        // Safely call onSaved in a separate try/catch to prevent callback errors 
-        // from interfering with form reset or error display
-        try {
-          if (onSaved) await onSaved()
-        } catch (callbackError) {
-          console.error("Error in onSaved callback:", callbackError)
+          toast.error("Failed to update AI");
         }
       }
     } catch (error) {
-      console.error("Error saving business information:", error)
-      toast.error("An error occurred while saving")
+      console.error("Error saving AI:", error);
+      toast.error("An error occurred while saving");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
