@@ -104,6 +104,17 @@ export default function SignupPage() {
             -webkit-box-shadow: 0 0 0 30px white inset !important;
             transition: background-color 5000s ease-in-out 0s;
           }
+          
+          /* Fix label color on mobile */
+          label, .text-sm, .text-xs {
+            color: #111827 !important; /* text-gray-900 */
+          }
+          
+          /* Ensure form labels are visible against the background */
+          form label {
+            color: #111827 !important; /* text-gray-900 */
+            font-weight: 500 !important;
+          }
         }
       `}</style>
       <Card className="w-full max-w-lg shadow-2xl rounded-2xl border-0 bg-white/90">
