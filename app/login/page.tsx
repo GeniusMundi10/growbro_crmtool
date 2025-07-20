@@ -219,6 +219,55 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-400 via-green-600 to-green-900">
+      {/* Mobile-specific styling to match desktop experience */}
+      <style jsx global>{`
+        /* Mobile-specific overrides to match desktop experience */
+        @media (max-width: 767px) {
+          /* Force inputs to have white background and dark text on mobile */
+          input, select, textarea {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: #ffffff !important;
+            color: #111827 !important; /* text-gray-900 */
+            opacity: 1 !important;
+          }
+          
+          /* Fix autofill styling on mobile */
+          input:-webkit-autofill,
+          input:-webkit-autofill:hover,
+          input:-webkit-autofill:focus,
+          input:-webkit-autofill:active {
+            -webkit-text-fill-color: #111827 !important;
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+          }
+          
+          /* Fix label color on mobile */
+          label, .text-sm, .text-xs {
+            color: #111827 !important; /* text-gray-900 */
+          }
+          
+          /* Ensure form labels are visible against the background */
+          form label {
+            color: #111827 !important; /* text-gray-900 */
+            font-weight: 500 !important;
+          }
+          
+          /* Fix card transparency issues on mobile */
+          .card, .bg-white, .bg-white\/90 {
+            background-color: #ffffff !important;
+            backdrop-filter: none !important;
+          }
+          
+          /* Fix login form element styles */
+          .form-input, input[type="email"], input[type="password"] {
+            background-color: #ffffff !important;
+            color: #111827 !important;
+            border: 1px solid #d1d5db !important;
+          }
+        }
+      `}</style>
       <Card className="w-full max-w-md shadow-xl rounded-2xl border-0 bg-white/90">
         <CardContent className="p-8">
           <div className="mb-8 text-center">
