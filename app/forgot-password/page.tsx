@@ -35,11 +35,24 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-green-400 via-green-600 to-green-900">
       {/* Mobile-specific styling to match desktop experience */}
       <style jsx global>{`
         /* Mobile-specific overrides to match desktop experience */
         @media (max-width: 767px) {
+          /* Force all text to have good contrast in mobile */
+          h1, h2, h3, h4, h5, h6, p, span, div, label, input, button, a {
+            color: #111827 !important; /* text-gray-900 */
+          }
+
+          /* Make headings explicitly visible with strong contrast */
+          h2, .text-xl {
+            color: #000000 !important;
+            opacity: 1 !important;
+            font-weight: 700 !important;
+            text-shadow: 0 0 1px rgba(255,255,255,0.5);
+          }
+          
           /* Force inputs to have white background and dark text on mobile */
           input, select, textarea {
             -webkit-appearance: none;
@@ -63,18 +76,28 @@ export default function ForgotPasswordPage() {
           /* Fix label color on mobile */
           label, .text-sm, .text-xs {
             color: #111827 !important; /* text-gray-900 */
+            font-weight: 600 !important;
           }
           
           /* Ensure form labels are visible against the background */
           form label {
             color: #111827 !important; /* text-gray-900 */
-            font-weight: 500 !important;
+            font-weight: 600 !important;
+            display: block !important;
+            margin-bottom: 4px !important;
           }
           
           /* Fix card transparency issues on mobile */
           .card, .bg-white, .bg-white\/90, .bg-white.rounded-lg {
             background-color: #ffffff !important;
             backdrop-filter: none !important;
+            border: 1px solid #d1d5db !important;
+          }
+          
+          /* Force white background on container */
+          .bg-white.rounded-lg {
+            background-color: #ffffff !important;
+            color: #000000 !important;
           }
           
           /* Fix form element styles */
@@ -82,6 +105,12 @@ export default function ForgotPasswordPage() {
             background-color: #ffffff !important;
             color: #111827 !important;
             border: 1px solid #d1d5db !important;
+          }
+
+          /* Make button text visible */
+          button, .bg-green-600, .bg-green-700 {
+            color: #ffffff !important;
+            font-weight: 600 !important;
           }
         }
       `}</style>
@@ -107,6 +136,6 @@ export default function ForgotPasswordPage() {
           </Button>
         </form>
       </div>
-    </>
+    </div>
   );
 }
