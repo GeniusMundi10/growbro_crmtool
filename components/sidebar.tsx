@@ -17,6 +17,7 @@ import {
   Map,
   ChevronRight,
   Menu,
+  Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -66,6 +67,7 @@ export default function Sidebar({ locked = false }: SidebarProps) {
   const [aiList, setAIList] = useState<any[]>([])
   const [loadingAIs, setLoadingAIs] = useState(true)
   const router = useRouter();
+  const [aiTrainingStatus, setAiTrainingStatus] = useState<Record<string, boolean>>({});
   
   // Handle window resize to collapse sidebar on mobile
   useEffect(() => {
@@ -108,6 +110,20 @@ export default function Sidebar({ locked = false }: SidebarProps) {
     try {
       const ais = await getAIsForUser(user.id);
       setAIList(ais || []);
+      
+      // Check vectorstore_ready status for each AI
+      const trainingStatus: Record<string, boolean> = {};
+      for (const ai of ais || []) {
+        const { data } = await supabase
+          .from("business_info")
+          .select("vectorstore_ready")
+          .eq("id", ai.id)
+          .single();
+        
+        // Set to true if vectorstore is not ready (still training)
+        trainingStatus[ai.id] = !(data?.vectorstore_ready === true);
+      }
+      setAiTrainingStatus(trainingStatus);
     } catch (e) {
       setAIList([]);
     } finally {
@@ -119,14 +135,12 @@ export default function Sidebar({ locked = false }: SidebarProps) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       // Check session storage flag
-      const shouldRefresh = sessionStorage.getItem('refreshAIList');
-      if (shouldRefresh === 'true') {
-        // Clear the flag
-        sessionStorage.removeItem('refreshAIList');
-        // Refresh the AI list
+      const shouldRefreshAIs = sessionStorage.getItem('refresh_ais') === 'true';
+      if (shouldRefreshAIs) {
+        sessionStorage.removeItem('refresh_ais');
         fetchUserAIs();
       }
-      
+
       // Add event listener for custom refresh event
       const handleRefreshEvent = () => {
         fetchUserAIs();
@@ -139,14 +153,52 @@ export default function Sidebar({ locked = false }: SidebarProps) {
         window.removeEventListener('refreshAIList', handleRefreshEvent);
       };
     }
-  }, [pathname, fetchUserAIs]); // Re-run when pathname changes (after navigation)
-
-  // Initial fetch of AIs when user is loaded
+  }, [fetchUserAIs]);
+  
+  // Fetch AI data when user changes
   useEffect(() => {
-    if (user) {
+    if (user?.id && mounted) {
       fetchUserAIs();
     }
-  }, [user, fetchUserAIs]);
+  }, [user, fetchUserAIs, mounted]);
+  
+  // Setup polling for training status for all AIs in the list
+  useEffect(() => {
+    if (aiList.length === 0) return;
+    
+    // Initial check for all AIs
+    const checkTrainingStatus = async () => {
+      const updatedStatus = {...aiTrainingStatus};
+      let hasChanges = false;
+      
+      for (const ai of aiList) {
+        const { data } = await supabase
+          .from("business_info")
+          .select("vectorstore_ready")
+          .eq("id", ai.id)
+          .single();
+        
+        // If vectorstore is ready, update status (false means no longer in training)
+        const isStillTraining = !(data?.vectorstore_ready === true);
+        if (updatedStatus[ai.id] !== isStillTraining) {
+          updatedStatus[ai.id] = isStillTraining;
+          hasChanges = true;
+        }
+      }
+      
+      if (hasChanges) {
+        setAiTrainingStatus(updatedStatus);
+      }
+    };
+    
+    // Check initial status
+    checkTrainingStatus();
+    
+    // Set up polling interval to check for training status
+    const interval = setInterval(checkTrainingStatus, 10000); // Poll every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [aiList]);
 
   if (!mounted) return null
 
@@ -309,7 +361,19 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                             className="flex items-center rounded-md py-2 px-3 text-sm text-green-100 hover:bg-white/10 hover:text-white"
                           >
                             <span className="mr-2">🤖</span>
-                            <span>{ai.ai_name || "Untitled AI"}</span>
+                            <span className="flex-1">{ai.ai_name || "Untitled AI"}</span>
+                            {aiTrainingStatus[ai.id] && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="ml-1">
+                                    <Loader2 className="h-3.5 w-3.5 text-amber-400 animate-spin" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="border-none bg-gray-900 text-white">
+                                  AI is still being trained
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                           </Link>
                           
                         </div>
