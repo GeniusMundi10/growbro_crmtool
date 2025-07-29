@@ -339,32 +339,21 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] w-full">
-        <div className="relative">
-          {/* Glowing pulsing circle in the background */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-r from-blue-400 to-green-400 rounded-full opacity-30 animate-pulse"></div>
+        {/* Simple, clean loading spinner */}
+        <div className="relative h-24 w-24 flex items-center justify-center">
+          {/* Outer loading circle */}
+          <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
           
-          {/* Main spinner - rotating gradient ring */}
-          <div className="w-24 h-24 border-4 border-t-4 border-t-blue-500 border-r-green-400 border-b-teal-400 border-l-amber-400 rounded-full animate-spin"></div>
+          {/* Loading progress - semi-circle that animates */}
+          <div className="absolute inset-0 border-4 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin-slow"></div>
           
-          {/* Inner spinner - counter rotating */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-4 border-t-transparent border-r-blue-400 border-b-green-500 border-l-transparent rounded-full animate-spin-slow"></div>
-          
-          {/* Center dot */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg animate-pulse"></div>
+          {/* Inner circle with company brand color */}
+          <div className="h-4 w-4 bg-blue-500 rounded-full"></div>
         </div>
         
-        {/* Text with typing animation */}
-        <div className="mt-6 text-lg font-medium text-gray-700">
-          <span className="inline-flex items-center">
-            <span className="animate-text-gradient bg-gradient-to-r from-blue-500 via-green-400 to-emerald-500 bg-clip-text text-transparent font-semibold">
-              Preparing your analytics
-            </span>
-            <span className="ml-1 flex space-x-1">
-              <span className="animate-bounce-delay-1">.</span>
-              <span className="animate-bounce-delay-2">.</span>
-              <span className="animate-bounce-delay-3">.</span>
-            </span>
-          </span>
+        {/* Simple loading text */}
+        <div className="mt-8 text-base font-medium text-gray-600">
+          <p>Loading analytics dashboard</p>
         </div>
       </div>
     );
