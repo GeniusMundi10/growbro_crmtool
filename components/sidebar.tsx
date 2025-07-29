@@ -58,9 +58,8 @@ export default function Sidebar({ locked = false }: SidebarProps) {
 
   const pathname = usePathname()
   const [expanded, setExpanded] = useState(true)
-  const [manageAIExpanded, setManageAIExpanded] = useState(
-    pathname === "/dashboard" || pathname.startsWith("/dashboard/")
-  )
+  // Always start with Manage AI section expanded for better UX
+  const [manageAIExpanded, setManageAIExpanded] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
