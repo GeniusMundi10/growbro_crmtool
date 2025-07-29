@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Menu,
   Loader2,
+  Circle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -362,7 +363,8 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                           >
                             <span className="mr-2">🤖</span>
                             <span className="flex-1">{ai.ai_name || "Untitled AI"}</span>
-                            {aiTrainingStatus[ai.id] && (
+                            {/* Show either training indicator or online indicator */}
+                            {aiTrainingStatus[ai.id] ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <span className="ml-1">
@@ -371,6 +373,17 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="border-none bg-gray-900 text-white">
                                   AI is still being trained
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="ml-1">
+                                    <Circle className="h-3 w-3 text-green-500 fill-green-500" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="border-none bg-gray-900 text-white">
+                                  AI is online and ready
                                 </TooltipContent>
                               </Tooltip>
                             )}
