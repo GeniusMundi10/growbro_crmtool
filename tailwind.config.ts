@@ -96,6 +96,23 @@ const config = {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "spin-slow": "spin 3s linear infinite reverse",
+        "bounce-delay-1": "bounce 1s infinite 0.2s",
+        "bounce-delay-2": "bounce 1s infinite 0.4s",
+        "bounce-delay-3": "bounce 1s infinite 0.6s",
+        "text-gradient": "text-gradient 3s ease infinite",
+      },
+      keyframes: {
+        "text-gradient": {
+          "0%, 100%": {
+            "background-size": "200% 200%",
+            "background-position": "left center",
+          },
+          "50%": {
+            "background-size": "200% 200%",
+            "background-position": "right center",
+          },
+        },
       },
     },
   },

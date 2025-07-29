@@ -337,7 +337,37 @@ export default function AnalyticsPage() {
   }, [user, ais, period, selectedAIId]);
 
   if (loading) {
-    return <div className="p-6 text-center">Loading analytics...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] w-full">
+        <div className="relative">
+          {/* Glowing pulsing circle in the background */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-r from-blue-400 to-green-400 rounded-full opacity-30 animate-pulse"></div>
+          
+          {/* Main spinner - rotating gradient ring */}
+          <div className="w-24 h-24 border-4 border-t-4 border-t-blue-500 border-r-green-400 border-b-teal-400 border-l-amber-400 rounded-full animate-spin"></div>
+          
+          {/* Inner spinner - counter rotating */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 border-4 border-t-transparent border-r-blue-400 border-b-green-500 border-l-transparent rounded-full animate-spin-slow"></div>
+          
+          {/* Center dot */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-lg animate-pulse"></div>
+        </div>
+        
+        {/* Text with typing animation */}
+        <div className="mt-6 text-lg font-medium text-gray-700">
+          <span className="inline-flex items-center">
+            <span className="animate-text-gradient bg-gradient-to-r from-blue-500 via-green-400 to-emerald-500 bg-clip-text text-transparent font-semibold">
+              Preparing your analytics
+            </span>
+            <span className="ml-1 flex space-x-1">
+              <span className="animate-bounce-delay-1">.</span>
+              <span className="animate-bounce-delay-2">.</span>
+              <span className="animate-bounce-delay-3">.</span>
+            </span>
+          </span>
+        </div>
+      </div>
+    );
   }
 
   // Data shaping for charts from summaryRows
