@@ -50,6 +50,11 @@ export default function ChatWidgetSettings() {
           label: ai.ai_name
         }))
         setAIOptions(options)
+        // Auto-select first AI if none selected
+        if (!selectedAI && options.length > 0) {
+          setSelectedAI(options[0].value)
+          loadAISettings(options[0].value)
+        }
       }
     } catch (error) {
       console.error("Error loading user AIs:", error)
