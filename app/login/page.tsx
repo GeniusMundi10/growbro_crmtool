@@ -178,18 +178,22 @@ function LoginContent() {
             }
           }
           console.log('[LOGIN] Insert payload for business_info:', businessInfoPayload);
-          const { error: businessInfoError } = await supabase.from('business_info').insert([businessInfoPayload]);
+          const { data: insertedRow, error: businessInfoError } = await supabase
+            .from('business_info')
+            .insert([businessInfoPayload])
+            .select()
+            .single();
           if (businessInfoError) {
             console.error('[LOGIN] Business info creation failed:', businessInfoError);
             setLoading(false);
             setError('Business info creation failed: ' + businessInfoError.message);
             return;
           }
-          console.log('[LOGIN] Business info insert successful.');
+          console.log('[LOGIN] Business info insert successful.', insertedRow);
           // Trigger vectorstore creation right after business_info insert
-          if (businessInfoPayload && businessInfoPayload.id) {
-            console.log('[DEBUG] Calling triggerVectorstoreCreation after signup', businessInfoPayload.id, businessInfoPayload.session_cookie);
-            triggerVectorstoreCreation(businessInfoPayload.id, businessInfoPayload.session_cookie).then(res => {
+          if (insertedRow && insertedRow.id) {
+            console.log('[DEBUG] Calling triggerVectorstoreCreation after signup', insertedRow.id, insertedRow.session_cookie);
+            triggerVectorstoreCreation(insertedRow.id, insertedRow.session_cookie).then(res => {
               console.log('[DEBUG] triggerVectorstoreCreation result:', res);
             });
           }
