@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { AlertCircle, Check, RefreshCw, Info } from "lucide-react"
 import { getBusinessInfo, createBusinessInfo, updateBusinessInfo, countUserAIs, getPlanAILimit } from "@/lib/supabase"
+import { triggerVectorstoreCreation } from "@/lib/vectorstore"
 import type { BusinessInfo } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { useUser } from "@/context/UserContext"
@@ -172,6 +173,13 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
           console.log("New AI created successfully:", result);
           setBusinessInfo(prev => ({ ...prev, id: result.id }));
           toast.success("AI created successfully!");
+
+          // Trigger initial vectorstore creation (do not block onboarding on failure)
+          triggerVectorstoreCreation(result.id, result.session_cookie).then(res => {
+            if (!res.success) {
+              toast.error("Vectorstore creation failed: " + (res.message || "Unknown error"));
+            }
+          });
           
           // Set refresh flag for new AIs
           if (typeof window !== 'undefined') {
