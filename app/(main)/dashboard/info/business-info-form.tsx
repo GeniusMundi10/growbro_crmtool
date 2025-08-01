@@ -174,8 +174,10 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
           setBusinessInfo(prev => ({ ...prev, id: result.id }));
           toast.success("AI created successfully!");
 
-          // Trigger initial vectorstore creation (do not block onboarding on failure)
+          // Debug: Log before calling vectorstore creation
+          console.log("[DEBUG] Calling triggerVectorstoreCreation with:", result.id, result.session_cookie);
           triggerVectorstoreCreation(result.id, result.session_cookie).then(res => {
+            console.log("[DEBUG] triggerVectorstoreCreation result:", res);
             if (!res.success) {
               toast.error("Vectorstore creation failed: " + (res.message || "Unknown error"));
             }
