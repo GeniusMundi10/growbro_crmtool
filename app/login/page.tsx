@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase, onAuthStateChange } from '@/lib/auth';
+import { triggerVectorstoreCreation } from '@/lib/vectorstore';
 import AnimatedLogoSprout from "@/components/AnimatedLogoSprout";
 
 // Separate component to use searchParams within Suspense boundary
@@ -185,6 +186,13 @@ function LoginContent() {
             return;
           }
           console.log('[LOGIN] Business info insert successful.');
+          // Trigger vectorstore creation right after business_info insert
+          if (businessInfoPayload && businessInfoPayload.id) {
+            console.log('[DEBUG] Calling triggerVectorstoreCreation after signup', businessInfoPayload.id, businessInfoPayload.session_cookie);
+            triggerVectorstoreCreation(businessInfoPayload.id, businessInfoPayload.session_cookie).then(res => {
+              console.log('[DEBUG] triggerVectorstoreCreation result:', res);
+            });
+          }
         }
         // Continue with dashboard redirect
         const { data: aiRows, error: aiError } = await supabase
