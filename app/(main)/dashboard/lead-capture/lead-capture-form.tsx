@@ -134,11 +134,7 @@ export default function LeadCaptureForm() {
   return (
     <div className="bg-white rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-sm text-gray-500 mb-1">Step 2 of 3</p>
-          <h2 className="text-xl font-bold">Customize Lead Capture</h2>
-        </div>
-        <h2 className="text-xl font-bold">2. Customize Lead Capture Settings</h2>
+        <h2 className="text-xl font-bold">Customize Lead Capture Settings</h2>
         <HelpButton />
       </div>
 
