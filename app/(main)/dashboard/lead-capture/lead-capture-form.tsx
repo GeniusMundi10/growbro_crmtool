@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
 import HelpButton from "@/components/help-button"
 import ActionButtons from "@/components/action-buttons"
 import { useUser } from "@/context/UserContext"
@@ -131,7 +133,11 @@ export default function LeadCaptureForm() {
 
   return (
     <div className="bg-white rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-sm text-gray-500 mb-1">Step 2 of 3</p>
+          <h2 className="text-xl font-bold">Customize Lead Capture</h2>
+        </div>
         <h2 className="text-xl font-bold">2. Customize Lead Capture Settings</h2>
         <HelpButton />
       </div>
@@ -144,40 +150,34 @@ export default function LeadCaptureForm() {
         </p>
       </div>
 
-      <div className="flex justify-center space-x-16 mb-8">
-        <div className="flex flex-col items-center">
-          <span className="mb-2">Name</span>
-          <Checkbox
-            id="name"
-            checked={captureSettings.name}
-            onCheckedChange={(checked) => handleCheckboxChange("name", checked as boolean)}
-          />
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="mb-2">Email</span>
-          <Checkbox
-            id="email"
-            checked={captureSettings.email}
-            onCheckedChange={(checked) => handleCheckboxChange("email", checked as boolean)}
-          />
-        </div>
-        <div className="flex flex-col items-center">
-          <span className="mb-2">Phone Number</span>
-          <Checkbox
-            id="phone"
-            checked={captureSettings.phone}
-            onCheckedChange={(checked) => handleCheckboxChange("phone", checked as boolean)}
-          />
-        </div>
+      <div className="space-y-6 mb-8">
+        {[
+          { key: "name", label: "Name", help: "Collect the visitor's name so you can personalise follow-ups." },
+          { key: "email", label: "Email", help: "Capture an email address for direct outreach." },
+          { key: "phone", label: "Phone Number", help: "Optionally gather a phone number for quick contact." },
+        ].map(opt => (
+          <div key={opt.key} className="flex items-start justify-between gap-4 p-4 rounded-lg border hover:bg-gray-50">
+            <div>
+              <p className="font-medium">{opt.label}</p>
+              <p className="text-sm text-gray-500 leading-snug">{opt.help}</p>
+            </div>
+            <Switch
+              checked={captureSettings[opt.key as keyof typeof captureSettings]}
+              onCheckedChange={(checked) => handleCheckboxChange(opt.key, checked as boolean)}
+            />
+          </div>
+        ))}
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-md mb-8">
-        <p className="text-yellow-800 text-center text-sm">
-          <strong>Warning:</strong> Modifying these settings may result in fewer captured sales leads. Visitors will
-          still use your chat and voice minutes, but without collecting contact details, you may miss opportunities to
-          follow up and convert them into customers.
-        </p>
-      </div>
+      <Alert className="mb-8" variant="default">
+        <AlertTriangle className="h-4 w-4" />
+        <div>
+          <AlertTitle>Heads up</AlertTitle>
+          <AlertDescription>
+            Reducing the amount of information you capture may lower your lead count. Visitors will still consume chat minutes, but you’ll have fewer details for follow-up.
+          </AlertDescription>
+        </div>
+      </Alert>
 
       <ActionButtons
         showSave={true}
