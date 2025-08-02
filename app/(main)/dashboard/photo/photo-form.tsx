@@ -13,6 +13,7 @@ import {
 } from "@/lib/supabase";
 import { toast } from "sonner";
 import HelpButton from "@/components/help-button";
+import { Upload, Check, Trash2 } from "lucide-react";
 import ActionButtons from "@/components/action-buttons";
 
 export default function PhotoForm() {
@@ -107,6 +108,17 @@ export default function PhotoForm() {
     return (
       <div className="bg-white rounded-lg p-6 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600 mx-auto"></div>
+        <button
+          className={`mx-auto mt-2 px-6 py-2 rounded-md text-white font-semibold transition-colors ${
+            pendingSelectedPhotoId !== selectedPhotoId && !saving
+              ? 'bg-green-600 hover:bg-green-700'
+              : 'bg-gray-300 cursor-not-allowed'
+          }`}
+          disabled={pendingSelectedPhotoId === selectedPhotoId || saving}
+          onClick={handleSave}
+        >
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
         <p className="mt-4 text-gray-600">Loading photos...</p>
       </div>
     );
@@ -115,7 +127,7 @@ export default function PhotoForm() {
   return (
     <div className="bg-white rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">3. Give Your AI a Face</h2>
+        <h2 className="text-xl font-bold">Give Your AI a Face</h2>
         <HelpButton />
       </div>
       <div className="mb-8">
@@ -124,16 +136,14 @@ export default function PhotoForm() {
         </p>
       </div>
       <div
-        className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-8 mb-8 cursor-pointer hover:bg-gray-50"
+        className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-10 mb-8 cursor-pointer transition-colors hover:border-green-400 hover:bg-green-50/40"
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
         onClick={() => fileInputRef.current?.click()}
         style={{ minHeight: 180 }}
       >
-        <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16 10a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-        <p className="text-gray-500">Select or drag and drop</p>
+        <Upload className="w-12 h-12 text-gray-400 mb-2" strokeWidth={1.5} />
+        <p className="text-gray-600 font-medium">Upload or drag & drop</p>
         <input
           type="file"
           accept="image/*"
@@ -145,30 +155,33 @@ export default function PhotoForm() {
       </div>
       {photos.length > 0 && (
         <>
-          <div className="text-center font-medium mb-3">Previously uploaded:</div>
-          <div className="flex flex-row flex-wrap gap-8 justify-center mb-8">
+          <div className="text-center font-medium mb-3">Your photos:</div>
+          <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 justify-center mb-8">
             {photos.map(photo => (
-              <div key={photo.id} className="flex flex-col items-center">
+              <div key={photo.id} className="group relative">
                 <img
                   src={photo.url}
                   alt="AI Avatar"
-                  className="h-24 w-24 object-cover rounded-full mb-2 border-2"
-                  style={{ borderColor: photo.selected ? '#10b981' : '#e5e7eb' }}
+                  className={`h-24 w-24 object-cover rounded-full border-4 transition-transform duration-200 ${photo.selected ? 'border-green-500' : 'border-transparent'} group-hover:scale-105`}
                 />
-                <input
-                  type="checkbox"
-                  checked={pendingSelectedPhotoId === photo.id}
-                  onChange={() => handleSelect(photo.id)}
-                  disabled={uploading || saving}
-                  className="mb-1"
-                />
-                <button
-                  className="text-xs text-red-600 underline"
-                  onClick={() => handleDelete(photo.id)}
-                  disabled={uploading}
-                >
-                  Delete
-                </button>
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                  <button
+                    onClick={() => handleSelect(photo.id)}
+                    disabled={uploading || saving}
+                    className="text-white hover:text-green-400"
+                    title="Select"
+                  >
+                    <Check className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(photo.id)}
+                    disabled={uploading}
+                    className="text-white hover:text-red-400"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -176,7 +189,7 @@ export default function PhotoForm() {
       )}
       <div className="flex flex-col items-center">
         <button
-          className={`mt-2 px-6 py-2 rounded-md text-white font-semibold ${
+          className={`mx-auto mt-2 px-6 py-2 rounded-md text-white font-semibold transition-colors ${
             pendingSelectedPhotoId !== selectedPhotoId && !saving
               ? 'bg-green-600 hover:bg-green-700'
               : 'bg-gray-300 cursor-not-allowed'
