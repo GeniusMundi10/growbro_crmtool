@@ -545,18 +545,20 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
               Changes saved automatically
             </div>
             <div className="flex gap-3">
-              <Button 
-                type="submit" 
-                className="bg-gradient-to-r from-emerald-600 to-green-500 text-white hover:from-emerald-700 hover:to-green-600"
-                disabled={saving}
-              >
-                {saving ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : activeSection === "ai" && mode === "create" ? "Create AI" : "Save Changes"}
-              </Button>
+              {mode === 'create' && activeSection === 'ai' && (
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-emerald-600 to-green-500 text-white hover:from-emerald-700 hover:to-green-600"
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : 'Create AI'}
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
