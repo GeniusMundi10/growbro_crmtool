@@ -66,9 +66,17 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
 
   const autoSave = async () => {
     try {
-      // basic validation only for AI tab
-      if (activeSection === 'ai' && !businessInfo.ai_name?.trim()) return
-      if (activeSection === 'company' && !businessInfo.company_name?.trim()) return
+      // Validation only for first-time create (AI needs a name / company on initial save)
+      if (!businessInfo.id && mode === 'create') {
+        if (activeSection === 'ai' && !businessInfo.ai_name?.trim()) {
+          setSaveStatus('idle');
+          return;
+        }
+        if (activeSection === 'company' && !businessInfo.company_name?.trim()) {
+          setSaveStatus('idle');
+          return;
+        }
+      }
 
       // Decide whether to create or update
       if (mode === 'create' && !businessInfo.id) {
@@ -155,6 +163,11 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
       return { ...prev, [name]: value };
     });
     queueSave();
+  }
+
+  const handleBlur = () => {
+    // run save immediately on blur – no debounce
+    autoSave();
   }
 
   const handleSelectChange = (value: string) => {
@@ -330,7 +343,7 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
           </TabsList>
         </div>
         
-        <form onSubmit={handleSubmit}>
+        <form onBlurCapture={handleBlur} onSubmit={handleSubmit}>
           <CardContent className="p-6">
             <TabsContent value="ai" className="mt-0 space-y-4">
               <motion.div 
