@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,8 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
   const router = useRouter()
   const { user } = useUser() // Access user context to get plan info
   const [loading, setLoading] = useState(true)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const saveTimeout = useRef<NodeJS.Timeout | null>(null)
   const [saving, setSaving] = useState(false)
   const [activeSection, setActiveSection] = useState<keyof typeof formSections>("ai")
   const [businessInfo, setBusinessInfo] = useState<Partial<BusinessInfo>>({
@@ -52,6 +54,41 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
   // Track the initial website to detect changes
   const [initialWebsite, setInitialWebsite] = useState<string>("");
   const [isRetraining, setIsRetraining] = useState(false)
+
+  // Debounced auto-save
+  const queueSave = () => {
+    setSaveStatus('saving')
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    saveTimeout.current = setTimeout(() => {
+      autoSave()
+    }, 800)
+  }
+
+  const autoSave = async () => {
+    try {
+      // basic validation only for AI tab
+      if (activeSection === 'ai' && !businessInfo.ai_name?.trim()) return
+      if (activeSection === 'company' && !businessInfo.company_name?.trim()) return
+
+      // create vs update
+      if (mode === 'create' && !businessInfo.id) {
+        const result = await createBusinessInfo(userId, { ...businessInfo, vectorstore_ready: false })
+        if (result) {
+          toast.success('AI created')
+          setBusinessInfo(prev => ({ ...prev, id: result.id }))
+          triggerVectorstoreCreation(result.id, result.session_cookie)
+        }
+      } else if (mode === 'edit' && businessInfo.id) {
+        await updateBusinessInfo(businessInfo as BusinessInfo)
+      }
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch (err) {
+      console.error(err)
+      toast.error('Save failed')
+      setSaveStatus('error')
+    }
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -112,10 +149,12 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
       // No special handling for session_cookie
       return { ...prev, [name]: value };
     });
+    queueSave();
   }
 
   const handleSelectChange = (value: string) => {
-    setBusinessInfo((prev) => ({ ...prev, agent_type: value }))
+    setBusinessInfo((prev) => ({ ...prev, agent_type: value }));
+    queueSave();
   }
 
   const handleRetrainWebsite = async () => {
@@ -491,8 +530,19 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
           
           <CardFooter className="flex justify-between border-t bg-muted/10 px-6 py-4">
             <div className="flex items-center text-sm text-muted-foreground">
-              <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse mr-2 mt-0.5"></span>
-              Changes are saved automatically
+              {saveStatus === 'idle' && (
+                <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse mr-2 mt-0.5"></span>
+              )}
+              {saveStatus === 'saving' && (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {saveStatus === 'saved' && (
+                <Check className="mr-2 h-4 w-4 text-emerald-600" />
+              )}
+              {saveStatus === 'error' && (
+                <AlertCircle className="mr-2 h-4 w-4 text-red-600" />
+              )}
+              Changes saved automatically
             </div>
             <div className="flex gap-3">
               <Button 
