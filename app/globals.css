@@ -74,3 +74,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ---------------------------- */
+/* Dark mode readability tweaks */
+/* ---------------------------- */
+@layer utilities {
+  /* Override hard-coded light backgrounds */
+  .dark .bg-white,
+  .dark .bg-white\/90,
+  .dark .bg-white\/95,
+  .dark .bg-white\/20,
+  .dark .min-h-screen.bg-white {
+    /* Use the card surface color variable so it matches the overall dark theme */
+    background-color: hsl(var(--card)) !important;
+  }
+
+  /* Override hard-coded dark text colors */
+  .dark .text-gray-900 {
+    color: hsl(var(--foreground)) !important;
+  }
+}
+
