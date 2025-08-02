@@ -39,8 +39,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NotificationProvider>
           <ThemeProvider
             attribute="class"
-            defaultTheme="system"
-            enableSystem
+            forcedTheme="light"  /* always use light mode */
+            enableSystem={false}
             disableTransitionOnChange
           >
             {children}
