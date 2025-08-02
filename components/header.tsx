@@ -214,7 +214,7 @@ export default function Header({ title }: HeaderProps) {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 mt-1 p-0 overflow-hidden border-none shadow-lg rounded-xl">
+            <DropdownMenuContent align="end" className="w-64 mt-1 p-0 overflow-hidden border-none shadow-lg rounded-xl">
               <div className="bg-gradient-to-r from-emerald-700 to-green-600 p-4 text-white">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border-2 border-white/20">
@@ -228,7 +228,7 @@ export default function Header({ title }: HeaderProps) {
                   </Avatar>
                   <div>
                     <p className="font-medium">{user ? user.name : "Loading..."}</p>
-                    <p className="text-xs text-emerald-100">{user ? user.email : ""}</p>
+                    <p className="text-xs text-emerald-100 break-all">{user ? user.email : ""}</p>
                   </div>
                 </div>
               </div>
