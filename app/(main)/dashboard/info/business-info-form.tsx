@@ -70,16 +70,21 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
       if (activeSection === 'ai' && !businessInfo.ai_name?.trim()) return
       if (activeSection === 'company' && !businessInfo.company_name?.trim()) return
 
-      // create vs update
+      // Decide whether to create or update
       if (mode === 'create' && !businessInfo.id) {
+        // First save when AI doesn't exist yet
         const result = await createBusinessInfo(userId, { ...businessInfo, vectorstore_ready: false })
         if (result) {
           toast.success('AI created')
           setBusinessInfo(prev => ({ ...prev, id: result.id }))
-          triggerVectorstoreCreation(result.id, result.session_cookie)
+          // Future saves should update the existing row
+          await triggerVectorstoreCreation(result.id, result.session_cookie)
         }
-      } else if (mode === 'edit' && businessInfo.id) {
-        await updateBusinessInfo(businessInfo as BusinessInfo)
+      } else {
+        // Either we are in edit mode, or we already have an id after initial create
+        if (businessInfo.id) {
+          await updateBusinessInfo(businessInfo as BusinessInfo)
+        }
       }
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
