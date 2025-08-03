@@ -46,10 +46,29 @@ export default function IntegrationsForm() {
   const [hubspotConnected, setHubspotConnected] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
 
-  // Placeholder: load status from backend once endpoint is ready
+  // Load connection status from backend
   useEffect(() => {
-    // TODO: fetch integration status for user
-    setLoading(false);
+    const checkStatus = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/hubspot/status");
+        const data = await res.json();
+        setHubspotConnected(!!data.connected);
+      } catch {
+        setHubspotConnected(false);
+      }
+      setLoading(false);
+    };
+    checkStatus();
+
+    // Show toast if redirected after connect
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("status") === "connected") {
+        toast.success("HubSpot connected!");
+        window.history.replaceState({}, document.title, window.location.pathname); // Clean up URL
+      }
+    }
   }, []);
 
   const handleConnectHubspot = async () => {
@@ -62,9 +81,18 @@ export default function IntegrationsForm() {
   };
 
   const handleDisconnectHubspot = async () => {
-    // TODO: call backend to revoke / delete tokens
-    setHubspotConnected(false);
-    toast.success("HubSpot disconnected");
+    try {
+      const res = await fetch("/api/hubspot/disconnect", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setHubspotConnected(false);
+        toast.success("HubSpot disconnected");
+      } else {
+        toast.error(data.error || "Failed to disconnect HubSpot");
+      }
+    } catch (e) {
+      toast.error("Failed to disconnect HubSpot");
+    }
   };
 
   if (loading) {
