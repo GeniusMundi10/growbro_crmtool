@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useUser } from "@/context/UserContext"
 import { getAIWebsites, upsertAIWebsites, deleteAIWebsiteByLabel, AIWebsite, supabase } from "@/lib/supabase"
@@ -150,6 +150,21 @@ export default function WebsitesForm() {
     }
     setSaving(false);
   };
+
+  // Autosave websites when list changes (debounced 1000ms)
+  const firstRenderRef = useRef(true);
+  useEffect(() => {
+    if (loading) return;
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      handleSave();
+    }, 1000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [websites]);
 
   const handleLabelEdit = (idx: number, value: string) => {
     setEditingLabelIdx(idx);
@@ -306,7 +321,7 @@ export default function WebsitesForm() {
   onCustomize={() => {
     if (aiId) window.location.href = `/customize?aiId=${aiId}`;
   }}
-showSave={true} onSave={handleSave} saving={saving} />
+showSave={false} onSave={handleSave} saving={saving} />
     </div>
   );
 }
