@@ -136,7 +136,7 @@ export default function PhotoForm() {
       {photos.length > 0 && (
         <>
           <div className="text-center font-medium mb-3">Your photos:</div>
-          <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 justify-center mb-8">
+          <div className="grid gap-4 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 justify-start mb-8">
             {photos.map(photo => (
               <div key={photo.id} className="group relative cursor-pointer" onClick={() => handleSelect(photo.id)}>
                 <img
