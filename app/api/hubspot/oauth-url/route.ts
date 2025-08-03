@@ -10,5 +10,5 @@ export async function GET(req: NextRequest) {
   ];
   const state = Math.random().toString(36).substring(2, 15); // TODO: store state for CSRF
   const url = `https://app.hubspot.com/oauth/authorize?client_id=${HUBSPOT_CLIENT_ID}&scope=${scopes.join("%20")}&redirect_uri=${encodeURIComponent(HUBSPOT_REDIRECT_URI)}&state=${state}`;
-  return NextResponse.json({ url });
+  return NextResponse.redirect(url);
 }
