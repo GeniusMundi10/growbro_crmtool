@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useUser } from "@/context/UserContext"
 import { getAIGreetings, upsertAIGreetings, deleteAIGreetingByLabel, AIGreeting } from "@/lib/supabase"
@@ -33,6 +33,8 @@ export default function GreetingsForm() {
   const [greetings, setGreetings] = useState<GreetingSlot[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Skip first render for autosave
+  const firstRenderRef = useRef(true);
 
   useEffect(() => {
     if (aiId && user?.id) {
@@ -95,6 +97,8 @@ export default function GreetingsForm() {
     }
     setSaving(false);
     await loadGreetings();
+    // Reset first-render flag so autosave waits for next user change
+    firstRenderRef.current = true;
   };
 
 
@@ -123,6 +127,20 @@ export default function GreetingsForm() {
       setGreetings(greetings.filter((_, i) => i !== idx));
     }
   };
+
+  // Autosave greetings when they change (debounced 1000ms)
+  useEffect(() => {
+    if (loading || saving) return;
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false;
+      return;
+    }
+    const t = setTimeout(() => {
+      handleSave();
+    }, 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [greetings]);
 
   return (
     <div className="bg-white rounded-lg p-6">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useUser } from "@/context/UserContext"
 import { getAIServices, upsertAIServices } from "@/lib/supabase"
@@ -56,7 +56,22 @@ export default function ServicesForm() {
       toast.error("Failed to save services");
     }
     setSaving(false);
-  }
+  };
+
+  // Autosave services when fields change (debounced 800ms)
+  const firstRenderRef = useRef(true);
+  useEffect(() => {
+    if (loading) return;
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false;
+      return;
+    }
+    const t = setTimeout(() => {
+      handleSave();
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fields]);
 
   if (loading) {
     return <div className="text-center text-gray-500 py-10">Loading...</div>;
@@ -141,15 +156,6 @@ export default function ServicesForm() {
             </button>
           </div>
         </div>
-      </div>
-      <div className="flex justify-center mb-8">
-        <Button
-          className="bg-green-600 text-white hover:bg-green-700"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? "Saving..." : "Save Changes"}
-        </Button>
       </div>
       <ActionButtons
         showCustomize={true}
