@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 export async function GET(req: NextRequest) {
   const HUBSPOT_CLIENT_ID = process.env.HUBSPOT_CLIENT_ID;
@@ -12,7 +13,8 @@ export async function GET(req: NextRequest) {
   // Generate a secure random state
   const state = crypto.randomUUID();
 
-  // Get the current user (must be authenticated)
+  // Use Supabase Auth Helpers to get the current user from cookies
+  const supabase = createRouteHandlerClient({ cookies });
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
