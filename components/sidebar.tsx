@@ -15,6 +15,7 @@ import {
   History,
   CreditCard,
   Map,
+  Plug,
   ChevronRight,
   Menu,
   Loader2,
@@ -46,6 +47,7 @@ const menuItems = [
   { name: "Help Center", icon: <HelpCircle className="h-5 w-5" />, path: "/help" },
   { name: "Take a Tour", icon: <Map className="h-5 w-5" />, path: "/tour" },
   { name: "Billing", icon: <CreditCard className="h-5 w-5" />, path: "/billing" },
+  { name: "Integrations", icon: <Plug className="h-5 w-5" />, path: "/dashboard/integrations" },
 ]
 
 interface SidebarProps {

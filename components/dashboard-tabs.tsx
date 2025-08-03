@@ -19,7 +19,6 @@ const tabs = [
   { id: "resource-links", label: "RESOURCE LINKS" },
   { id: "greetings", label: "GREETINGS" },
   { id: "services", label: "SERVICES" },
-  { id: "integrations", label: "INTEGRATIONS" },
 ]
 
 export default function DashboardTabs({ activeTab }: DashboardTabsProps) {
