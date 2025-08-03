@@ -4,6 +4,7 @@ export async function GET(req: NextRequest) {
   const HUBSPOT_CLIENT_ID = process.env.HUBSPOT_CLIENT_ID;
   const HUBSPOT_REDIRECT_URI = process.env.HUBSPOT_REDIRECT_URI;
   const scopes = [
+    "oauth",
     "crm.objects.contacts.read",
     "crm.objects.contacts.write"
   ];
