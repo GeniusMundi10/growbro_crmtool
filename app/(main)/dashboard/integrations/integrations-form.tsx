@@ -73,12 +73,31 @@ export default function IntegrationsForm() {
 
   const handleConnectHubspot = async () => {
     try {
-      window.location.href = "/api/hubspot/oauth-url"; // will redirect to HubSpot install URL
+      const popup = window.open(
+        "/api/hubspot/oauth-url",
+        "hubspot-oauth",
+        "width=600,height=700"
+      );
+      if (!popup) {
+        toast.error("Popup blocked. Please allow popups and try again.");
+        return;
+      }
+      // Listen for postMessage from popup
+      const listener = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        if (event.data.status === "connected") {
+          setHubspotConnected(true);
+          toast.success("HubSpot connected!");
+          window.removeEventListener("message", listener);
+        }
+      };
+      window.addEventListener("message", listener);
     } catch (e) {
       console.error(e);
       toast.error("Unable to initiate HubSpot connection");
     }
   };
+
 
   const handleDisconnectHubspot = async () => {
     try {

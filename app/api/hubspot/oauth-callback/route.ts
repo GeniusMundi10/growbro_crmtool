@@ -65,7 +65,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Failed to store tokens", details: upsertError.message }, { status: 500 });
   }
 
-  // Redirect to integrations page with success
-  return NextResponse.redirect("/integrations?status=connected");
+  // If called from a popup, send postMessage and close
+  const html = `<!DOCTYPE html>
+  <html><head><title>Connected!</title></head><body>
+  <script>
+    if (window.opener) {
+      window.opener.postMessage({ status: 'connected' }, window.location.origin);
+      window.close();
+    } else {
+      window.location.href = '/integrations?status=connected';
+    }
+  </script>
+  <p>Connected! You can close this window.</p>
+  </body></html>`;
+  return new NextResponse(html, { headers: { 'Content-Type': 'text/html' } });
 }
+
 
