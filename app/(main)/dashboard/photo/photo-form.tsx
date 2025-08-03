@@ -13,7 +13,7 @@ import {
 } from "@/lib/supabase";
 import { toast } from "sonner";
 import HelpButton from "@/components/help-button";
-import { Upload, Check, Trash2 } from "lucide-react";
+import { Upload, Trash2 } from "lucide-react";
 import ActionButtons from "@/components/action-buttons";
 
 export default function PhotoForm() {
@@ -22,8 +22,6 @@ export default function PhotoForm() {
   const { user } = useUser();
   const [photos, setPhotos] = useState<AIPhoto[]>([]);
   const [selectedPhotoId, setSelectedPhotoId] = useState<string | null>(null);
-  const [pendingSelectedPhotoId, setPendingSelectedPhotoId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -41,7 +39,6 @@ export default function PhotoForm() {
     setPhotos(data);
     const selected = data.find(p => p.selected);
     setSelectedPhotoId(selected ? selected.id : null);
-    setPendingSelectedPhotoId(selected ? selected.id : null);
     setLoading(false);
   };
 
@@ -86,39 +83,22 @@ export default function PhotoForm() {
     setUploading(false);
   };
 
-  const handleSelect = (photoId: string) => {
-    setPendingSelectedPhotoId(photoId);
-  };
-
-  const handleSave = async () => {
-    if (!aiId || !pendingSelectedPhotoId || pendingSelectedPhotoId === selectedPhotoId) return;
-    setSaving(true);
-    const ok = await selectAIPhoto(pendingSelectedPhotoId, aiId);
+  const handleSelect = async (photoId: string) => {
+    if (!aiId || photoId === selectedPhotoId) return;
+    const ok = await selectAIPhoto(photoId, aiId);
     if (ok) {
-      setSelectedPhotoId(pendingSelectedPhotoId);
-      toast.success("Selected photo updated.");
+      setSelectedPhotoId(photoId);
+      toast.success("Active photo updated.");
       await loadPhotos();
     } else {
       toast.error("Failed to select photo.");
     }
-    setSaving(false);
   };
 
   if (loading) {
     return (
       <div className="bg-white rounded-lg p-6 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600 mx-auto"></div>
-        <button
-          className={`mx-auto mt-2 px-6 py-2 rounded-md text-white font-semibold transition-colors ${
-            pendingSelectedPhotoId !== selectedPhotoId && !saving
-              ? 'bg-green-600 hover:bg-green-700'
-              : 'bg-gray-300 cursor-not-allowed'
-          }`}
-          disabled={pendingSelectedPhotoId === selectedPhotoId || saving}
-          onClick={handleSave}
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </button>
         <p className="mt-4 text-gray-600">Loading photos...</p>
       </div>
     );
@@ -132,7 +112,7 @@ export default function PhotoForm() {
       </div>
       <div className="mb-8">
         <p className="text-gray-700">
-          Upload one or more profile photos for your AI assistant. Select one to be the active avatar in the chat widget.
+          Upload photos for your AI assistant and click one to make it the active chat avatar. All changes save automatically.
         </p>
       </div>
       <div
@@ -158,49 +138,29 @@ export default function PhotoForm() {
           <div className="text-center font-medium mb-3">Your photos:</div>
           <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 justify-center mb-8">
             {photos.map(photo => (
-              <div key={photo.id} className="group relative">
+              <div key={photo.id} className="group relative cursor-pointer" onClick={() => handleSelect(photo.id)}>
                 <img
                   src={photo.url}
                   alt="AI Avatar"
                   className={`h-24 w-24 object-cover rounded-full border-4 transition-transform duration-200 ${photo.selected ? 'border-green-500' : 'border-transparent'} group-hover:scale-105`}
                 />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                  <button
-                    onClick={() => handleSelect(photo.id)}
-                    disabled={uploading || saving}
-                    className="text-white hover:text-green-400"
-                    title="Select"
-                  >
-                    <Check className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(photo.id)}
-                    disabled={uploading}
-                    className="text-white hover:text-red-400"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
-                </div>
+                {photo.selected && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-green-500 text-white text-[10px] flex items-center justify-center rounded-full">✓</span>
+                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(photo.id); }}
+                  disabled={uploading}
+                  className="absolute bottom-1 right-1 bg-black/60 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             ))}
           </div>
         </>
       )}
-      <div className="flex flex-col items-center">
-        <button
-          className={`mx-auto mt-2 px-6 py-2 rounded-md text-white font-semibold transition-colors ${
-            pendingSelectedPhotoId !== selectedPhotoId && !saving
-              ? 'bg-green-600 hover:bg-green-700'
-              : 'bg-gray-300 cursor-not-allowed'
-          }`}
-          disabled={pendingSelectedPhotoId === selectedPhotoId || saving}
-          onClick={handleSave}
-        >
-          {saving ? 'Saving...' : 'Save Changes'}
-        </button>
-      </div>
-      <ActionButtons
+            <ActionButtons
         showSave={false}
         showCustomize={true}
         showTest={true}
