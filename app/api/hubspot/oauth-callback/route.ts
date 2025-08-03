@@ -10,21 +10,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing code" }, { status: 400 });
   }
 
-  // Look up the user by the state parameter (robust against missing session in popup)
-  if (!state) {
-    return NextResponse.json({ error: "Missing state" }, { status: 400 });
+  // Get the current user from Supabase Auth (cookie/session)
+  // This assumes you have a way to get the user from the request/session
+  // For demo, we'll use a placeholder; replace with your real auth logic
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
-  const { data: stateRows, error: stateError } = await supabase
-    .from("hubspot_oauth_state")
-    .select("user_id")
-    .eq("state", state)
-    .limit(1);
-  if (stateError || !stateRows || stateRows.length === 0) {
-    return NextResponse.json({ error: "Invalid or expired state" }, { status: 401 });
-  }
-  const user_id = stateRows[0].user_id;
-  // Optionally: Delete the state row after use for security
-  await supabase.from("hubspot_oauth_state").delete().eq("state", state);
 
   // Exchange code for tokens with HubSpot
   const HUBSPOT_CLIENT_ID = process.env.HUBSPOT_CLIENT_ID;
@@ -61,7 +53,7 @@ export async function GET(req: NextRequest) {
 
   // Upsert tokens in hubspot_tokens table
   const { error: upsertError } = await supabase.from("hubspot_tokens").upsert({
-    user_id,
+    user_id: user.id,
     portal_id,
     access_token: tokenData.access_token,
     refresh_token: tokenData.refresh_token,
