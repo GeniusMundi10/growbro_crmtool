@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -16,9 +16,9 @@ export default function LeadCaptureForm() {
   const aiId = searchParams.get('aiId');
   const { user } = useUser();
   const [captureSettings, setCaptureSettings] = useState({
-    name: true,
-    email: true,
-    phone: true,
+    name: false,
+    email: false,
+    phone: false,
   });
   const [leadCaptureId, setLeadCaptureId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -46,16 +46,16 @@ export default function LeadCaptureForm() {
       if (data) {
         setLeadCaptureId(data.id);
         setCaptureSettings(data.form_config || {
-          name: true,
-          email: true,
-          phone: true,
+          name: false,
+          email: false,
+          phone: false,
         });
       } else {
         setLeadCaptureId(null);
         setCaptureSettings({
-          name: true,
-          email: true,
-          phone: true,
+          name: false,
+          email: false,
+          phone: false,
         });
       }
     } catch (err) {
@@ -113,6 +113,21 @@ export default function LeadCaptureForm() {
       setSaving(false);
     }
   };
+
+  // Debounced autosave: runs 800ms after last change
+  const initialRenderRef = useRef(true);
+  useEffect(() => {
+    if (loading) return;
+    if (initialRenderRef.current) {
+      initialRenderRef.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      saveSettings();
+    }, 800);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captureSettings]);
 
   if (loading) {
     return (
@@ -176,9 +191,7 @@ export default function LeadCaptureForm() {
       </Alert>
 
       <ActionButtons
-        showSave={true}
-        onSave={saveSettings}
-        saving={saving}
+        showSave={false}
         showCustomize={true}
         onCustomize={() => {
           if (aiId) window.location.href = `/customize?aiId=${aiId}`;
