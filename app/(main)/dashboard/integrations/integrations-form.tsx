@@ -72,7 +72,10 @@ export default function IntegrationsForm() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <section className="w-full max-w-4xl">
+      <h1 className="text-2xl font-semibold mb-6 text-slate-800">Integrations</h1>
+      <p className="text-sm text-slate-600 mb-10">Connect third-party tools to super-charge your AI assistant workflow.</p>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <IntegrationCard
         name="HubSpot"
         description="Sync leads you capture in GrowBro directly into your HubSpot CRM."
@@ -80,7 +83,8 @@ export default function IntegrationsForm() {
         onConnect={handleConnectHubspot}
         onDisconnect={handleDisconnectHubspot}
       />
-      {/* Future integrations can be added here */}
-    </div>
+        {/* Future integrations can be added here */}
+      </div>
+    </section>
   );
 }
