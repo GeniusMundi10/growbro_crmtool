@@ -137,7 +137,7 @@ export default function GreetingsForm() {
     }
     const t = setTimeout(() => {
       handleSave();
-    }, 1000);
+    }, 1500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [greetings]);
@@ -181,16 +181,6 @@ export default function GreetingsForm() {
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Greeting
-        </Button>
-      </div>
-      <div className="flex justify-center mb-8">
-        <Button
-          variant="success"
-          className="bg-green-600 text-white hover:bg-green-700"
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
       <ActionButtons 
