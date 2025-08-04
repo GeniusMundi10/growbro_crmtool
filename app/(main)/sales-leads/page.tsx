@@ -110,9 +110,24 @@ export default function SalesLeadsPage() {
     }
   }, [fetchLeadsAndAIs, userLoading, user]);
 
+  const [hubspotConnected, setHubspotConnected] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check HubSpot connection status on mount
+    (async () => {
+      try {
+        const res = await fetch("/api/hubspot/status");
+        const data = await res.json();
+        setHubspotConnected(!!data.connected);
+      } catch (err) {
+        setHubspotConnected(false);
+      }
+    })();
+  }, []);
+
   const filteredLeads = leads.filter(row => aiFilter === "all" || row.ai_name === aiFilter);
 
-  if (loading) {
+  if (loading || hubspotConnected === null) {
     return <div className="p-6 text-center">Loading leads...</div>;
   }
 
@@ -120,6 +135,17 @@ export default function SalesLeadsPage() {
     <div className="min-h-screen bg-white">
       <Header title="Sales Leads" />
       <div className="container mx-auto px-4 py-6">
+        {hubspotConnected === false && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-yellow-700 font-medium">You are not connected to HubSpot. Connect your account to sync leads.</div>
+            <Button
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={() => window.location.href = "/dashboard/integrations"}
+            >
+              Connect HubSpot
+            </Button>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <h1 className="text-2xl font-bold">Sales Leads</h1>
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
@@ -203,6 +229,36 @@ export default function SalesLeadsPage() {
                     <TableCell className="font-medium">{lead.name || "-"}</TableCell>
                     <TableCell>{lead.email || "-"}</TableCell>
                     <TableCell>{lead.phone || "-"}</TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!hubspotConnected}
+                        onClick={async () => {
+                          if (!hubspotConnected) {
+                            toast.error("Please connect your HubSpot account first.");
+                            return;
+                          }
+                          try {
+                            const res = await fetch("/api/hubspot/sync-lead", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ leadId: lead.chat_id })
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              toast.success("Lead synced to HubSpot!");
+                            } else {
+                              toast.error(data.error || "Failed to sync lead to HubSpot");
+                            }
+                          } catch (err) {
+                            toast.error("Failed to sync lead to HubSpot");
+                          }
+                        }}
+                      >
+                        Sync to HubSpot
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
