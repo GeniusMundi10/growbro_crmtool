@@ -30,6 +30,6 @@ export async function GET(req: NextRequest) {
   }
 
   // Build the OAuth URL with the state
-  const url = `https://app.hubspot.com/oauth/authorize?client_id=${HUBSPOT_CLIENT_ID}&scope=${scopes.join("%20")}&redirect_uri=${encodeURIComponent(HUBSPOT_REDIRECT_URI)}&state=${state}`;
+  const url = `https://app.hubspot.com/oauth/authorize?client_id=${HUBSPOT_CLIENT_ID}&scope=${scopes.join("%20")}&redirect_uri=${encodeURIComponent(HUBSPOT_REDIRECT_URI)}&state=${state}&prompt=consent`;
   return NextResponse.redirect(url);
 }
