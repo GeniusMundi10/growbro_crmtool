@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 
 import React from "react";
 import Header from "@/components/header";
-import IntegrationsForm from "../dashboard/integrations/integrations-form";
+import IntegrationsForm from "./integrations-form";
 
 export default function IntegrationsPage() {
   return (
