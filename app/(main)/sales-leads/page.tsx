@@ -140,7 +140,7 @@ export default function SalesLeadsPage() {
             <div className="text-yellow-700 font-medium">You are not connected to HubSpot. Connect your account to sync leads.</div>
             <Button
               className="bg-orange-600 hover:bg-orange-700 text-white"
-              onClick={() => window.location.href = "/dashboard/integrations"}
+              onClick={() => window.location.href = "/integrations"}
             >
               Connect HubSpot
             </Button>
