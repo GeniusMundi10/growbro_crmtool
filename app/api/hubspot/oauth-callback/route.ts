@@ -16,17 +16,23 @@ export async function GET(req: NextRequest) {
   if (!state) {
     return NextResponse.json({ error: "Missing state" }, { status: 400 });
   }
+  // Attempt to atomically fetch and delete the state row (single-use)
   const { data: stateRows, error: stateError } = await supabase
     .from("hubspot_oauth_state")
     .select("user_id")
     .eq("state", state)
     .limit(1);
   if (stateError || !stateRows || stateRows.length === 0) {
+    // Log duplicate or replayed state usage
+    console.warn(`[HubSpot OAuth] State not found or already used: ${state}`);
     return NextResponse.json({ error: "Invalid or expired state" }, { status: 401 });
   }
   const user_id = stateRows[0].user_id;
-  // Optionally: Delete the state row after use for security
-  await supabase.from("hubspot_oauth_state").delete().eq("state", state);
+  // Delete the state row after use for single-use guarantee
+  const { error: deleteError } = await supabase.from("hubspot_oauth_state").delete().eq("state", state);
+  if (deleteError) {
+    console.warn(`[HubSpot OAuth] Failed to delete used state: ${state}`, deleteError.message);
+  }
 
   // Exchange code for tokens with HubSpot
   const HUBSPOT_CLIENT_ID = process.env.HUBSPOT_CLIENT_ID;
