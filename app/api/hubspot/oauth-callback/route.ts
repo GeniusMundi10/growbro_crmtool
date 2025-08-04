@@ -49,19 +49,26 @@ export async function GET(req: NextRequest) {
   }
   const tokenData = await tokenRes.json();
 
-  // Optionally fetch portal_id
+  // Fetch portal_id and validate authorization
   let portal_id = null;
+  let me = null;
   try {
     const meRes = await fetch("https://api.hubapi.com/integrations/v1/me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
     if (meRes.ok) {
-      const me = await meRes.json();
+      me = await meRes.json();
       portal_id = me.portalId?.toString() || null;
+    } else {
+      // If /me fails, do not upsert tokens or treat as connected
+      const err = await meRes.text();
+      return NextResponse.json({ error: "HubSpot authorization not complete. Please finish connecting the app.", details: err }, { status: 400 });
     }
-  } catch {}
+  } catch (e) {
+    return NextResponse.json({ error: "HubSpot authorization not complete. Please finish connecting the app.", details: (e as Error).message }, { status: 400 });
+  }
 
-  // Upsert tokens in hubspot_tokens table
+  // Only upsert tokens if /me succeeded (i.e. user has approved)
   const { error: upsertError } = await supabase.from("hubspot_tokens").upsert({
     user_id,
     portal_id,
