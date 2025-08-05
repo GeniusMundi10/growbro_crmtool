@@ -73,7 +73,7 @@ export default function SalesLeadsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("chat_history")
-      .select("name,email,phone,chat_id,ai_name,end_user_id,hubspot_synched")
+      .select("name,email,phone,chat_id,ai_name,end_user_id")
       .eq("user_id", user.id);
 
     // Debug: log both error and data
@@ -97,7 +97,30 @@ export default function SalesLeadsPage() {
       seen.add(key);
       return true;
     });
-    setLeads(deduped);
+
+    // Step 2: Fetch hubspot_synched/contact_id for all unique end_user_ids
+    const endUserIds = Array.from(new Set(deduped.map(l => l.end_user_id).filter(Boolean)));
+    let endUserSyncMap: Record<string, { hubspot_synched?: boolean; hubspot_contact_id?: string }> = {};
+    if (endUserIds.length > 0) {
+      const { data: endUsers, error: endUserError } = await supabase
+        .from("end_users")
+        .select("id,hubspot_synched,hubspot_contact_id")
+        .in("id", endUserIds);
+      if (!endUserError && endUsers) {
+        endUserSyncMap = Object.fromEntries(
+          endUsers.map((eu: any) => [eu.id, { hubspot_synched: eu.hubspot_synched, hubspot_contact_id: eu.hubspot_contact_id }])
+        );
+      }
+    }
+
+    // Step 3: Merge sync status into leads
+    const merged = deduped.map((lead: any) => ({
+      ...lead,
+      hubspot_synched: lead.end_user_id ? endUserSyncMap[lead.end_user_id]?.hubspot_synched : false,
+      hubspot_contact_id: lead.end_user_id ? endUserSyncMap[lead.end_user_id]?.hubspot_contact_id : undefined,
+    }));
+    setLeads(merged);
+
     const aiSet = new Set<string>();
     filtered.forEach((row: any) => {
       if (row.ai_name) aiSet.add(row.ai_name);
