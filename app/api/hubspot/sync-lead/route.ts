@@ -99,6 +99,10 @@ export async function POST(req: NextRequest) {
   }
 
   const hubspotContact = await res.json();
+
+  // Mark this lead as synced in the DB
+  await supabase.from("end_users").update({ hubspot_synched: true, hubspot_contact_id: hubspotContact.id }).eq("id", leadId);
+
   // Optionally: return the HubSpot contact id
   return NextResponse.json({ success: true, hubspotContact });
 }

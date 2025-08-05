@@ -50,11 +50,13 @@ import Header from "@/components/header"
 // import { getCurrentUser, getLeads, createLead } from "@/lib/supabase"
 type LeadRow = {
   chat_id: string;
-  ai_name: string;
   name: string | null;
   email: string | null;
   phone: string | null;
-  end_user_id: string | null;
+  ai_name: string | null;
+  created_at: string;
+  end_user_id?: string;
+  hubspot_synched?: boolean;
 };
 
 import { supabase } from "@/lib/supabase";
@@ -72,7 +74,7 @@ export default function SalesLeadsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("chat_history")
-      .select("chat_id, ai_name, name, email, phone, end_user_id")
+      .select("name,email,phone,chat_id,ai_name,created_at,end_user_id,hubspot_synched")
       .eq("user_id", user.id);
 
     // Debug: log both error and data
@@ -231,11 +233,14 @@ export default function SalesLeadsPage() {
                     <TableCell>{lead.email || "-"}</TableCell>
                     <TableCell>{lead.phone || "-"}</TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={!hubspotConnected}
-                        onClick={async () => {
+                      {lead.hubspot_synched ? (
+  <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded">Synced</span>
+) : (
+  <Button
+    size="sm"
+    variant="outline"
+    disabled={!hubspotConnected}
+    onClick={async () => {
                           if (!hubspotConnected) {
                             toast.error("Please connect your HubSpot account first.");
                             return;
