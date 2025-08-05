@@ -54,7 +54,6 @@ type LeadRow = {
   name: string | null;
   email: string | null;
   phone: string | null;
-  end_user_id: string | null;
 };
 
 import { supabase } from "@/lib/supabase";
@@ -72,7 +71,7 @@ export default function SalesLeadsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("chat_history")
-      .select("chat_id, ai_name, name, email, phone, end_user_id")
+      .select("chat_id, ai_name, name, email, phone")
       .eq("user_id", user.id);
 
     // Debug: log both error and data
@@ -244,7 +243,7 @@ export default function SalesLeadsPage() {
                             const res = await fetch("/api/hubspot/sync-lead", {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ leadId: lead.end_user_id })
+                              body: JSON.stringify({ leadId: lead.chat_id })
                             });
                             const data = await res.json();
                             if (res.ok && data.success) {
