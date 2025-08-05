@@ -54,7 +54,6 @@ type LeadRow = {
   email: string | null;
   phone: string | null;
   ai_name: string | null;
-  created_at: string;
   end_user_id?: string;
   hubspot_synched?: boolean;
 };
@@ -74,7 +73,7 @@ export default function SalesLeadsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("chat_history")
-      .select("name,email,phone,chat_id,ai_name,created_at,end_user_id,hubspot_synched")
+      .select("name,email,phone,chat_id,ai_name,end_user_id,hubspot_synched")
       .eq("user_id", user.id);
 
     // Debug: log both error and data
