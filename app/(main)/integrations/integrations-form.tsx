@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
 import { CheckCircle2, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,11 @@ function IntegrationCard({ name, description, connected, onConnect, onDisconnect
 export default function IntegrationsForm() {
   const { user } = useUser();
   const [hubspotConnected, setHubspotConnected] = useState<boolean>(false);
+  const [whatsappConnected, setWhatsappConnected] = useState<boolean>(false);
+  const [whatsappInfo, setWhatsappInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const fbReadyRef = useRef(false);
+  const waSessionDataRef = useRef<{ waba_id?: string; phone_number_id?: string } | null>(null);
 
   // Load connection status from backend
   useEffect(() => {
@@ -56,6 +60,15 @@ export default function IntegrationsForm() {
         setHubspotConnected(!!data.connected);
       } catch {
         setHubspotConnected(false);
+      }
+      try {
+        const res = await fetch("/api/whatsapp/status");
+        const data = await res.json();
+        setWhatsappConnected(!!data.connected);
+        setWhatsappInfo(data.info || null);
+      } catch {
+        setWhatsappConnected(false);
+        setWhatsappInfo(null);
       }
       setLoading(false);
     };
@@ -114,6 +127,132 @@ export default function IntegrationsForm() {
     }
   };
 
+  // ---- WhatsApp Embedded Signup helpers ----
+  const loadFacebookSdk = () => {
+    if (typeof window === "undefined") return;
+    const w = window as any;
+    if (w.FB) {
+      fbReadyRef.current = true;
+      return;
+    }
+    // Initialize SDK when ready
+    w.fbAsyncInit = function () {
+      const appId = process.env.NEXT_PUBLIC_FB_APP_ID as string;
+      if (!appId) {
+        console.warn("NEXT_PUBLIC_FB_APP_ID is not set");
+      }
+      w.FB?.init({
+        appId: appId || "",
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: "v23.0",
+      });
+      fbReadyRef.current = true;
+    };
+    // Inject SDK script once
+    const id = "facebook-jssdk";
+    if (!document.getElementById(id)) {
+      const js = document.createElement("script");
+      js.id = id;
+      js.async = true;
+      js.defer = true;
+      js.crossOrigin = "anonymous";
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      document.body.appendChild(js);
+    }
+    // Session logging message event listener (only add once)
+    if (!w.__wa_es_listener_added) {
+      window.addEventListener("message", (event: MessageEvent) => {
+        if (typeof event.origin !== "string" || !event.origin.endsWith("facebook.com")) return;
+        try {
+          const data = JSON.parse((event as any).data);
+          if (data?.type === "WA_EMBEDDED_SIGNUP") {
+            waSessionDataRef.current = {
+              waba_id: data?.data?.waba_id,
+              phone_number_id: data?.data?.phone_number_id,
+            };
+          }
+        } catch {
+          // ignore non-JSON messages
+        }
+      });
+      w.__wa_es_listener_added = true;
+    }
+  };
+
+  // Load the Facebook SDK once on mount
+  useEffect(() => {
+    loadFacebookSdk();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleConnectWhatsApp = async () => {
+    try {
+      const w = window as any;
+      const FB = w.FB;
+      if (!FB) {
+        toast.error("Facebook SDK not loaded yet. Please try again in a moment.");
+        return;
+      }
+      const configId = process.env.NEXT_PUBLIC_FB_EMBEDDED_SIGNUP_CONFIG_ID as string;
+      if (!configId) {
+        toast.error("Missing NEXT_PUBLIC_FB_EMBEDDED_SIGNUP_CONFIG_ID");
+        return;
+      }
+
+      const fbLoginCallback = async (response: any) => {
+        if (response?.authResponse?.code) {
+          const code = response.authResponse.code as string;
+          const body = {
+            code,
+            waba_id: waSessionDataRef.current?.waba_id,
+            phone_number_id: waSessionDataRef.current?.phone_number_id,
+          };
+          const resp = await fetch("/api/whatsapp/embedded-callback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await resp.json();
+          if (!resp.ok || !data?.success) {
+            toast.error(data?.error || "WhatsApp onboarding failed");
+            return;
+          }
+          setWhatsappConnected(true);
+          toast.success("WhatsApp connected!");
+        } else {
+          toast.error("WhatsApp signup was cancelled or failed.");
+        }
+      };
+
+      FB.login(fbLoginCallback, {
+        config_id: configId,
+        response_type: "code",
+        override_default_response_type: true,
+        extras: { setup: {}, sessionInfoVersion: "3" },
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error("Unable to initiate WhatsApp connection");
+    }
+  };
+
+  const handleDisconnectWhatsApp = async () => {
+    try {
+      const res = await fetch("/api/whatsapp/disconnect", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setWhatsappConnected(false);
+        setWhatsappInfo(null);
+        toast.success("WhatsApp disconnected");
+      } else {
+        toast.error(data.error || "Failed to disconnect WhatsApp");
+      }
+    } catch (e) {
+      toast.error("Failed to disconnect WhatsApp");
+    }
+  };
+
   if (loading) {
     return <div className="text-center text-gray-500 py-10">Loading...</div>;
   }
@@ -129,6 +268,17 @@ export default function IntegrationsForm() {
         connected={hubspotConnected}
         onConnect={handleConnectHubspot}
         onDisconnect={handleDisconnectHubspot}
+      />
+      <IntegrationCard
+        name="WhatsApp"
+        description={
+          whatsappConnected
+            ? `Connected to WhatsApp${whatsappInfo?.phone_number ? ` (+${whatsappInfo.phone_number})` : ""}.`
+            : "Connect your WhatsApp Business number via Meta Embedded Signup."
+        }
+        connected={whatsappConnected}
+        onConnect={handleConnectWhatsApp}
+        onDisconnect={handleDisconnectWhatsApp}
       />
         {/* Future integrations can be added here */}
       </div>
