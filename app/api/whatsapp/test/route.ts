@@ -29,9 +29,18 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ai_id, to_number: body.to_number, message: body.message })
     });
-    const data = await resp.json().catch(() => ({}));
+    const data = await resp.json().catch(() => ({} as any));
     if (!resp.ok || !data?.success) {
-      return NextResponse.json({ success: false, error: data?.error || 'Test send failed' }, { status: 500 });
+      // Surface underlying backend/Graph error info to the client for easier debugging
+      return NextResponse.json(
+        {
+          success: false,
+          error: data?.error || data?.body || 'Test send failed',
+          status: data?.status ?? resp.status,
+          backendBody: data?.body ?? null,
+        },
+        { status: 500 }
+      );
     }
     return NextResponse.json({ success: true });
   } catch (e: any) {
