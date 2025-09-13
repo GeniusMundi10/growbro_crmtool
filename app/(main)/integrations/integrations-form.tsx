@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
 import { CheckCircle2, Plug } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -47,6 +49,9 @@ export default function IntegrationsForm() {
   const [whatsappConnected, setWhatsappConnected] = useState<boolean>(false);
   const [whatsappInfo, setWhatsappInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [testTo, setTestTo] = useState("");
+  const [testMsg, setTestMsg] = useState("Hello from GrowBro test");
+  const [testSending, setTestSending] = useState(false);
   const fbReadyRef = useRef(false);
   const waSessionDataRef = useRef<{ waba_id?: string; phone_number_id?: string } | null>(null);
 
@@ -207,6 +212,8 @@ export default function IntegrationsForm() {
             code,
             waba_id: waSessionDataRef.current?.waba_id,
             phone_number_id: waSessionDataRef.current?.phone_number_id,
+            // Important for OAuth code exchange: must match the page that launched the flow
+            redirect_uri: typeof window !== 'undefined' ? window.location.href : undefined,
           };
           const resp = await fetch("/api/whatsapp/embedded-callback", {
             method: "POST",
@@ -253,6 +260,31 @@ export default function IntegrationsForm() {
     }
   };
 
+  const handleTestSend = async () => {
+    if (!testTo || !testMsg) {
+      toast.error("Enter recipient number and message");
+      return;
+    }
+    try {
+      setTestSending(true);
+      const resp = await fetch("/api/whatsapp/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to_number: testTo, message: testMsg })
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data?.success) {
+        toast.error(data?.error || "Test send failed");
+        return;
+      }
+      toast.success("Test message sent");
+    } catch (e) {
+      toast.error("Failed to send test message");
+    } finally {
+      setTestSending(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-center text-gray-500 py-10">Loading...</div>;
   }
@@ -269,17 +301,51 @@ export default function IntegrationsForm() {
         onConnect={handleConnectHubspot}
         onDisconnect={handleDisconnectHubspot}
       />
-      <IntegrationCard
-        name="WhatsApp"
-        description={
-          whatsappConnected
-            ? `Connected to WhatsApp${whatsappInfo?.phone_number ? ` (+${whatsappInfo.phone_number})` : ""}.`
-            : "Connect your WhatsApp Business number via Meta Embedded Signup."
-        }
-        connected={whatsappConnected}
-        onConnect={handleConnectWhatsApp}
-        onDisconnect={handleDisconnectWhatsApp}
-      />
+      <Card className="max-w-md w-full shadow-sm border border-gray-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div className="flex items-center gap-2">
+            <Plug className="h-5 w-5 text-purple-600" />
+            <CardTitle className="text-lg font-semibold">WhatsApp</CardTitle>
+          </div>
+          {whatsappConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-4">
+            {whatsappConnected
+              ? `Connected${whatsappInfo?.phone_number ? ` to +${whatsappInfo.phone_number}` : ""}.`
+              : "Connect your WhatsApp Business number via Meta Embedded Signup."}
+          </p>
+          {whatsappConnected ? (
+            <div className="space-y-4">
+              <div className="text-xs text-slate-600 bg-slate-50 border rounded p-3">
+                <div><span className="font-medium">Status:</span> {whatsappInfo?.status || "connected"}</div>
+                {whatsappInfo?.phone_number && (
+                  <div><span className="font-medium">Phone:</span> +{whatsappInfo.phone_number}</div>
+                )}
+                {whatsappInfo?.phone_number_id && (
+                  <div><span className="font-medium">Phone Number ID:</span> {whatsappInfo.phone_number_id}</div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="to">Test send to (E.164)</Label>
+                <Input id="to" placeholder="+15551234567" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="msg">Message</Label>
+                <Input id="msg" placeholder="Hello from GrowBro" value={testMsg} onChange={(e) => setTestMsg(e.target.value)} />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleTestSend} size="sm" disabled={testSending}>Send Test</Button>
+                <Button variant="destructive" onClick={handleDisconnectWhatsApp} size="sm">Disconnect</Button>
+              </div>
+              <p className="text-[11px] text-slate-500">Note: Test numbers require recipients to be verified in Meta's API Setup, or start a session by messaging your number first.</p>
+            </div>
+          ) : (
+            <Button onClick={handleConnectWhatsApp} size="sm">Connect</Button>
+          )}
+        </CardContent>
+      </Card>
         {/* Future integrations can be added here */}
       </div>
     </section>

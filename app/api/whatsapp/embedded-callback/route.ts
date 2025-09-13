@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     waba_id?: string;
     phone_number_id?: string;
     code?: string;
+    redirect_uri?: string;
   } | null;
 
   if (!body || !body.code) {
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
         waba_id: body.waba_id,
         phone_number_id: body.phone_number_id,
         code: body.code,
+        redirect_uri: body.redirect_uri,
       })
     });
 
