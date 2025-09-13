@@ -9,17 +9,38 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as { to_number: string; message: string } | null;
+  const body = await req.json().catch(() => null) as { to_number: string; message: string; ai_id?: string } | null;
   if (!body?.to_number || !body?.message) {
     return NextResponse.json({ success: false, error: "Missing to_number or message" }, { status: 400 });
   }
 
-  const { data: biz } = await supabase
-    .from("business_info")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const ai_id = biz?.id as string | undefined;
+  // Prefer ai_id provided by client (selected AI), else derive
+  let ai_id = body?.ai_id as string | undefined;
+
+  if (!ai_id) {
+    const { data: biz } = await supabase
+      .from("business_info")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    ai_id = biz?.id as string | undefined;
+  }
+
+  // Fallback: if user has no business_info row yet, try whatsapp_integrations mapping
+  if (!ai_id) {
+    const { data: wi } = await supabase
+      .from("whatsapp_integrations")
+      .select("ai_id")
+      .eq("user_id", user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    ai_id = (wi?.ai_id as string | undefined) || ai_id;
+  }
+
+  if (!ai_id) {
+    return NextResponse.json({ success: false, error: "No AI found for user" }, { status: 400 });
+  }
 
   const backendUrl = process.env.NEXT_PUBLIC_WHATSAPP_BACKEND_URL || 'https://growbro-backend.fly.dev';
 

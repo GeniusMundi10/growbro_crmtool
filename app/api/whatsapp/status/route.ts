@@ -11,8 +11,10 @@ export async function GET(req: NextRequest) {
   try {
     const { data, error } = await supabase
       .from("whatsapp_integrations")
-      .select("id, phone_number, phone_number_id, status")
+      .select("id, ai_id, phone_number, phone_number_id, status")
       .eq("user_id", user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {

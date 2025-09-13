@@ -265,12 +265,16 @@ export default function IntegrationsForm() {
       toast.error("Enter recipient number and message");
       return;
     }
+    if (!whatsappInfo?.ai_id) {
+      toast.error("No AI selected or found for this WhatsApp integration");
+      return;
+    }
     try {
       setTestSending(true);
       const resp = await fetch("/api/whatsapp/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to_number: testTo, message: testMsg })
+        body: JSON.stringify({ to_number: testTo, message: testMsg, ai_id: whatsappInfo.ai_id })
       });
       const data = await resp.json();
       if (!resp.ok || !data?.success) {
