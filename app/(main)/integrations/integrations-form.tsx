@@ -51,6 +51,7 @@ export default function IntegrationsForm() {
   const [whatsappInfo, setWhatsappInfo] = useState<any>(null);
   const [waList, setWaList] = useState<Array<any>>([]);
   const [selectedAiId, setSelectedAiId] = useState<string | null>(null);
+  const [aiList, setAiList] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
   const [testTo, setTestTo] = useState("");
   const [testMsg, setTestMsg] = useState("Hello from GrowBro test");
@@ -79,13 +80,22 @@ export default function IntegrationsForm() {
         const listData = await listRes.json();
         const items = Array.isArray(listData?.items) ? listData.items : [];
         setWaList(items);
-        // Default selection: currently connected (from status) or most recent
-        const defaultAi = (data?.info?.ai_id as string | undefined) || (items[0]?.ai_id as string | undefined) || null;
+        // Fetch AI list for pre-connect selection
+        const aiRes = await fetch("/api/ai/list");
+        const aiData = await aiRes.json();
+        const ais = Array.isArray(aiData?.items) ? aiData.items : [];
+        setAiList(ais);
+        // Default selection: if connected use that ai_id; else first AI in list
+        const defaultAi = (data?.info?.ai_id as string | undefined)
+          || (items[0]?.ai_id as string | undefined)
+          || (ais[0]?.ai_id as string | undefined)
+          || null;
         setSelectedAiId(defaultAi);
       } catch {
         setWhatsappConnected(false);
         setWhatsappInfo(null);
         setWaList([]);
+        setAiList([]);
         setSelectedAiId(null);
       }
       setLoading(false);
@@ -227,6 +237,7 @@ export default function IntegrationsForm() {
             phone_number_id: waSessionDataRef.current?.phone_number_id,
             // Important for OAuth code exchange: must match the page that launched the flow
             redirect_uri: typeof window !== 'undefined' ? window.location.href : undefined,
+            ai_id: selectedAiId || undefined,
           };
           fetch("/api/whatsapp/embedded-callback", {
             method: "POST",
@@ -412,7 +423,30 @@ export default function IntegrationsForm() {
               <p className="text-[11px] text-slate-500">Note: Test numbers require recipients to be verified in Meta's API Setup, or start a session by messaging your number first.</p>
             </div>
           ) : (
-            <Button onClick={handleConnectWhatsApp} size="sm">Connect</Button>
+            <div className="space-y-4">
+              {aiList.length > 0 ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Select AI to connect</Label>
+                    <Select value={selectedAiId ?? undefined} onValueChange={(v) => setSelectedAiId(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an AI" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {aiList.map((ai) => (
+                          <SelectItem key={ai.ai_id} value={ai.ai_id}>
+                            {ai.ai_name || 'AI'} {ai.connected ? '— connected' : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleConnectWhatsApp} size="sm" disabled={!selectedAiId}>Connect</Button>
+                </>
+              ) : (
+                <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect WhatsApp.</p>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>

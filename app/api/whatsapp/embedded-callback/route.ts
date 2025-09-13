@@ -14,24 +14,39 @@ export async function POST(req: NextRequest) {
     phone_number_id?: string;
     code?: string;
     redirect_uri?: string;
+    ai_id?: string;
   } | null;
 
   if (!body || !body.code) {
     return NextResponse.json({ success: false, error: "Missing code" }, { status: 400 });
   }
 
-  // Find the user's AI (business_info.id) to map onboarding to the correct tenant
-  const { data: biz, error: bizErr } = await supabase
-    .from("business_info")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (bizErr || !biz?.id) {
-    return NextResponse.json({ success: false, error: "AI not found for user" }, { status: 400 });
+  // Determine ai_id: prefer value passed from client selector, else fallback to user's first AI
+  let ai_id = body.ai_id as string | undefined;
+  if (ai_id) {
+    // Validate the provided ai_id belongs to this user
+    const { data: validate } = await supabase
+      .from("business_info")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("id", ai_id)
+      .maybeSingle();
+    if (!validate?.id) {
+      return NextResponse.json({ success: false, error: "Invalid ai_id for user" }, { status: 400 });
+    }
+  } else {
+    const { data: biz, error: bizErr } = await supabase
+      .from("business_info")
+      .select("id")
+      .eq("user_id", user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (bizErr || !biz?.id) {
+      return NextResponse.json({ success: false, error: "AI not found for user" }, { status: 400 });
+    }
+    ai_id = biz.id as string;
   }
-
-  const ai_id = biz.id as string;
 
   const backendUrl = process.env.NEXT_PUBLIC_WHATSAPP_BACKEND_URL || 'https://growbro-backend.fly.dev';
 
