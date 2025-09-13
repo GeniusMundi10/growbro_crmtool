@@ -205,7 +205,7 @@ export default function IntegrationsForm() {
         return;
       }
 
-      const fbLoginCallback = async (response: any) => {
+      function fbLoginCallback(response: any) {
         if (response?.authResponse?.code) {
           const code = response.authResponse.code as string;
           const body = {
@@ -215,22 +215,28 @@ export default function IntegrationsForm() {
             // Important for OAuth code exchange: must match the page that launched the flow
             redirect_uri: typeof window !== 'undefined' ? window.location.href : undefined,
           };
-          const resp = await fetch("/api/whatsapp/embedded-callback", {
+          fetch("/api/whatsapp/embedded-callback", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
-          });
-          const data = await resp.json();
-          if (!resp.ok || !data?.success) {
-            toast.error(data?.error || "WhatsApp onboarding failed");
-            return;
-          }
-          setWhatsappConnected(true);
-          toast.success("WhatsApp connected!");
+          })
+            .then(async (resp) => {
+              const data = await resp.json().catch(() => ({}));
+              if (!resp.ok || !(data as any)?.success) {
+                toast.error((data as any)?.error || "WhatsApp onboarding failed");
+                return;
+              }
+              setWhatsappConnected(true);
+              toast.success("WhatsApp connected!");
+            })
+            .catch((e) => {
+              console.error(e);
+              toast.error("Backend error during WhatsApp onboarding");
+            });
         } else {
           toast.error("WhatsApp signup was cancelled or failed.");
         }
-      };
+      }
 
       FB.login(fbLoginCallback, {
         config_id: configId,
