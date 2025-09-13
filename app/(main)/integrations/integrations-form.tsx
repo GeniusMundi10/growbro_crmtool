@@ -192,16 +192,19 @@ export default function IntegrationsForm() {
     if (!w.__wa_es_listener_added) {
       window.addEventListener("message", (event: MessageEvent) => {
         if (typeof event.origin !== "string" || !event.origin.endsWith("facebook.com")) return;
+        let payload: any = null;
         try {
-          const data = JSON.parse((event as any).data);
-          if (data?.type === "WA_EMBEDDED_SIGNUP") {
-            waSessionDataRef.current = {
-              waba_id: data?.data?.waba_id,
-              phone_number_id: data?.data?.phone_number_id,
-            };
-          }
-        } catch {
-          // ignore non-JSON messages
+          const raw = (event as any).data;
+          payload = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        } catch (e) {
+          payload = null;
+        }
+        if (payload?.type === "WA_EMBEDDED_SIGNUP") {
+          waSessionDataRef.current = {
+            waba_id: payload?.data?.waba_id,
+            phone_number_id: payload?.data?.phone_number_id,
+          };
+          console.debug("[WA_ES] Session data captured", waSessionDataRef.current);
         }
       });
       w.__wa_es_listener_added = true;
@@ -231,12 +234,13 @@ export default function IntegrationsForm() {
       function fbLoginCallback(response: any) {
         if (response?.authResponse?.code) {
           const code = response.authResponse.code as string;
+          const redirectUri = (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string) || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
           const body = {
             code,
             waba_id: waSessionDataRef.current?.waba_id,
             phone_number_id: waSessionDataRef.current?.phone_number_id,
             // Important for OAuth code exchange: must match the page that launched the flow
-            redirect_uri: typeof window !== 'undefined' ? window.location.href : undefined,
+            redirect_uri: redirectUri,
             ai_id: selectedAiId || undefined,
           };
           fetch("/api/whatsapp/embedded-callback", {
@@ -246,12 +250,23 @@ export default function IntegrationsForm() {
           })
             .then(async (resp) => {
               const data = await resp.json().catch(() => ({}));
+              console.debug('[WA_ES] embedded-callback response', { ok: resp.ok, status: resp.status, data });
               if (!resp.ok || !(data as any)?.success) {
                 toast.error((data as any)?.error || "WhatsApp onboarding failed");
                 return;
               }
               setWhatsappConnected(true);
               toast.success("WhatsApp connected!");
+              // Refresh status + integrations list so UI updates immediately
+              try {
+                const s = await fetch("/api/whatsapp/status").then(r=>r.json());
+                setWhatsappConnected(!!s.connected);
+                setWhatsappInfo(s.info || null);
+                const l = await fetch("/api/whatsapp/list").then(r=>r.json());
+                const items = Array.isArray(l?.items) ? l.items : [];
+                setWaList(items);
+                setSelectedAiId((s?.info?.ai_id as string | undefined) || items[0]?.ai_id || null);
+              } catch {}
             })
             .catch((e) => {
               console.error(e);
