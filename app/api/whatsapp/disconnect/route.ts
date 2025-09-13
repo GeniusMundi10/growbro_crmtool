@@ -9,12 +9,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: biz } = await supabase
-    .from("business_info")
-    .select("id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const ai_id = biz?.id as string | undefined;
+  const body = await req.json().catch(() => null) as { ai_id?: string } | null;
+  let ai_id = body?.ai_id as string | undefined;
+
+  if (!ai_id) {
+    const { data: biz } = await supabase
+      .from("business_info")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    ai_id = biz?.id as string | undefined;
+  }
+
+  if (!ai_id) {
+    const { data: wi } = await supabase
+      .from("whatsapp_integrations")
+      .select("ai_id")
+      .eq("user_id", user.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    ai_id = (wi?.ai_id as string | undefined) || ai_id;
+  }
 
   const backendUrl = process.env.NEXT_PUBLIC_WHATSAPP_BACKEND_URL || 'https://growbro-backend.fly.dev';
 

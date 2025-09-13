@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface IntegrationCardProps {
   name: string;
@@ -48,6 +49,8 @@ export default function IntegrationsForm() {
   const [hubspotConnected, setHubspotConnected] = useState<boolean>(false);
   const [whatsappConnected, setWhatsappConnected] = useState<boolean>(false);
   const [whatsappInfo, setWhatsappInfo] = useState<any>(null);
+  const [waList, setWaList] = useState<Array<any>>([]);
+  const [selectedAiId, setSelectedAiId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [testTo, setTestTo] = useState("");
   const [testMsg, setTestMsg] = useState("Hello from GrowBro test");
@@ -71,9 +74,19 @@ export default function IntegrationsForm() {
         const data = await res.json();
         setWhatsappConnected(!!data.connected);
         setWhatsappInfo(data.info || null);
+        // Fetch list of all WhatsApp integrations
+        const listRes = await fetch("/api/whatsapp/list");
+        const listData = await listRes.json();
+        const items = Array.isArray(listData?.items) ? listData.items : [];
+        setWaList(items);
+        // Default selection: currently connected (from status) or most recent
+        const defaultAi = (data?.info?.ai_id as string | undefined) || (items[0]?.ai_id as string | undefined) || null;
+        setSelectedAiId(defaultAi);
       } catch {
         setWhatsappConnected(false);
         setWhatsappInfo(null);
+        setWaList([]);
+        setSelectedAiId(null);
       }
       setLoading(false);
     };
@@ -271,7 +284,7 @@ export default function IntegrationsForm() {
       toast.error("Enter recipient number and message");
       return;
     }
-    if (!whatsappInfo?.ai_id) {
+    if (!selectedAiId) {
       toast.error("No AI selected or found for this WhatsApp integration");
       return;
     }
@@ -280,7 +293,7 @@ export default function IntegrationsForm() {
       const resp = await fetch("/api/whatsapp/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to_number: testTo, message: testMsg, ai_id: whatsappInfo.ai_id })
+        body: JSON.stringify({ to_number: testTo, message: testMsg, ai_id: selectedAiId })
       });
       const data = await resp.json();
       if (!resp.ok || !data?.success) {
@@ -327,6 +340,23 @@ export default function IntegrationsForm() {
           </p>
           {whatsappConnected ? (
             <div className="space-y-4">
+              {waList.length > 1 && (
+                <div className="space-y-2">
+                  <Label>Select AI / WhatsApp number</Label>
+                  <Select value={selectedAiId ?? undefined} onValueChange={(v) => setSelectedAiId(v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose an integration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {waList.map((item) => (
+                        <SelectItem key={item.ai_id} value={item.ai_id}>
+                          {(item.ai_name || 'AI') + (item.phone_number ? ` — +${item.phone_number}` : '')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="text-xs text-slate-600 bg-slate-50 border rounded p-3">
                 <div><span className="font-medium">Status:</span> {whatsappInfo?.status || "connected"}</div>
                 {whatsappInfo?.phone_number && (
@@ -347,7 +377,37 @@ export default function IntegrationsForm() {
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleTestSend} size="sm" disabled={testSending}>Send Test</Button>
-                <Button variant="destructive" onClick={handleDisconnectWhatsApp} size="sm">Disconnect</Button>
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    try {
+                      const resp = await fetch("/api/whatsapp/disconnect", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ai_id: selectedAiId || whatsappInfo?.ai_id })
+                      });
+                      const data = await resp.json();
+                      if (!resp.ok || !data?.success) {
+                        toast.error(data?.error || "Failed to disconnect WhatsApp");
+                        return;
+                      }
+                      toast.success("WhatsApp disconnected");
+                      // Refresh status/list
+                      const s = await fetch("/api/whatsapp/status").then(r=>r.json());
+                      setWhatsappConnected(!!s.connected);
+                      setWhatsappInfo(s.info || null);
+                      const l = await fetch("/api/whatsapp/list").then(r=>r.json());
+                      const items = Array.isArray(l?.items) ? l.items : [];
+                      setWaList(items);
+                      setSelectedAiId(items[0]?.ai_id || null);
+                    } catch (e) {
+                      toast.error("Failed to disconnect WhatsApp");
+                    }
+                  }}
+                  size="sm"
+                >
+                  Disconnect
+                </Button>
               </div>
               <p className="text-[11px] text-slate-500">Note: Test numbers require recipients to be verified in Meta's API Setup, or start a session by messaging your number first.</p>
             </div>
