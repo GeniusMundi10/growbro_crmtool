@@ -231,9 +231,10 @@ export default function IntegrationsForm() {
         return;
       }
 
-      // Normalize the current URL to a stable redirect without query before launching the dialog
-      if (typeof window !== 'undefined') {
-        const desired = `${window.location.origin}/integrations`;
+      // Normalize the current URL to EXACTLY the redirect we plan to send
+      const ENV_REDIRECT = process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined;
+      const desired = ENV_REDIRECT || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
+      if (typeof window !== 'undefined' && desired) {
         if (window.location.href !== desired) {
           try { window.history.replaceState({}, '', desired); } catch {}
         }
@@ -242,7 +243,7 @@ export default function IntegrationsForm() {
       function fbLoginCallback(response: any) {
         if (response?.authResponse?.code) {
           const code = response.authResponse.code as string;
-          const redirectUri = (typeof window !== 'undefined') ? `${window.location.origin}/integrations` : (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined);
+          const redirectUri = (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string) || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
           const body = {
             code,
             waba_id: waSessionDataRef.current?.waba_id,
@@ -251,6 +252,7 @@ export default function IntegrationsForm() {
             redirect_uri: redirectUri,
             ai_id: selectedAiId || undefined,
           };
+          console.debug('[WA_ES] using redirect_uri', redirectUri);
           fetch("/api/whatsapp/embedded-callback", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
