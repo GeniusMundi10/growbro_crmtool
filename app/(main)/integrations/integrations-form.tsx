@@ -231,10 +231,18 @@ export default function IntegrationsForm() {
         return;
       }
 
+      // Normalize the current URL to a stable redirect without query before launching the dialog
+      if (typeof window !== 'undefined') {
+        const desired = `${window.location.origin}/integrations`;
+        if (window.location.href !== desired) {
+          try { window.history.replaceState({}, '', desired); } catch {}
+        }
+      }
+
       function fbLoginCallback(response: any) {
         if (response?.authResponse?.code) {
           const code = response.authResponse.code as string;
-          const redirectUri = (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string) || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
+          const redirectUri = (typeof window !== 'undefined') ? `${window.location.origin}/integrations` : (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined);
           const body = {
             code,
             waba_id: waSessionDataRef.current?.waba_id,
