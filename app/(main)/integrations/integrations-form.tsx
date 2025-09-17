@@ -2,47 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
-import { CheckCircle2, Plug } from "lucide-react";
+import { CheckCircle2, Trash2, ExternalLink, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface IntegrationCardProps {
-  name: string;
-  description: string;
-  connected: boolean;
-  onConnect: () => void;
-  onDisconnect: () => void;
-}
-
-function IntegrationCard({ name, description, connected, onConnect, onDisconnect }: IntegrationCardProps) {
-  return (
-    <Card className="max-w-md w-full shadow-sm border border-gray-200">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
-        <div className="flex items-center gap-2">
-          <Plug className="h-5 w-5 text-purple-600" />
-          <CardTitle className="text-lg font-semibold">{name}</CardTitle>
-        </div>
-        {connected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-gray-600 mb-4">{description}</p>
-        {connected ? (
-          <Button variant="destructive" onClick={onDisconnect} size="sm">
-            Disconnect
-          </Button>
-        ) : (
-          <Button onClick={onConnect} size="sm">
-            Connect
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function IntegrationsForm() {
   const { user } = useUser();
@@ -59,6 +25,24 @@ export default function IntegrationsForm() {
   const [testSending, setTestSending] = useState(false);
   const fbReadyRef = useRef(false);
   const waSessionDataRef = useRef<{ waba_id?: string; phone_number_id?: string } | null>(null);
+
+  // Lightweight brand icons (inline SVGs) to replace the generic socket icon
+  const HubSpotIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" fill="#FF7A59" />
+      <circle cx="19" cy="5" r="2" fill="#FF7A59" />
+      <circle cx="5.5" cy="6.5" r="1.5" fill="#FF7A59" />
+      <circle cx="19.5" cy="18.5" r="1.5" fill="#FF7A59" />
+      <path d="M13.5 9.5L17 6.5M10.5 10.5L7 8M12.5 13.5L18 17" stroke="#FF7A59" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+
+  const WhatsAppIcon = ({ className = "h-5 w-5" }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" fill="#25D366" />
+      <path d="M9.5 8.5c.5-1 1.5-1 2 0l1 1c.4.4.4 1 0 1.4l-.6.6c.7 1.2 1.8 2.3 3 3l.6-.6c.4-.4 1-.4 1.4 0l1 1c.5.5.5 1.5 0 2a3.5 3.5 0 0 1-3.5 0c-2.3-1.1-4.2-3-5.3-5.3a3.5 3.5 0 0 1 0-3.5Z" fill="#ffffff" />
+    </svg>
+  );
 
   // Load connection status from backend
   useEffect(() => {
@@ -380,7 +364,7 @@ export default function IntegrationsForm() {
       <Card className="max-w-md w-full shadow-sm border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div className="flex items-center gap-2">
-            <Plug className="h-5 w-5 text-purple-600" />
+            <HubSpotIcon className="h-5 w-5" />
             <CardTitle className="text-lg font-semibold">HubSpot</CardTitle>
           </div>
           {hubspotConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
@@ -418,7 +402,7 @@ export default function IntegrationsForm() {
       <Card className="max-w-md w-full shadow-sm border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div className="flex items-center gap-2">
-            <Plug className="h-5 w-5 text-purple-600" />
+            <WhatsAppIcon className="h-5 w-5" />
             <CardTitle className="text-lg font-semibold">WhatsApp</CardTitle>
           </div>
           {whatsappConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
