@@ -10,27 +10,22 @@ export async function GET(req: NextRequest) {
   }
   const url = new URL(req.url);
   const ai_id = url.searchParams.get("ai_id");
-  // Prefer per-AI lookup if ai_id provided; fallback to legacy per-user row
-  try {
-    if (ai_id) {
-      const { data: rowByAi } = await supabase
-        .from("hubspot_tokens")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("ai_id", ai_id)
-        .maybeSingle();
-      if (rowByAi) {
-        return NextResponse.json({ connected: true });
-      }
-    }
-  } catch (_) {
-    // ignore schema errors (e.g., no ai_id column)
+  // If ai_id is provided, only return true if that specific AI has a token row
+  if (ai_id) {
+    const { data: rowByAi } = await supabase
+      .from("hubspot_tokens")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("ai_id", ai_id)
+      .maybeSingle();
+    return NextResponse.json({ connected: !!rowByAi });
   }
 
-  const { data: legacyRow } = await supabase
+  // No ai_id provided: return true if the user has any token row
+  const { data: anyRow } = await supabase
     .from("hubspot_tokens")
     .select("id")
     .eq("user_id", user.id)
     .maybeSingle();
-  return NextResponse.json({ connected: !!legacyRow });
+  return NextResponse.json({ connected: !!anyRow });
 }
