@@ -67,6 +67,7 @@ export default function SalesLeadsPage() {
   const [aiOptions, setAIOptions] = useState<{ value: string; label: string }[]>([{ value: "all", label: "All AI" }]);
   const [aiFilter, setAIFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [hubspotConnectionByAi, setHubspotConnectionByAi] = useState<Record<string, boolean>>({});
 
   // Memoized fetch function for use in both useEffect and refresh button
   const fetchLeadsAndAIs = React.useCallback(async () => {
@@ -121,6 +122,29 @@ export default function SalesLeadsPage() {
       hubspot_contact_id: lead.end_user_id ? endUserSyncMap[lead.end_user_id]?.hubspot_contact_id : undefined,
     }));
     setLeads(merged);
+
+    // Step 3b: Fetch per-AI HubSpot connection status so we can disable the Sync button appropriately
+    try {
+      const aiIdsForStatus = Array.from(new Set((merged || []).map((l: any) => l.ai_id).filter(Boolean)));
+      if (aiIdsForStatus.length > 0) {
+        const entries = await Promise.all(
+          aiIdsForStatus.map(async (id: string) => {
+            try {
+              const res = await fetch(`/api/hubspot/status?ai_id=${encodeURIComponent(id)}`);
+              const j = await res.json();
+              return [id, !!j.connected] as const;
+            } catch {
+              return [id, false] as const;
+            }
+          })
+        );
+        setHubspotConnectionByAi(Object.fromEntries(entries));
+      } else {
+        setHubspotConnectionByAi({});
+      }
+    } catch {
+      setHubspotConnectionByAi({});
+    }
 
     const aiSet = new Set<string>();
     filtered.forEach((row: any) => {
@@ -262,10 +286,13 @@ export default function SalesLeadsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={!hubspotConnected}
+                          disabled={!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]}
+                          title={!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]
+                            ? "Connect HubSpot for this AI in Integrations to enable syncing"
+                            : "Sync this lead to the connected HubSpot for this AI"}
                           onClick={async () => {
-                            if (!hubspotConnected) {
-                              toast.error("Please connect your HubSpot account first.");
+                            if (!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]) {
+                              toast.error("Connect HubSpot for this AI in Integrations to enable syncing.");
                               return;
                             }
                             if (!lead.end_user_id) {
