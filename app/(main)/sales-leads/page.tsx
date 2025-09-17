@@ -54,6 +54,7 @@ type LeadRow = {
   email: string | null;
   phone: string | null;
   ai_name: string | null;
+  ai_id?: string | null;
   end_user_id?: string;
   hubspot_synched?: boolean;
 };
@@ -73,7 +74,7 @@ export default function SalesLeadsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("chat_history")
-      .select("name,email,phone,chat_id,ai_name,end_user_id")
+      .select("name,email,phone,chat_id,ai_name,ai_id,end_user_id")
       .eq("user_id", user.id);
 
     // Debug: log both error and data
@@ -255,43 +256,43 @@ export default function SalesLeadsPage() {
                     <TableCell>{lead.email || "-"}</TableCell>
                     <TableCell>{lead.phone || "-"}</TableCell>
                     <TableCell>
-  {lead.hubspot_synched ? (
-    <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded">Synced</span>
-  ) : (
-    <Button
-      size="sm"
-      variant="outline"
-      disabled={!hubspotConnected}
-      onClick={async () => {
-        if (!hubspotConnected) {
-          toast.error("Please connect your HubSpot account first.");
-          return;
-        }
-        if (!lead.end_user_id) {
-          toast.error("This lead cannot be synced (missing user ID)");
-          return;
-        }
-        try {
-          const res = await fetch("/api/hubspot/sync-lead", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ leadId: lead.end_user_id })
-          });
-          const data = await res.json();
-          if (res.ok && data.success) {
-            toast.success("Lead synced to HubSpot!");
-          } else {
-            toast.error(data.error || "Failed to sync lead to HubSpot");
-          }
-        } catch (err) {
-          toast.error("Failed to sync lead to HubSpot");
-        }
-      }}
-    >
-      Sync to HubSpot
-    </Button>
-  )}
-</TableCell>
+                      {lead.hubspot_synched ? (
+                        <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded">Synced</span>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!hubspotConnected}
+                          onClick={async () => {
+                            if (!hubspotConnected) {
+                              toast.error("Please connect your HubSpot account first.");
+                              return;
+                            }
+                            if (!lead.end_user_id) {
+                              toast.error("This lead cannot be synced (missing user ID)");
+                              return;
+                            }
+                            try {
+                              const res = await fetch("/api/hubspot/sync-lead", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ leadId: lead.end_user_id, ai_id: lead.ai_id ?? null })
+                              });
+                              const data = await res.json();
+                              if (res.ok && data.success) {
+                                toast.success("Lead synced to HubSpot!");
+                              } else {
+                                toast.error(data.error || "Failed to sync lead to HubSpot");
+                              }
+                            } catch (err) {
+                              toast.error("Failed to sync lead to HubSpot");
+                            }
+                          }}
+                        >
+                          Sync to HubSpot
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               )}

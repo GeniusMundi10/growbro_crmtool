@@ -56,19 +56,24 @@ export async function POST(req: NextRequest) {
       if (!errByAi && rowsByAi && rowsByAi.length > 0) {
         access_token = rowsByAi[0].access_token as string;
         refresh_token = rowsByAi[0].refresh_token as string | null;
+      } else {
+        // Explicitly require a connection for this AI
+        return NextResponse.json({ error: "No HubSpot connection found for this AI. Please connect HubSpot for this AI in Integrations." }, { status: 400 });
       }
     } catch {
       // ignore and fall back to legacy
+      return NextResponse.json({ error: "No HubSpot connection found for this AI. Please connect HubSpot for this AI in Integrations." }, { status: 400 });
     }
   }
   if (!access_token) {
+    // Only reach here when ai_id is null (no AI context known) -> legacy user-level token
     const { data: tokenRows, error: tokenError } = await supabase
       .from("hubspot_tokens")
       .select("access_token,refresh_token")
       .eq("user_id", user.id)
       .limit(1);
     if (tokenError || !tokenRows || tokenRows.length === 0) {
-      return NextResponse.json({ error: "No HubSpot connection found for this AI or user" }, { status: 400 });
+      return NextResponse.json({ error: "No HubSpot connection found. Please connect HubSpot for the relevant AI in Integrations." }, { status: 400 });
     }
     access_token = tokenRows[0].access_token as string;
     refresh_token = tokenRows[0].refresh_token as string | null;
