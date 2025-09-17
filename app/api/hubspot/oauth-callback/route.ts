@@ -28,6 +28,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid or expired state" }, { status: 401 });
   }
   const user_id = stateRows[0].user_id;
+  // Parse ai_id (if we encoded it as uuid:ai_id)
+  let ai_id: string | null = null;
+  if (state && state.includes(":")) {
+    const parts = state.split(":");
+    ai_id = parts[1] || null;
+  }
   // Delete the state row after use for single-use guarantee
   const { error: deleteError } = await supabase.from("hubspot_oauth_state").delete().eq("state", state);
   if (deleteError) {
@@ -75,17 +81,38 @@ export async function GET(req: NextRequest) {
   }
 
   // Only upsert tokens if /me succeeded (i.e. user has approved)
-  const { error: upsertError } = await supabase.from("hubspot_tokens").upsert({
-    user_id,
-    portal_id,
-    access_token: tokenData.access_token,
-    refresh_token: tokenData.refresh_token,
-    expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
-    updated_at: new Date().toISOString()
-  }, { onConflict: "user_id" });
+  // Prefer per-AI storage if the table has ai_id; otherwise fall back to per-user.
+  let upsertErrorMsg: string | null = null;
+  try {
+    const { error: upsertWithAi } = await supabase.from("hubspot_tokens").upsert({
+      user_id,
+      ai_id, // may be null; PostgREST will ignore if the column doesn't exist or error
+      portal_id,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+      updated_at: new Date().toISOString()
+    }, { onConflict: ai_id ? "user_id,ai_id" : "user_id" });
+    if (upsertWithAi) {
+      upsertErrorMsg = upsertWithAi.message || "unknown error";
+    }
+  } catch (e: any) {
+    upsertErrorMsg = e?.message || String(e);
+  }
 
-  if (upsertError) {
-    return NextResponse.json({ error: "Failed to store tokens", details: upsertError.message }, { status: 500 });
+  // If the above errored due to a schema mismatch (e.g., no ai_id column), retry without ai_id
+  if (upsertErrorMsg) {
+    const { error: upsertLegacy } = await supabase.from("hubspot_tokens").upsert({
+      user_id,
+      portal_id,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+    if (upsertLegacy) {
+      return NextResponse.json({ error: "Failed to store tokens", details: upsertLegacy.message }, { status: 500 });
+    }
   }
 
   // If called from a popup, send postMessage and close

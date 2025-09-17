@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 
-// POST /api/hubspot/sync-lead { leadId: string }
+// POST /api/hubspot/sync-lead { leadId: string, ai_id?: string }
 export async function POST(req: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });
-  const { leadId } = await req.json();
+  const body = await req.json();
+  const leadId: string | undefined = body?.leadId;
+  let ai_id: string | null = body?.ai_id ?? null;
 
   // Get current user
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -13,17 +15,64 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Get HubSpot token for user
-  const { data: tokenRows, error: tokenError } = await supabase
-    .from("hubspot_tokens")
-    .select("access_token,refresh_token")
-    .eq("user_id", user.id)
-    .limit(1);
-  if (tokenError || !tokenRows || tokenRows.length === 0) {
-    return NextResponse.json({ error: "No HubSpot connection found for user" }, { status: 400 });
+  // Determine AI context if not explicitly given
+  if (!ai_id && leadId) {
+    // Try end_users.ai_id first
+    try {
+      const { data: eu } = await supabase
+        .from("end_users")
+        .select("ai_id")
+        .eq("id", leadId)
+        .maybeSingle();
+      if (eu?.ai_id) ai_id = eu.ai_id as string;
+    } catch {}
+    // Fallback: try chat_history.ai_id
+    if (!ai_id) {
+      try {
+        const { data: ch } = await supabase
+          .from("chat_history")
+          .select("ai_id")
+          .eq("end_user_id", leadId)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (ch && ch.length > 0 && ch[0]?.ai_id) ai_id = ch[0].ai_id as string;
+      } catch {}
+    }
   }
-  let access_token = tokenRows[0].access_token;
-  let refresh_token = tokenRows[0].refresh_token;
+
+  // Get HubSpot token for user (scoped by ai_id when available)
+  let access_token: string | null = null;
+  let refresh_token: string | null = null;
+  if (ai_id) {
+    // If schema supports ai_id, this will filter; otherwise it may error which we handle below
+    try {
+      const { data: rowsByAi, error: errByAi } = await supabase
+        .from("hubspot_tokens")
+        .select("access_token,refresh_token")
+        .eq("user_id", user.id)
+        .eq("ai_id", ai_id as string)
+        .limit(1);
+      if (!errByAi && rowsByAi && rowsByAi.length > 0) {
+        access_token = rowsByAi[0].access_token as string;
+        refresh_token = rowsByAi[0].refresh_token as string | null;
+      }
+    } catch {
+      // ignore and fall back to legacy
+    }
+  }
+  if (!access_token) {
+    const { data: tokenRows, error: tokenError } = await supabase
+      .from("hubspot_tokens")
+      .select("access_token,refresh_token")
+      .eq("user_id", user.id)
+      .limit(1);
+    if (tokenError || !tokenRows || tokenRows.length === 0) {
+      return NextResponse.json({ error: "No HubSpot connection found for this AI or user" }, { status: 400 });
+    }
+    access_token = tokenRows[0].access_token as string;
+    refresh_token = tokenRows[0].refresh_token as string | null;
+  }
 
   // Get lead info from end_users
   const { data: leadRows, error: leadError } = await supabase
@@ -46,19 +95,26 @@ export async function POST(req: NextRequest) {
   };
 
   // Helper to send contact to HubSpot
-  async function sendToHubSpot(token: string) {
-    return await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    });
-  }
+  // async function sendToHubSpot(token: string) {
+  //   return await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${token}`
+  //     },
+  //     body: JSON.stringify(payload)
+  //   });
+  // }
 
   // Try initial send
-  let res = await sendToHubSpot(access_token);
+  let res = await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${access_token}`
+    },
+    body: JSON.stringify(payload)
+  });
 
   // If token expired, refresh and retry once
   if (!res.ok) {
@@ -83,9 +139,25 @@ export async function POST(req: NextRequest) {
         access_token = refreshData.access_token;
         // Optionally update refresh_token if provided
         if (refreshData.refresh_token) refresh_token = refreshData.refresh_token;
-        await supabase.from("hubspot_tokens").update({ access_token, refresh_token }).eq("user_id", user.id);
+        // Persist refreshed tokens to the correct row
+        try {
+          if (ai_id) {
+            await supabase.from("hubspot_tokens").update({ access_token, refresh_token }).eq("user_id", user.id).eq("ai_id", ai_id as string);
+          } else {
+            await supabase.from("hubspot_tokens").update({ access_token, refresh_token }).eq("user_id", user.id);
+          }
+        } catch {
+          await supabase.from("hubspot_tokens").update({ access_token, refresh_token }).eq("user_id", user.id);
+        }
         // Retry sync with new token
-        res = await sendToHubSpot(access_token);
+        res = await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access_token}`
+          },
+          body: JSON.stringify(payload)
+        });
         if (!res.ok) {
           const retryErr = await res.text();
           return NextResponse.json({ error: "Failed to sync lead to HubSpot after refresh", details: retryErr }, { status: 400 });

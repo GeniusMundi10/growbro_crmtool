@@ -8,14 +8,29 @@ export async function GET(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ connected: false });
   }
-  // Check if user has a valid HubSpot token
-  const { data, error } = await supabase
+  const url = new URL(req.url);
+  const ai_id = url.searchParams.get("ai_id");
+  // Prefer per-AI lookup if ai_id provided; fallback to legacy per-user row
+  try {
+    if (ai_id) {
+      const { data: rowByAi } = await supabase
+        .from("hubspot_tokens")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("ai_id", ai_id)
+        .maybeSingle();
+      if (rowByAi) {
+        return NextResponse.json({ connected: true });
+      }
+    }
+  } catch (_) {
+    // ignore schema errors (e.g., no ai_id column)
+  }
+
+  const { data: legacyRow } = await supabase
     .from("hubspot_tokens")
     .select("id")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (error) {
-    return NextResponse.json({ connected: false });
-  }
-  return NextResponse.json({ connected: !!data });
+  return NextResponse.json({ connected: !!legacyRow });
 }

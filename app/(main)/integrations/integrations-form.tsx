@@ -51,6 +51,7 @@ export default function IntegrationsForm() {
   const [whatsappInfo, setWhatsappInfo] = useState<any>(null);
   const [waList, setWaList] = useState<Array<any>>([]);
   const [selectedAiId, setSelectedAiId] = useState<string | null>(null);
+  const [hubspotAiId, setHubspotAiId] = useState<string | null>(null);
   const [aiList, setAiList] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
   const [testTo, setTestTo] = useState("");
@@ -64,6 +65,7 @@ export default function IntegrationsForm() {
     const checkStatus = async () => {
       setLoading(true);
       try {
+        // We will refresh once more below after we compute defaultAi
         const res = await fetch("/api/hubspot/status");
         const data = await res.json();
         setHubspotConnected(!!data.connected);
@@ -91,6 +93,12 @@ export default function IntegrationsForm() {
           || (ais[0]?.ai_id as string | undefined)
           || null;
         setSelectedAiId(defaultAi);
+        setHubspotAiId(defaultAi);
+        // Now that we know the default AI, refresh HubSpot status for it if available
+        try {
+          const st = await fetch(`/api/hubspot/status${defaultAi ? `?ai_id=${encodeURIComponent(defaultAi)}` : ""}`).then(r=>r.json());
+          setHubspotConnected(!!st.connected);
+        } catch {}
       } catch {
         setWhatsappConnected(false);
         setWhatsappInfo(null);
@@ -112,10 +120,21 @@ export default function IntegrationsForm() {
     }
   }, []);
 
+  // Re-check HubSpot connection when the HubSpot AI selection changes
+  useEffect(() => {
+    (async () => {
+      try {
+        const st = await fetch(`/api/hubspot/status${hubspotAiId ? `?ai_id=${encodeURIComponent(hubspotAiId)}` : ""}`).then(r=>r.json());
+        setHubspotConnected(!!st.connected);
+      } catch {}
+    })();
+  }, [hubspotAiId]);
+
   const handleConnectHubspot = async () => {
     try {
+      const qs = hubspotAiId ? `?ai_id=${encodeURIComponent(hubspotAiId)}` : "";
       const popup = window.open(
-        "/api/hubspot/oauth-url",
+        `/api/hubspot/oauth-url${qs}`,
         "hubspot-oauth",
         "width=600,height=700"
       );
@@ -124,12 +143,17 @@ export default function IntegrationsForm() {
         return;
       }
       // Listen for postMessage from popup
-      const listener = (event: MessageEvent) => {
+      const listener = async (event: MessageEvent) => {
         if (event.origin !== window.location.origin) return;
         if (event.data.status === "connected") {
           setHubspotConnected(true);
           toast.success("HubSpot connected!");
           window.removeEventListener("message", listener);
+          // Refresh status for this AI specifically
+          try {
+            const st = await fetch(`/api/hubspot/status${hubspotAiId ? `?ai_id=${encodeURIComponent(hubspotAiId)}` : ""}`).then(r=>r.json());
+            setHubspotConnected(!!st.connected);
+          } catch {}
         }
       };
       window.addEventListener("message", listener);
@@ -142,7 +166,7 @@ export default function IntegrationsForm() {
 
   const handleDisconnectHubspot = async () => {
     try {
-      const res = await fetch("/api/hubspot/disconnect", { method: "POST" });
+      const res = await fetch("/api/hubspot/disconnect", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ ai_id: hubspotAiId || null }) });
       const data = await res.json();
       if (data.success) {
         setHubspotConnected(false);
@@ -353,13 +377,44 @@ export default function IntegrationsForm() {
       <h1 className="text-2xl font-semibold mb-6 text-slate-800">Integrations</h1>
       <p className="text-sm text-slate-600 mb-10">Connect third-party tools to super-charge your AI assistant workflow.</p>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <IntegrationCard
-        name="HubSpot"
-        description="Sync leads you capture in GrowBro directly into your HubSpot CRM."
-        connected={hubspotConnected}
-        onConnect={handleConnectHubspot}
-        onDisconnect={handleDisconnectHubspot}
-      />
+      <Card className="max-w-md w-full shadow-sm border border-gray-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <div className="flex items-center gap-2">
+            <Plug className="h-5 w-5 text-purple-600" />
+            <CardTitle className="text-lg font-semibold">HubSpot</CardTitle>
+          </div>
+          {hubspotConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 mb-4">Sync leads you capture in GrowBro directly into your HubSpot CRM.</p>
+          {aiList.length > 0 ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Select AI</Label>
+                <Select value={hubspotAiId ?? undefined} onValueChange={(v) => setHubspotAiId(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an AI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiList.map((ai) => (
+                      <SelectItem key={ai.ai_id} value={ai.ai_id}>
+                        {ai.ai_name || 'AI'} {ai.connected ? '— connected' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {hubspotConnected ? (
+                <Button variant="destructive" onClick={handleDisconnectHubspot} size="sm">Disconnect</Button>
+              ) : (
+                <Button onClick={handleConnectHubspot} size="sm" disabled={!hubspotAiId}>Connect</Button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect HubSpot.</p>
+          )}
+        </CardContent>
+      </Card>
       <Card className="max-w-md w-full shadow-sm border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div className="flex items-center gap-2">
