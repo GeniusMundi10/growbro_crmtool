@@ -234,15 +234,35 @@ export default function IntegrationsForm() {
       const ENV_REDIRECT = process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined;
       const desired = ENV_REDIRECT || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
       if (typeof window !== 'undefined' && desired) {
+        console.debug('[WA_ES] Pre-login URL diagnostics', {
+          currentHref: window.location.href,
+          ENV_REDIRECT,
+          desired,
+          configId,
+          selectedAiId,
+        });
         if (window.location.href !== desired) {
           try { window.history.replaceState({}, '', desired); } catch {}
+          console.debug('[WA_ES] Normalized current URL to desired redirect', { afterReplace: window.location.href });
         }
       }
 
       function fbLoginCallback(response: any) {
         if (response?.authResponse?.code) {
           const code = response.authResponse.code as string;
-          const redirectUri = (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string) || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
+          // Use the EXACT current URL (after we normalized it above) so it matches the one used by FB during the OAuth dialog
+          const redirectUri = (typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined)
+            || (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined)
+            || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
+          console.debug('[WA_ES] About to POST embedded-callback with redirect diagnostics', {
+            front_redirectUri: redirectUri,
+            ENV_REDIRECT: process.env.NEXT_PUBLIC_FB_REDIRECT_URI,
+            currentHref: (typeof window !== 'undefined' ? window.location.href : 'n/a'),
+            front_backendUrl: process.env.NEXT_PUBLIC_WHATSAPP_BACKEND_URL,
+            configId,
+            selectedAiId,
+            hasCode: !!code,
+          });
           const body = {
             code,
             waba_id: waSessionDataRef.current?.waba_id,

@@ -48,6 +48,16 @@ export async function POST(req: NextRequest) {
     ai_id = biz.id as string;
   }
 
+  // Diagnostics: compare FE-provided redirect vs server env before we exchange the code
+  try {
+    console.debug('[WA_ES][API] Redirect diagnostics', {
+      body_redirect_uri: body.redirect_uri,
+      server_env_redirect: process.env.NEXT_PUBLIC_FB_REDIRECT_URI || process.env.FB_REDIRECT_URI,
+      backend_env_url: process.env.NEXT_PUBLIC_WHATSAPP_BACKEND_URL,
+      code_len: (body.code || '').length,
+    });
+  } catch {}
+
   const backendUrl = process.env.NEXT_PUBLIC_WHATSAPP_BACKEND_URL || 'https://growbro-backend.fly.dev';
 
   try {
