@@ -24,8 +24,10 @@ export default function IntegrationsForm() {
   const [testTo, setTestTo] = useState("");
   const [testMsg, setTestMsg] = useState("Hello from GrowBro test");
   const [testSending, setTestSending] = useState(false);
+  const [whatsappConnecting, setWhatsappConnecting] = useState(false);
   const fbReadyRef = useRef(false);
   const waSessionDataRef = useRef<{ waba_id?: string; phone_number_id?: string } | null>(null);
+  const processingCodeRef = useRef(false);
 
   // Official brand icons using simple-icons
   const BrandIcon = ({ icon, className = "h-5 w-5" }: { icon: { path: string; hex: string; title: string }, className?: string }) => (
@@ -218,7 +220,13 @@ export default function IntegrationsForm() {
   }, []);
 
   const handleConnectWhatsApp = async () => {
+    if (whatsappConnecting) {
+      toast.error("WhatsApp connection already in progress...");
+      return;
+    }
+    
     try {
+      setWhatsappConnecting(true);
       const w = window as any;
       const FB = w.FB;
       if (!FB) {
@@ -231,35 +239,26 @@ export default function IntegrationsForm() {
         return;
       }
 
-      // Normalize the current URL to EXACTLY the redirect we plan to send
-      const ENV_REDIRECT = process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined;
-      const desired = ENV_REDIRECT || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
-      if (typeof window !== 'undefined' && desired) {
-        console.log('[WA_ES] Pre-login URL diagnostics', {
-          currentHref: window.location.href,
-          ENV_REDIRECT,
-          desired,
-          configId,
-          selectedAiId,
-        });
-        if (window.location.href !== desired) {
-          // Hard navigate to canonical URL to guarantee the SDK binds the code to this exact URL
-          console.log('[WA_ES] Hard navigating to canonical redirect before FB.login', { from: window.location.href, to: desired });
-          try { window.location.replace(desired); } catch { window.location.href = desired as string; }
-          return; // Stop here; user will retry after navigation completes
-        }
-      }
+      console.log('[WA_ES] Starting WhatsApp connection', {
+        currentHref: window.location.href,
+        configId,
+        selectedAiId,
+      });
 
       function fbLoginCallback(response: any) {
         if (response?.authResponse?.code) {
+          // Prevent double processing of the same code
+          if (processingCodeRef.current) {
+            console.log('[WA_ES] Code already being processed, ignoring duplicate callback');
+            return;
+          }
+          processingCodeRef.current = true;
           const code = response.authResponse.code as string;
-          // Use the same canonical redirect (desired) we used when launching the dialog
-          const redirectUri = desired;
-          console.log('[WA_ES] About to POST embedded-callback with redirect diagnostics', {
-            front_redirectUri: redirectUri,
-            ENV_REDIRECT: process.env.NEXT_PUBLIC_FB_REDIRECT_URI,
-            currentHref: (typeof window !== 'undefined' ? window.location.href : 'n/a'),
-            front_backendUrl: process.env.NEXT_PUBLIC_WHATSAPP_BACKEND_URL,
+          // Use the current page URL as redirect URI (Facebook's natural behavior)
+          const redirectUri = window.location.href.split('?')[0]; // Remove query params if any
+          console.log('[WA_ES] About to POST embedded-callback', {
+            redirectUri,
+            currentHref: window.location.href,
             configId,
             selectedAiId,
             hasCode: !!code,
@@ -268,11 +267,9 @@ export default function IntegrationsForm() {
             code,
             waba_id: waSessionDataRef.current?.waba_id,
             phone_number_id: waSessionDataRef.current?.phone_number_id,
-            // Important for OAuth code exchange: must match the page that launched the flow
             redirect_uri: redirectUri,
             ai_id: selectedAiId || undefined,
           };
-          console.log('[WA_ES] using redirect_uri', redirectUri);
           fetch("/api/whatsapp/embedded-callback", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -301,9 +298,15 @@ export default function IntegrationsForm() {
             .catch((e) => {
               console.error(e);
               toast.error("Backend error during WhatsApp onboarding");
+            })
+            .finally(() => {
+              processingCodeRef.current = false;
+              setWhatsappConnecting(false);
             });
         } else {
           toast.error("WhatsApp signup was cancelled or failed.");
+          processingCodeRef.current = false;
+          setWhatsappConnecting(false);
         }
       }
 
@@ -311,12 +314,12 @@ export default function IntegrationsForm() {
         config_id: configId,
         response_type: "code",
         override_default_response_type: true,
-        redirect_uri: desired,
         extras: { setup: {}, sessionInfoVersion: "3" },
       });
     } catch (e) {
       console.error(e);
       toast.error("Unable to initiate WhatsApp connection");
+      setWhatsappConnecting(false);
     }
   };
 
@@ -518,7 +521,9 @@ export default function IntegrationsForm() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button onClick={handleConnectWhatsApp} size="sm" disabled={!selectedAiId}>Connect</Button>
+                  <Button onClick={handleConnectWhatsApp} size="sm" disabled={!selectedAiId || whatsappConnecting}>
+                    {whatsappConnecting ? "Connecting..." : "Connect"}
+                  </Button>
                 </>
               ) : (
                 <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect WhatsApp.</p>
