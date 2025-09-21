@@ -168,6 +168,7 @@ export default function IntegrationsForm() {
       if (!appId) {
         console.warn("NEXT_PUBLIC_FB_APP_ID is not set");
       }
+      console.log('[WA_ES] Initializing FB SDK with appId', appId);
       w.FB?.init({
         appId: appId || "",
         autoLogAppEvents: true,
@@ -234,7 +235,7 @@ export default function IntegrationsForm() {
       const ENV_REDIRECT = process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined;
       const desired = ENV_REDIRECT || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
       if (typeof window !== 'undefined' && desired) {
-        console.debug('[WA_ES] Pre-login URL diagnostics', {
+        console.log('[WA_ES] Pre-login URL diagnostics', {
           currentHref: window.location.href,
           ENV_REDIRECT,
           desired,
@@ -243,7 +244,7 @@ export default function IntegrationsForm() {
         });
         if (window.location.href !== desired) {
           try { window.history.replaceState({}, '', desired); } catch {}
-          console.debug('[WA_ES] Normalized current URL to desired redirect', { afterReplace: window.location.href });
+          console.log('[WA_ES] Normalized current URL to desired redirect', { afterReplace: window.location.href });
         }
       }
 
@@ -254,7 +255,7 @@ export default function IntegrationsForm() {
           const redirectUri = (typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined)
             || (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined)
             || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
-          console.debug('[WA_ES] About to POST embedded-callback with redirect diagnostics', {
+          console.log('[WA_ES] About to POST embedded-callback with redirect diagnostics', {
             front_redirectUri: redirectUri,
             ENV_REDIRECT: process.env.NEXT_PUBLIC_FB_REDIRECT_URI,
             currentHref: (typeof window !== 'undefined' ? window.location.href : 'n/a'),
@@ -271,7 +272,7 @@ export default function IntegrationsForm() {
             redirect_uri: redirectUri,
             ai_id: selectedAiId || undefined,
           };
-          console.debug('[WA_ES] using redirect_uri', redirectUri);
+          console.log('[WA_ES] using redirect_uri', redirectUri);
           fetch("/api/whatsapp/embedded-callback", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
