@@ -243,18 +243,18 @@ export default function IntegrationsForm() {
           selectedAiId,
         });
         if (window.location.href !== desired) {
-          try { window.history.replaceState({}, '', desired); } catch {}
-          console.log('[WA_ES] Normalized current URL to desired redirect', { afterReplace: window.location.href });
+          // Hard navigate to canonical URL to guarantee the SDK binds the code to this exact URL
+          console.log('[WA_ES] Hard navigating to canonical redirect before FB.login', { from: window.location.href, to: desired });
+          try { window.location.replace(desired); } catch { window.location.href = desired as string; }
+          return; // Stop here; user will retry after navigation completes
         }
       }
 
       function fbLoginCallback(response: any) {
         if (response?.authResponse?.code) {
           const code = response.authResponse.code as string;
-          // Use the EXACT current URL (after we normalized it above) so it matches the one used by FB during the OAuth dialog
-          const redirectUri = (typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined)
-            || (process.env.NEXT_PUBLIC_FB_REDIRECT_URI as string | undefined)
-            || (typeof window !== 'undefined' ? `${window.location.origin}/integrations` : undefined);
+          // Use the same canonical redirect (desired) we used when launching the dialog
+          const redirectUri = desired;
           console.log('[WA_ES] About to POST embedded-callback with redirect diagnostics', {
             front_redirectUri: redirectUri,
             ENV_REDIRECT: process.env.NEXT_PUBLIC_FB_REDIRECT_URI,
