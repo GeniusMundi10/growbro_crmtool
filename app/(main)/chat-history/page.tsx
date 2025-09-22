@@ -5,12 +5,15 @@ import { useUser } from "@/context/UserContext";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Filter, Download, Eye, Mail } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search, Download, Mail, MessageCircle, Clock, User, Phone, AtSign, Calendar, Bot, MoreVertical, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, parseISO, isWithinInterval } from "date-fns";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { format, parseISO } from "date-fns";
 
-function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void }) {
+function ConversationViewer({ chat, onBack }: { chat: any; onBack?: () => void }) {
   const { user } = useUser();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +21,10 @@ function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void 
   useEffect(() => {
     setLoading(true);
     async function fetchMessages() {
-      if (!chat?.chat_id) return;
+      if (!chat?.chat_id) {
+        setLoading(false);
+        return;
+      }
       
       const trimmedId = typeof chat.chat_id === 'string' ? chat.chat_id.trim() : chat.chat_id;
       
@@ -29,36 +35,228 @@ function ConversationViewer({ chat, onClose }: { chat: any, onClose: () => void 
         .eq("client_id", user?.id)
         .order("timestamp", { ascending: true });
       
-      
       if (!error && data) setMessages(data);
       setLoading(false);
     }
     fetchMessages();
-  }, [chat]);
+  }, [chat, user?.id]);
+
+  if (!chat) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-lg font-medium text-gray-600 mb-2">Select a conversation</p>
+          <p className="text-sm text-gray-500">Choose a chat from the list to view the conversation</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 relative">
-        <button className="absolute left-4 top-4 text-sm text-blue-600 hover:underline" onClick={onClose}>&larr; Go Back</button>
-        <h2 className="text-xl font-bold mb-4 text-center">Conversation</h2>
-        <div className="text-xs text-center text-gray-400 mb-2">conversation_id: {chat.chat_id}</div>
+    <div className="flex-1 flex flex-col bg-white">
+      {/* Conversation Header */}
+      <div className="border-b bg-white p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            {/* Mobile back button */}
+            {onBack && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="lg:hidden p-2"
+                onClick={onBack}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-blue-100 text-blue-600">
+                <User className="h-5 w-5" />
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="font-semibold text-lg">{chat.name || "Anonymous Visitor"}</h2>
+              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                <span className="flex items-center">
+                  <Bot className="h-3 w-3 mr-1" />
+                  {chat.ai_name}
+                </span>
+                <span className="flex items-center">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {format(parseISO(chat.date), "MMM dd, yyyy")}
+                </span>
+                <span className="flex items-center">
+                  <MessageCircle className="h-3 w-3 mr-1" />
+                  {chat.messages_count} messages
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Contact Info Pills */}
+          <div className="flex items-center space-x-2">
+            {chat.email && chat.email !== "Anonymous" && (
+              <Badge variant="secondary" className="text-xs">
+                <AtSign className="h-3 w-3 mr-1" />
+                {chat.email}
+              </Badge>
+            )}
+            {chat.phone && chat.phone !== "Anonymous" && (
+              <Badge variant="secondary" className="text-xs">
+                <Phone className="h-3 w-3 mr-1" />
+                {chat.phone}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 p-4">
         {loading ? (
-          <div className="text-center py-8">Loading...</div>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading conversation...</p>
+            </div>
+          </div>
         ) : messages.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">No messages found.</div>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-lg font-medium text-gray-600 mb-2">No messages found</p>
+              <p className="text-sm text-gray-500">This conversation doesn&apos;t have any messages yet</p>
+            </div>
+          </div>
         ) : (
-          <div className="space-y-6">
-            {messages.map((msg) => (
+          <div className="space-y-4">
+            {messages.map((msg, index) => (
               <div key={msg.id} className={`flex ${msg.sender === "bot" ? "justify-start" : "justify-end"}`}>
-                <div className={`max-w-[70%] p-4 rounded-lg shadow-sm ${msg.sender === "bot" ? "bg-blue-50 text-blue-900" : "bg-gray-100 text-gray-800"}`}>
-                  <div className="text-xs font-bold mb-1">{msg.sender === "bot" ? chat.ai_name : "Client"}</div>
-                  <div className="whitespace-pre-line">{msg.content}</div>
-                  <div className="text-[10px] text-gray-400 mt-2">{msg.timestamp ? new Date(msg.timestamp).toLocaleString() : ""}</div>
+                <div className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                  msg.sender === "bot" 
+                    ? "bg-gray-100 text-gray-900" 
+                    : "bg-blue-600 text-white"
+                }`}>
+                  <div className="whitespace-pre-line text-sm leading-relaxed">{msg.content}</div>
+                  <div className={`text-xs mt-2 ${msg.sender === "bot" ? "text-gray-500" : "text-blue-200"}`}>
+                    {msg.timestamp ? format(new Date(msg.timestamp), "HH:mm") : ""}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </ScrollArea>
+
+      {/* Conversation Info Footer */}
+      <div className="border-t bg-gray-50 px-4 py-3">
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>Conversation ID: {chat.chat_id}</span>
+          <span>Duration: {chat.duration}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, sendingSummaryId }: {
+  chat: any;
+  isSelected: boolean;
+  onClick: () => void;
+  onDownload: () => void;
+  onEmailSummary: () => void;
+  sendingSummaryId: string | null;
+}) {
+  return (
+    <div
+      className={`p-4 border-b cursor-pointer transition-all duration-200 hover:bg-gray-50 ${
+        isSelected ? "bg-blue-50 border-r-4 border-r-blue-600" : "hover:bg-gray-50"
+      }`}
+      onClick={onClick}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-3 mb-2">
+            <Avatar className="h-8 w-8 flex-shrink-0">
+              <AvatarFallback className="bg-gray-200 text-gray-600 text-xs">
+                {chat.name && chat.name !== "Anonymous" ? chat.name.charAt(0).toUpperCase() : "A"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2">
+                <p className="font-medium text-gray-900 truncate">
+                  {chat.name || "Anonymous Visitor"}
+                </p>
+                <Badge variant="outline" className="text-xs flex items-center">
+                  <Bot className="h-3 w-3 mr-1" />
+                  {chat.ai_name}
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-3 mt-1 text-xs text-gray-500">
+                <span className="flex items-center">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {format(parseISO(chat.date), "MMM dd")}
+                </span>
+                <span className="flex items-center">
+                  <MessageCircle className="h-3 w-3 mr-1" />
+                  {chat.messages_count}
+                </span>
+                <span className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {chat.duration}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact info */}
+          <div className="flex items-center space-x-2 mb-2">
+            {chat.email && chat.email !== "Anonymous" && (
+              <Badge variant="secondary" className="text-xs">
+                <AtSign className="h-3 w-3 mr-1" />
+                {chat.email.length > 20 ? `${chat.email.substring(0, 20)}...` : chat.email}
+              </Badge>
+            )}
+            {chat.phone && chat.phone !== "Anonymous" && (
+              <Badge variant="secondary" className="text-xs">
+                <Phone className="h-3 w-3 mr-1" />
+                {chat.phone}
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 opacity-60 hover:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(); }}>
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={(e) => { e.stopPropagation(); onEmailSummary(); }}
+              disabled={sendingSummaryId === chat.chat_id}
+            >
+              {sendingSummaryId === chat.chat_id ? (
+                <div className="animate-spin h-4 w-4 mr-2 border-2 border-gray-300 border-t-blue-600 rounded-full" />
+              ) : (
+                <Mail className="h-4 w-4 mr-2" />
+              )}
+              Email Summary
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
@@ -85,7 +283,7 @@ export default function ChatHistoryPage() {
         alert(`Failed to send summary email for conversation ${chat.chat_id}: ${result.error || 'Unknown error'}`);
       }
     } catch (e) {
-      alert(`Failed to send summary email for conversation ${chat.chat_id}: ${e.message}`);
+      alert(`Failed to send summary email for conversation ${chat.chat_id}: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
       setSendingSummaryId(null);
     }
@@ -98,11 +296,29 @@ export default function ChatHistoryPage() {
   const [loading, setLoading] = useState(false);
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
 
+  // Move fetchChats inside useEffect to fix dependency issue
   useEffect(() => {
+    async function fetchChats() {
+      if (!user?.id) return;
+      setLoading(true);
+      let query = (await import("@/lib/supabase")).supabase.from("chat_history").select("*").eq("client_id", user.id).order("date", { ascending: false });
+      if (aiFilter !== "all") {
+        query = query.eq("ai_name", aiFilter);
+      }
+      if (dateRange.from) {
+        query = query.gte("date", dateRange.from);
+      }
+      if (dateRange.to) {
+        query = query.lte("date", dateRange.to);
+      }
+      const { data, error } = await query;
+      if (!error) setChats(data || []);
+      setLoading(false);
+    }
+
     if (!userLoading && user?.id) {
       fetchChats();
     }
-    // eslint-disable-next-line
   }, [aiFilter, dateRange.from, dateRange.to, userLoading, user]);
 
   useEffect(() => {
@@ -124,28 +340,6 @@ export default function ChatHistoryPage() {
     fetchAIs();
   }, [user]);
 
-  async function fetchChats() {
-    if (!user?.id) return;
-    setLoading(true);
-    let query = (await import("@/lib/supabase")).supabase.from("chat_history").select("*").eq("client_id", user.id).order("date", { ascending: false });
-    if (aiFilter !== "all") {
-      query = query.eq("ai_name", aiFilter);
-    }
-    if (dateRange.from) {
-      query = query.gte("date", dateRange.from);
-    }
-    if (dateRange.to) {
-      query = query.lte("date", dateRange.to);
-    }
-    const { data, error } = await query;
-    if (!error) setChats(data || []);
-    setLoading(false);
-  }
-
-  const handleView = (chatId: string) => {
-    const chat = chats.find((c) => c.chat_id === chatId);
-    setSelectedChat(chat);
-  };
 
   const handleDownload = async (chatId: string) => {
     const chat = chats.find((c) => c.chat_id === chatId);
@@ -188,19 +382,21 @@ export default function ChatHistoryPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header title="Chat History" />
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
+      
+      {/* Filters Header */}
+      <div className="border-b bg-white px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">Chat History</h1>
+          <div className="text-sm text-gray-500">
+            {chats.length} conversations
+          </div>
         </div>
 
-        {selectedChat && (
-          <ConversationViewer chat={selectedChat} onClose={() => setSelectedChat(null)} />
-        )}
-
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
           {/* AI Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-gray-500">AI:</span>
+            <span className="text-gray-600 text-sm font-medium">AI:</span>
             <Select value={aiFilter} onValueChange={setAIFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Select AI" />
@@ -215,14 +411,14 @@ export default function ChatHistoryPage() {
 
           {/* Date Range Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-gray-500">From:</span>
+            <span className="text-gray-600 text-sm font-medium">From:</span>
             <Input
               type="date"
               value={dateRange.from}
               onChange={e => setDateRange({ ...dateRange, from: e.target.value })}
               className="w-[140px]"
             />
-            <span className="text-gray-500">To:</span>
+            <span className="text-gray-600 text-sm font-medium">To:</span>
             <Input
               type="date"
               value={dateRange.to}
@@ -231,75 +427,63 @@ export default function ChatHistoryPage() {
             />
           </div>
         </div>
+      </div>
 
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Chat ID</TableHead>
-                <TableHead>AI Name</TableHead>
-                <TableHead>Visitor Name</TableHead>
-                <TableHead>Email ID</TableHead>
-                <TableHead>Phone No.</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Messages Count</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : chats.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
-                    No chat history found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                chats.map((chat) => (
-                  <TableRow key={chat.chat_id}>
-                    <TableCell>{chat.chat_id}</TableCell>
-                    <TableCell>{chat.ai_name}</TableCell>
-                    <TableCell className="font-medium">{chat.name ? chat.name : "Anonymous"}</TableCell>
-                    <TableCell>{chat.email ? chat.email : "Anonymous"}</TableCell>
-                    <TableCell>{chat.phone ? chat.phone : "Anonymous"}</TableCell>
-                    <TableCell>{format(parseISO(chat.date), "yyyy-MM-dd")}</TableCell>
-                    <TableCell>{chat.duration}</TableCell>
-                    <TableCell>{chat.messages_count}</TableCell>
-                    <TableCell className="flex gap-2">
-  <Button variant="ghost" size="sm" onClick={() => handleView(chat.chat_id)} title="View Conversation">
-    <Eye className="h-4 w-4" />
-  </Button>
-  <button
-    className="p-2 hover:bg-gray-100 rounded"
-    title="Download Conversation"
-    onClick={() => handleDownload(chat.chat_id)}
-  >
-    <Download className="w-4 h-4" />
-  </button>
-  <button
-    className={`p-2 hover:bg-gray-100 rounded ${sendingSummaryId === chat.chat_id ? 'opacity-60 cursor-not-allowed' : ''}`}
-    title="Email Conversation Summary"
-    disabled={sendingSummaryId === chat.chat_id}
-    onClick={() => sendSummaryEmail(chat)}
-  >
-    {sendingSummaryId === chat.chat_id ? (
-      <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-    ) : (
-      <Mail className="w-4 h-4 text-blue-600" />
-    )}
-  </button>
-</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+      {/* Two-Pane Layout */}
+      <div className="flex h-[calc(100vh-140px)]">
+        {/* Chat List Pane */}
+        <div className={`${selectedChat ? "hidden lg:flex lg:w-1/3" : "flex w-full lg:w-1/3"} border-r bg-white flex-col`}>
+          <div className="p-4 border-b bg-gray-50">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search conversations..."
+                className="pl-10"
+                // Add search functionality later if needed
+              />
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1">
+            {loading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading conversations...</p>
+                </div>
+              </div>
+            ) : chats.length === 0 ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-center">
+                  <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-gray-600 mb-2">No conversations found</p>
+                  <p className="text-sm text-gray-500">Try adjusting your filters</p>
+                </div>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {chats.map((chat) => (
+                  <ChatListItem
+                    key={chat.chat_id}
+                    chat={chat}
+                    isSelected={selectedChat?.chat_id === chat.chat_id}
+                    onClick={() => setSelectedChat(chat)}
+                    onDownload={() => handleDownload(chat.chat_id)}
+                    onEmailSummary={() => sendSummaryEmail(chat)}
+                    sendingSummaryId={sendingSummaryId}
+                  />
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </div>
+
+        {/* Conversation View Pane */}
+        <div className={`${selectedChat ? "flex w-full lg:w-2/3" : "hidden lg:flex lg:w-2/3"} flex-col`}>
+          <ConversationViewer 
+            chat={selectedChat} 
+            onBack={() => setSelectedChat(null)}
+          />
         </div>
       </div>
     </div>
