@@ -372,6 +372,7 @@ export default function ChatHistoryPage() {
       setSendingSummaryId(null);
     }
   }
+  
   const { user, loading: userLoading } = useUser();
   const [aiOptions, setAIOptions] = useState<{ value: string; label: string }[]>([{ value: "all", label: "All AI" }]);
   const [chats, setChats] = useState<any[]>([]);
@@ -600,5 +601,5 @@ export default function ChatHistoryPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
