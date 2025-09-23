@@ -347,33 +347,8 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
 }
 
 export default function ChatHistoryPage() {
-  const [sendingSummaryId, setSendingSummaryId] = useState<string | null>(null);
-
-  async function sendSummaryEmail(chat: any) {
-    setSendingSummaryId(chat.chat_id);
-    try {
-      const response = await fetch("https://growbro-backend.fly.dev/api/conversation/summary-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversation_id: chat.chat_id,
-          ai_id: chat.ai_id || chat.aiId || chat.aiID // fallback for various naming
-        })
-      });
-      const result = await response.json();
-      if (response.ok && result.success) {
-        alert(`Summary email for conversation ${chat.chat_id} sent successfully!`);
-      } else {
-        alert(`Failed to send summary email for conversation ${chat.chat_id}: ${result.error || 'Unknown error'}`);
-      }
-    } catch (e) {
-      alert(`Failed to send summary email for conversation ${chat.chat_id}: ${e instanceof Error ? e.message : 'Unknown error'}`);
-    } finally {
-      setSendingSummaryId(null);
-    }
-  }
-  
   const { user, loading: userLoading } = useUser();
+  const [sendingSummaryId, setSendingSummaryId] = useState<string | null>(null);
   const [aiOptions, setAIOptions] = useState<{ value: string; label: string }[]>([{ value: "all", label: "All AI" }]);
   const [chats, setChats] = useState<any[]>([]);
   const [aiFilter, setAIFilter] = useState("all");
@@ -425,6 +400,29 @@ export default function ChatHistoryPage() {
     fetchAIs();
   }, [user]);
 
+  const sendSummaryEmail = async (chat: any) => {
+    setSendingSummaryId(chat.chat_id);
+    try {
+      const response = await fetch("https://growbro-backend.fly.dev/api/conversation/summary-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: chat.chat_id,
+          ai_id: chat.ai_id || chat.aiId || chat.aiID // fallback for various naming
+        })
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        alert(`Summary email for conversation ${chat.chat_id} sent successfully!`);
+      } else {
+        alert(`Failed to send summary email for conversation ${chat.chat_id}: ${result.error || 'Unknown error'}`);
+      }
+    } catch (e) {
+      alert(`Failed to send summary email for conversation ${chat.chat_id}: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    } finally {
+      setSendingSummaryId(null);
+    }
+  };
 
   const handleDownload = async (chatId: string) => {
     const chat = chats.find((c) => c.chat_id === chatId);
