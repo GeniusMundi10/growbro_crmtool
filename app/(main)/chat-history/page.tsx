@@ -463,15 +463,15 @@ export default function ChatHistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="min-h-screen bg-white">
       <Header 
         title="Chat History" 
         description="Manage and review all customer conversations"
         showTitleInHeader={false}
       />
       
-      {/* Premium Filters Header */}
-      <div className="border-b bg-white/80 backdrop-blur-sm px-6 py-6 shadow-sm">
+      {/* Smooth Filters Section */}
+      <div className="bg-white px-6 py-8 border-b border-slate-100">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
@@ -482,8 +482,8 @@ export default function ChatHistoryPage() {
           </div>
         </div>
 
-        {/* Enhanced Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200/50">
+        {/* Smooth Filters */}
+        <div className="flex flex-col sm:flex-row gap-6 p-6 bg-slate-50/50 rounded-2xl border border-slate-200/50">
           {/* AI Filter */}
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
@@ -525,12 +525,12 @@ export default function ChatHistoryPage() {
         </div>
       </div>
 
-      {/* Premium Two-Pane Layout */}
-      <div className="flex h-[calc(100vh-180px)] gap-1">
-        {/* Enhanced Chat List Pane */}
-        <div className={`${selectedChat ? "hidden lg:flex lg:w-1/3" : "flex w-full lg:w-1/3"} bg-white/95 backdrop-blur-sm flex-col rounded-tl-2xl shadow-xl border border-gray-200/50`}>
-          {/* Premium Search Header */}
-          <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50/30">
+      {/* Elegant Two-Pane Layout */}
+      <div className="flex h-[calc(100vh-200px)] gap-4 px-6">
+        {/* Smooth Chat List Pane */}
+        <div className={`${selectedChat ? "hidden lg:flex lg:w-1/3" : "flex w-full lg:w-1/3"} bg-white flex-col rounded-2xl shadow-sm border border-slate-200`}>
+          {/* Clean Search Header */}
+          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-4">
                 <Search className="h-4 w-4 text-gray-400" />
@@ -583,8 +583,8 @@ export default function ChatHistoryPage() {
           </ScrollArea>
         </div>
 
-        {/* Conversation View Pane */}
-        <div className={`${selectedChat ? "flex w-full lg:w-2/3" : "hidden lg:flex lg:w-2/3"} flex-col`}>
+        {/* Smooth Conversation View Pane */}
+        <div className={`flex-col ${selectedChat ? "flex w-full lg:w-2/3" : "hidden lg:flex lg:w-2/3"}`}>
           <ConversationViewer 
             chat={selectedChat} 
             onBack={() => setSelectedChat(null)}

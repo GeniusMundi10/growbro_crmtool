@@ -289,22 +289,42 @@ export default function Header({ title, description, showTitleInHeader = true }:
       </div>
     </motion.header>
     
-    {/* Enhanced Page Title Section */}
+    {/* Smooth Enhanced Page Title Section */}
     {!showTitleInHeader && (
       <motion.div 
-        className="bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200"
+        className="bg-gradient-to-b from-white via-slate-50/30 to-white relative"
         initial={{ y: -10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl">
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
+        {/* Subtle gradient overlay for smooth transition */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/20 via-transparent to-purple-50/20"></div>
+        
+        <div className="container mx-auto px-4 py-10 relative">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.h1 
+              className="text-4xl font-light text-slate-800 mb-3 tracking-tight"
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              {title}
+            </motion.h1>
             {description && (
-              <p className="text-slate-600 text-lg leading-relaxed">{description}</p>
+              <motion.p 
+                className="text-slate-600 text-lg leading-relaxed font-light max-w-2xl mx-auto"
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                {description}
+              </motion.p>
             )}
           </div>
         </div>
+        
+        {/* Smooth bottom fade */}
+        <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-b from-transparent to-white"></div>
       </motion.div>
     )}
   </>)
