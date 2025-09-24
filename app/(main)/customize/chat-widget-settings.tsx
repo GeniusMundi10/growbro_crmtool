@@ -554,7 +554,8 @@ export default function ChatWidgetSettings() {
                 </div>
                 
                 <motion.div 
-                  className="w-full max-w-sm mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200"
+                  className="w-full max-w-sm mx-auto rounded-2xl shadow-xl overflow-hidden border border-slate-200"
+                  style={{ backgroundColor: widgetSettings.widgetColor || '#ffffff' }}
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ duration: 0.3 }}
@@ -588,7 +589,6 @@ export default function ChatWidgetSettings() {
                   {/* Chat Messages */}
                   <div 
                     className="p-4 h-64 overflow-y-auto space-y-3"
-                    style={{ backgroundColor: widgetSettings.widgetColor || '#f8fafc' }}
                   >
                     {/* AI Message */}
                     <div className="flex items-start gap-2">
@@ -646,7 +646,10 @@ export default function ChatWidgetSettings() {
                   </div>
 
                   {/* Input Area */}
-                  <div className="p-3 bg-white border-t border-slate-100">
+                  <div 
+                    className="p-3 border-t border-slate-100"
+                    style={{ backgroundColor: widgetSettings.widgetColor || '#ffffff' }}
+                  >
                     <div className="flex items-center gap-2">
                       <div className="flex-1 px-3 py-2 bg-slate-50 rounded-lg text-sm text-slate-500">
                         Type your message...
