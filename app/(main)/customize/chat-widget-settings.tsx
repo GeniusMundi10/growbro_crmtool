@@ -204,35 +204,94 @@ export default function ChatWidgetSettings() {
     }));
   };
 
-  const ColorPicker = ({ label, value, onChange, icon }: { label: string, value: string, onChange: (value: string) => void, icon?: React.ReactNode }) => (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-        {icon}
-        {label}
-      </Label>
-      <div className="flex gap-3">
-        <div className="relative">
-          <Input
-            type="color"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-12 h-12 p-1 border-2 border-slate-200 rounded-lg cursor-pointer hover:border-slate-300 transition-colors"
-          />
+  // Popular color presets for easy selection
+  const colorPresets = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
+    '#FF7675', '#74B9FF', '#A29BFE', '#FD79A8', '#FDCB6E', '#6C5CE7', '#00B894', '#E17055',
+    '#2D3436', '#636E72', '#B2BEC3', '#DDD', '#000000', '#FFFFFF', '#FF0000', '#00FF00'
+  ];
+
+  const ColorPicker = ({ label, value, onChange, icon }: { label: string, value: string, onChange: (value: string) => void, icon?: React.ReactNode }) => {
+    const [showPresets, setShowPresets] = useState(false);
+    
+    return (
+      <div className="space-y-3">
+        <Label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+          {icon}
+          {label}
+        </Label>
+        
+        {/* Main Color Display & Picker */}
+        <div className="flex gap-3 items-center">
+          <div className="relative">
+            <Input
+              type="color"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="w-16 h-16 p-2 border-2 border-slate-200 rounded-xl cursor-pointer hover:border-slate-300 transition-colors shadow-sm"
+            />
+            <div 
+              className="absolute inset-2 rounded-lg shadow-inner border border-white/30" 
+              style={{ backgroundColor: value }}
+            />
+          </div>
+          
+          <div className="flex-1 space-y-2">
+            <Input
+              type="text"
+              value={value.toUpperCase()}
+              onChange={(e) => onChange(e.target.value)}
+              className="font-mono text-sm"
+              placeholder="#000000"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPresets(!showPresets)}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {showPresets ? '← Hide Presets' : '🎨 Show Color Presets'}
+            </button>
+          </div>
+        </div>
+
+        {/* Color Presets */}
+        {showPresets && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="grid grid-cols-8 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200"
+          >
+            {colorPresets.map((color, index) => (
+              <motion.button
+                key={index}
+                type="button"
+                onClick={() => onChange(color)}
+                className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 hover:scale-110 hover:shadow-lg ${
+                  value.toLowerCase() === color.toLowerCase() 
+                    ? 'border-slate-800 ring-2 ring-blue-500' 
+                    : 'border-white shadow-sm hover:border-slate-300'
+                }`}
+                style={{ backgroundColor: color }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title={color}
+              />
+            ))}
+          </motion.div>
+        )}
+        
+        {/* Color Name Display */}
+        <div className="flex items-center gap-2 text-xs text-slate-500">
           <div 
-            className="absolute inset-1 rounded-md border border-white/20" 
+            className="w-4 h-4 rounded border border-slate-200" 
             style={{ backgroundColor: value }}
           />
+          <span>Current: {value.toUpperCase()}</span>
         </div>
-        <Input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="flex-1 font-mono text-sm"
-          placeholder="#000000"
-        />
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <motion.div 
@@ -514,9 +573,11 @@ export default function ChatWidgetSettings() {
                       </div>
                       <div>
                         <div className="text-sm font-semibold">
+                          {currentAI?.ai_name || "Your AI Assistant"}
+                        </div>
+                        <div className="text-xs opacity-90">
                           {currentAI?.company_name || "Your Business"}
                         </div>
-                        <div className="text-xs opacity-90">Online now</div>
                       </div>
                     </div>
                     <button className="text-sm opacity-75 hover:opacity-100 transition-opacity">
