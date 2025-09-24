@@ -375,8 +375,6 @@ export default function IntegrationsForm() {
 
   return (
     <section className="w-full max-w-4xl">
-      <h1 className="text-2xl font-semibold mb-6 text-slate-800">Integrations</h1>
-      <p className="text-sm text-slate-600 mb-10">Connect third-party tools to super-charge your AI assistant workflow.</p>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <Card className="max-w-md w-full shadow-sm border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between pb-3">

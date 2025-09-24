@@ -366,7 +366,11 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header title="Analytics" />
+      <Header 
+        title="Analytics" 
+        description="Track performance metrics, conversation insights, and user engagement across all your AI assistants."
+        showTitleInHeader={false}
+      />
       {/* Filter Bar: AI Selector + Period Tabs */}
       <div className="flex flex-wrap justify-center items-center gap-4 bg-white rounded-lg shadow px-4 py-3 mb-6">
         {ais.length > 0 && (

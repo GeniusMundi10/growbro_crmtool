@@ -32,9 +32,11 @@ import { useNotifications } from "@/context/NotificationContext"
 
 interface HeaderProps {
   title: string
+  description?: string
+  showTitleInHeader?: boolean
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title, description, showTitleInHeader = true }: HeaderProps) {
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false)
   const { notifications, markAllRead } = useNotifications();
@@ -58,39 +60,42 @@ export default function Header({ title }: HeaderProps) {
 
 
   return (
-    <motion.header
-      className="sticky top-0 z-30 w-full border-b bg-white/95 backdrop-blur-sm shadow-sm"
-      initial={{ y: -10, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          {isMobile && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="md:hidden mr-2 text-slate-600"
-              onClick={() => {
-                // This is just a placeholder for mobile menu toggle
-                // The actual toggle is handled in the sidebar component
-              }}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          )}
-          <h1 className="text-xl font-bold text-slate-800 flex items-center">
-            {title}
-            {title === "Dashboard" && user && (
-              <Badge 
-                variant="outline" 
-                className="ml-3 bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-normal"
+    <>
+      <motion.header
+        className="sticky top-0 z-30 w-full border-b bg-white/95 backdrop-blur-sm shadow-sm"
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            {isMobile && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden mr-2 text-slate-600"
+                onClick={() => {
+                  // This is just a placeholder for mobile menu toggle
+                  // The actual toggle is handled in the sidebar component
+                }}
               >
-                {user.plan ? `${user.plan.charAt(0).toUpperCase() + user.plan.slice(1)} Plan` : "Plan"}
-              </Badge>
+                <Menu className="h-5 w-5" />
+              </Button>
             )}
-          </h1>
-        </div>
+            {showTitleInHeader && (
+              <h1 className="text-xl font-bold text-slate-800 flex items-center">
+                {title}
+                {title === "Dashboard" && user && (
+                  <Badge 
+                    variant="outline" 
+                    className="ml-3 bg-emerald-50 text-emerald-700 border-emerald-200 text-xs font-normal"
+                  >
+                    {user.plan ? `${user.plan.charAt(0).toUpperCase() + user.plan.slice(1)} Plan` : "Plan"}
+                  </Badge>
+                )}
+              </h1>
+            )}
+          </div>
 
         <div className="flex items-center gap-3">
           {/* Search Bar */}
@@ -148,7 +153,7 @@ export default function Header({ title }: HeaderProps) {
                     variant="ghost" 
                     size="sm"
                     className="h-auto p-0 text-xs font-normal text-emerald-100 hover:text-white hover:bg-transparent"
-                    onClick={() => setNotifications(prev => prev.map(n => ({ ...n, unread: false })))}
+                    onClick={markAllRead}
                   >
                     Mark all as read
                   </Button>
@@ -283,5 +288,24 @@ export default function Header({ title }: HeaderProps) {
         </div>
       </div>
     </motion.header>
-  )
+    
+    {/* Enhanced Page Title Section */}
+    {!showTitleInHeader && (
+      <motion.div 
+        className="bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200"
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl">
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">{title}</h1>
+            {description && (
+              <p className="text-slate-600 text-lg leading-relaxed">{description}</p>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    )}
+  </>)
 }

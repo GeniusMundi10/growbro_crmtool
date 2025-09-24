@@ -118,9 +118,7 @@ function EmbedCodeContent() {
   }
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <h2 className="text-xl font-semibold mb-6">Get AI Code & Test AI</h2>
-      
+    <div className="bg-white rounded-lg p-6 shadow-sm border">      
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Left column - Form & Code snippets */}
         <div className="w-full lg:w-5/12 flex flex-col bg-white p-6 rounded-lg shadow-sm border">

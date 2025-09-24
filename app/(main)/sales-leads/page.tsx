@@ -183,24 +183,28 @@ export default function SalesLeadsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header title="Sales Leads" />
+      <Header 
+        title="Sales Leads" 
+        description="Manage and track potential customers from your AI assistant conversations."
+        showTitleInHeader={false}
+      />
       <div className="container mx-auto px-4 py-6">
-        {hubspotConnected === false && (
-          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-yellow-700 font-medium">You are not connected to HubSpot. Connect your account to sync leads.</div>
-            <Button
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-              onClick={() => window.location.href = "/integrations"}
-            >
-              Connect HubSpot
-            </Button>
-          </div>
-        )}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">Sales Leads</h1>
-          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-gray-500">AI:</span>
+        <div className="flex flex-col gap-6">
+          {hubspotConnected === false && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-yellow-700 font-medium">You are not connected to HubSpot. Connect your account to sync leads.</div>
+              <Button
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+                onClick={() => window.location.href = "/integrations"}
+              >
+                Connect HubSpot
+              </Button>
+            </div>
+          )}
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div className="flex items-center gap-4">
+              <span className="text-gray-500">Filter by AI:</span>
               <select
                 value={aiFilter}
                 onChange={e => setAIFilter(e.target.value)}
@@ -211,6 +215,8 @@ export default function SalesLeadsPage() {
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
+            </div>
+            <div className="flex gap-2">
               <button
                 onClick={() => {
                   // Export filteredLeads as CSV with correct columns and Excel compatibility

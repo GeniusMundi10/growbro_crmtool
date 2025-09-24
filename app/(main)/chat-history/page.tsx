@@ -464,22 +464,15 @@ export default function ChatHistoryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
-      <Header title="Chat History" />
+      <Header 
+        title="Chat History" 
+        description="Manage and review all customer conversations"
+        showTitleInHeader={false}
+      />
       
       {/* Premium Filters Header */}
       <div className="border-b bg-white/80 backdrop-blur-sm px-6 py-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
-              <MessageCircle className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Chat History
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">Manage and review all customer conversations</p>
-            </div>
-          </div>
           <div className="flex items-center space-x-3">
             <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
               <span className="text-sm font-medium text-blue-700">
