@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
 import { CheckCircle2, Trash2, ExternalLink, ArrowRight } from "lucide-react";
-import { siHubspot, siWhatsapp } from 'simple-icons/icons';
+import siHubspot from 'simple-icons/icons/hubspot';
+import siWhatsapp from 'simple-icons/icons/whatsapp';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
