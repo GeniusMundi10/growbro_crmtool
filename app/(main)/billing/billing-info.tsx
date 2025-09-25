@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@supabase/supabase-js"
 import { useUser } from "@/context/UserContext"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { format } from "date-fns"
 import { Shimmer } from "@/components/ui/shimmer"
 import { Crown, ArrowRight, BarChart2, Calendar, MessageSquare, CreditCard } from "lucide-react"
 
@@ -17,11 +19,21 @@ export default function BillingInfo() {
   const { user } = useUser()
   const [subscription, setSubscription] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [totalChatMessages, setTotalChatMessages] = useState(0)
+  const [totalChatMessagesMonth, setTotalChatMessagesMonth] = useState(0)
+  const [totalChatMessagesAll, setTotalChatMessagesAll] = useState(0)
   const [daysLeftInTrial, setDaysLeftInTrial] = useState(0)
+  const [usageScope, setUsageScope] = useState<"month" | "all">("month")
   
+  // Helper to get current month yyyy-MM-dd range
+  const getCurrentMonthRange = () => {
+    const now = new Date()
+    const start = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM-dd')
+    const end = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd')
+    return { start, end }
+  }
+
   // Function to fetch total chat messages for the current user
-  const fetchTotalChatMessages = async (userId: string) => {
+  const fetchTotalChatMessages = async (userId: string, scope: "month" | "all" = "month") => {
     if (!userId) return
     
     try {
@@ -31,24 +43,30 @@ export default function BillingInfo() {
       )
       
       // Query to get the sum of message_count for the specific client_id (user_id)
-      const { data, error } = await supabase
+      let query = supabase
         .from('dashboard_message_summary')
         .select('message_count')
         .eq('client_id', userId)
+
+      if (scope === "month") {
+        const { start, end } = getCurrentMonthRange()
+        query = query.gte('day', start).lte('day', end)
+      }
+
+      const { data, error } = await query
         
       if (error) {
         console.error('Error fetching total chat messages:', error)
-        return
+        return 0
       }
       
       // Calculate the total message count from the returned rows
-      if (data && data.length > 0) {
-        const totalMessages = data.reduce((sum, row) => sum + (Number(row.message_count) || 0), 0)
-        console.log('Total chat messages calculated:', totalMessages)
-        setTotalChatMessages(totalMessages)
-      }
+      const totalMessages = (data || []).reduce((sum, row) => sum + (Number((row as any).message_count) || 0), 0)
+      console.log(`Total chat messages calculated [${scope}]:`, totalMessages)
+      return totalMessages
     } catch (error) {
       console.error('Error in fetchTotalChatMessages:', error)
+      return 0
     }
   }
 
@@ -167,7 +185,12 @@ export default function BillingInfo() {
       
       if (user?.id) {
         await fetchSubscription()
-        await fetchTotalChatMessages(user.id)
+        const [monthTotal, allTotal] = await Promise.all([
+          fetchTotalChatMessages(user.id, 'month'),
+          fetchTotalChatMessages(user.id, 'all')
+        ])
+        setTotalChatMessagesMonth(monthTotal || 0)
+        setTotalChatMessagesAll(allTotal || 0)
       }
       
       setLoading(false)
@@ -216,7 +239,7 @@ export default function BillingInfo() {
               {/* Current Plan */}
               <Card className="shadow-sm overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
                       <CardTitle className="text-lg">
                         {subscription ? (subscription.plans?.name || 'Subscription') : 'Free Plan'}
@@ -225,11 +248,22 @@ export default function BillingInfo() {
                         {subscription ? 'Your current plan' : 'You are currently on the free plan'}
                       </div>
                     </div>
-                    {subscription ? (
-                      <Badge variant="outline" className="bg-white">Active</Badge>
-                    ) : (
-                      <Badge variant="secondary">Free</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {subscription ? (
+                        <Badge variant="outline" className="bg-white">Active</Badge>
+                      ) : (
+                        <Badge variant="secondary">Free</Badge>
+                      )}
+                      <Select value={usageScope} onValueChange={(v) => setUsageScope(v as any)}>
+                        <SelectTrigger className="w-[140px] bg-white border-slate-200">
+                          <SelectValue placeholder="Usage scope" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="month">This Month</SelectItem>
+                          <SelectItem value="all">All-time</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -265,13 +299,13 @@ export default function BillingInfo() {
                     </Card>
                     <Card className="shadow-none border">
                       <CardContent className="py-4">
-                        <div className="text-xs text-muted-foreground">Total Chat Messages</div>
-                        <div className="text-xl font-semibold">{totalChatMessages}</div>
+                        <div className="text-xs text-muted-foreground">{usageScope === 'month' ? 'Chat Messages (this month)' : 'Chat Messages (all-time)'}</div>
+                        <div className="text-xl font-semibold">{usageScope === 'month' ? totalChatMessagesMonth : totalChatMessagesAll}</div>
                       </CardContent>
                     </Card>
                     <Card className="shadow-none border">
                       <CardContent className="py-4">
-                        <div className="text-xs text-muted-foreground">Total Voice Messages</div>
+                        <div className="text-xs text-muted-foreground">{usageScope === 'month' ? 'Voice Minutes (this month)' : 'Voice Minutes (all-time)'}</div>
                         <div className="text-xl font-semibold">0</div>
                       </CardContent>
                     </Card>

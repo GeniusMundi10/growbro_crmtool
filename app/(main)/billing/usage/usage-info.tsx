@@ -22,6 +22,8 @@ import { ChevronLeft, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@supabase/supabase-js"
 import { useUser } from "@/context/UserContext"
+import { Shimmer } from "@/components/ui/shimmer"
+import { format } from "date-fns"
 
 export default function UsageInfo() {
   const router = useRouter()
@@ -37,6 +39,7 @@ export default function UsageInfo() {
   const [usageData, setUsageData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [scope, setScope] = useState<'month' | 'all'>('month')
   
   // Function to fetch usage data based on month and year
   const fetchUsageData = async () => {
@@ -51,22 +54,24 @@ export default function UsageInfo() {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       )
       
-      // Convert month name to month number (1-12)
-      const monthNumber = new Date(Date.parse(`${month} 1, ${year}`)).getMonth() + 1
-      
-      // Format start and end dates for the selected month
-      const startDate = new Date(parseInt(year), monthNumber - 1, 1)
-      const endDate = new Date(parseInt(year), monthNumber, 0) // Last day of the month
-      
-      console.log(`Fetching data for ${month} ${year}, date range:`, startDate, 'to', endDate)
-      
-      // Query to get data filtered by client_id and month/year
-      const { data, error } = await supabase
+      // Build base query
+      let query = supabase
         .from('dashboard_message_summary')
         .select('ai_name, message_count')
         .eq('client_id', user.id)
-        .gte('day', startDate.toISOString())
-        .lte('day', endDate.toISOString())
+
+      // Apply date filters if scope is month
+      if (scope === 'month') {
+        const monthNumber = new Date(Date.parse(`${month} 1, ${year}`)).getMonth() + 1
+        const startDateString = format(new Date(parseInt(year), monthNumber - 1, 1), 'yyyy-MM-dd')
+        const endDateString = format(new Date(parseInt(year), monthNumber, 0), 'yyyy-MM-dd')
+        console.log(`Fetching data for ${month} ${year}, date range:`, startDateString, 'to', endDateString)
+        query = query.gte('day', startDateString).lte('day', endDateString)
+      } else {
+        console.log('Fetching all-time usage data')
+      }
+
+      const { data, error } = await query
       
       if (error) {
         console.error('Error fetching usage data:', error)
@@ -120,7 +125,7 @@ export default function UsageInfo() {
   // Fetch data when component mounts or filters change
   useEffect(() => {
     fetchUsageData()
-  }, [month, year, user?.id])
+  }, [month, year, scope, user?.id])
 
   // Generate months for dropdown
   const months = [
@@ -151,7 +156,18 @@ export default function UsageInfo() {
 
       <div className="flex flex-wrap gap-4 mb-6">
         <div>
-          <Select value={month} onValueChange={setMonth}>
+          <Select value={scope} onValueChange={(v) => setScope(v as any)}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Scope" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="all">All-time</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Select value={month} onValueChange={setMonth} disabled={scope === 'all'}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Month" />
             </SelectTrigger>
@@ -164,7 +180,7 @@ export default function UsageInfo() {
         </div>
 
         <div>
-          <Select value={year} onValueChange={setYear}>
+          <Select value={year} onValueChange={setYear} disabled={scope === 'all'}>
             <SelectTrigger className="w-24">
               <SelectValue placeholder="Year" />
             </SelectTrigger>
@@ -176,6 +192,41 @@ export default function UsageInfo() {
           </Select>
         </div>
       </div>
+
+      {/* Summary cards */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i} className="shadow-sm">
+              <CardContent className="py-4">
+                <Shimmer className="h-4 w-28 mb-2" />
+                <Shimmer className="h-7 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="shadow-none border">
+            <CardContent className="py-4">
+              <div className="text-xs text-muted-foreground">{scope === 'month' ? 'Chat Messages (this month)' : 'Chat Messages (all-time)'}</div>
+              <div className="text-xl font-semibold">{usageData.reduce((s, x) => s + (x.chatMessages || 0), 0)}</div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-none border">
+            <CardContent className="py-4">
+              <div className="text-xs text-muted-foreground">{scope === 'month' ? 'Voice Minutes (this month)' : 'Voice Minutes (all-time)'}</div>
+              <div className="text-xl font-semibold">{usageData.reduce((s, x) => s + (x.voiceMinutes || 0), 0)}</div>
+            </CardContent>
+          </Card>
+          <Card className="shadow-none border">
+            <CardContent className="py-4">
+              <div className="text-xs text-muted-foreground">Active Agents</div>
+              <div className="text-xl font-semibold">{usageData.length}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <Card>
         <CardContent className="p-0">
