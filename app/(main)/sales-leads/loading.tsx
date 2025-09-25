@@ -1,12 +1,5 @@
 import Header from "@/components/header";
-
-function Shimmer({ className = "" }: { className?: string }) {
-  return (
-    <div className={`relative overflow-hidden rounded-md bg-muted ${className}`}>
-      <div className="absolute inset-0 shimmer-overlay" />
-    </div>
-  );
-}
+import { Shimmer } from "@/components/ui/shimmer";
 
 export default function Loading() {
   return (
@@ -16,7 +9,6 @@ export default function Loading() {
         description="Qualified contacts captured by your AI assistants. Filter, export, and sync to HubSpot in one place."
         showTitleInHeader={false}
       />
-      <ShimmerStyles />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           {/* Stats skeleton (3 cards) */}
@@ -75,24 +67,5 @@ export default function Loading() {
         </div>
       </div>
     </div>
-  );
-}
-
-/* Shimmer effect */
-// styled-jsx works in Next.js by default
-// We use a light gradient sweeping across the muted background
-export function ShimmerStyles() {
-  return (
-    <style jsx global>{`
-      @keyframes shimmer-sweep {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-      }
-      .shimmer-overlay {
-        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
-        animation: shimmer-sweep 1.6s infinite;
-        transform: translateX(-100%);
-      }
-    `}</style>
   );
 }
