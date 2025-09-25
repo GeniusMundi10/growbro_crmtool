@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -355,6 +356,8 @@ export default function ChatHistoryPage() {
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const [loading, setLoading] = useState(false);
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
+  const searchParams = useSearchParams();
+  const deepLinkChatId = searchParams.get('chatId');
 
   // Move fetchChats inside useEffect to fix dependency issue
   useEffect(() => {
@@ -380,6 +383,13 @@ export default function ChatHistoryPage() {
       fetchChats();
     }
   }, [aiFilter, dateRange.from, dateRange.to, userLoading, user]);
+
+  // Deep link: select chat by chatId from URL when chats are loaded
+  useEffect(() => {
+    if (!deepLinkChatId || !chats || chats.length === 0) return;
+    const target = chats.find((c) => (c.chat_id || '').trim() === deepLinkChatId.trim());
+    if (target) setSelectedChat(target);
+  }, [deepLinkChatId, chats]);
 
   useEffect(() => {
     async function fetchAIs() {

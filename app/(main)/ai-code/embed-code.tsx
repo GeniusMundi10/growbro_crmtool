@@ -14,6 +14,7 @@ import { Copy, X, RefreshCw, Monitor, Smartphone, ExternalLink, CheckCircle2, Co
 import { toast } from "sonner"
 import { getUserAIs } from "@/lib/supabase"
 import { useUser } from "@/context/UserContext"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Component that uses searchParams wrapped in Suspense
 function EmbedCodeContent() {
@@ -335,13 +336,71 @@ function EmbedCodeContent() {
 
 // Main export component with Suspense boundary
 export default function EmbedCode() {
+  function Shimmer({ className = "" }: { className?: string }) {
+    return (
+      <div className={`relative overflow-hidden rounded-md bg-muted ${className}`}>
+        <div className="absolute inset-0 shimmer-overlay" />
+      </div>
+    );
+  }
+  function ShimmerStyles() {
+    return (
+      <style jsx global>{`
+        @keyframes shimmer-sweep { 0% { transform: translateX(-100%);} 100% { transform: translateX(100%);} }
+        .shimmer-overlay { background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%); animation: shimmer-sweep 1.6s infinite; transform: translateX(-100%); }
+      `}</style>
+    )
+  }
   return (
     <Suspense fallback={
-      <div className="bg-white rounded-lg p-6 shadow-sm border">
-        <div className="flex justify-center items-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-4"></div>
-            <p>Loading embed code options...</p>
+      <div className="rounded-2xl border bg-gradient-to-b from-slate-50 to-white p-6 shadow-sm">
+        <ShimmerStyles />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left column skeleton */}
+          <div className="lg:col-span-5 space-y-6">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <Shimmer className="h-4 w-40 mb-2" />
+                <Shimmer className="h-3 w-64" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Shimmer className="h-10 w-full" />
+                  <Shimmer className="h-4 w-48" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardHeader>
+                <div className="space-y-2">
+                  <Shimmer className="h-4 w-48" />
+                  <Shimmer className="h-3 w-72" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="rounded-lg bg-slate-100 p-3">
+                    <Shimmer className="h-24 w-full" />
+                  </div>
+                  <div className="rounded-lg bg-slate-100 p-3">
+                    <Shimmer className="h-24 w-full" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          {/* Right column skeleton */}
+          <div className="lg:col-span-7">
+            <Card className="overflow-hidden shadow-sm">
+              <div className="px-4 py-2.5 border-b bg-gradient-to-r from-slate-50 to-emerald-50/60">
+                <Shimmer className="h-4 w-40" />
+              </div>
+              <CardContent className="p-0">
+                <div className="w-full h-[650px] bg-gray-50/60 flex items-center justify-center">
+                  <Shimmer className="h-[80%] w-[90%]" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

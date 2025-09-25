@@ -22,6 +22,7 @@ import { Separator } from "@/components/ui/separator"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import Link from "next/link"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -295,7 +296,7 @@ export default function SalesLeadsPage() {
                             URL.revokeObjectURL(url);
                           }}
                         >
-                          <Download className="h-4 w-4 mr-1" /> Export CSV
+                          <Download className="h-4 w-4 mr-1" /> Export CSV ({searchedLeads.length})
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Export filtered results</TooltipContent>
@@ -327,12 +328,12 @@ export default function SalesLeadsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Visitor Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>AI</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead className="bg-white sticky top-0 z-10">Visitor Name</TableHead>
+                        <TableHead className="bg-white sticky top-0 z-10">Email</TableHead>
+                        <TableHead className="bg-white sticky top-0 z-10">Phone</TableHead>
+                        <TableHead className="bg-white sticky top-0 z-10">AI</TableHead>
+                        <TableHead className="bg-white sticky top-0 z-10">Status</TableHead>
+                        <TableHead className="bg-white sticky top-0 z-10 text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -344,7 +345,7 @@ export default function SalesLeadsPage() {
                         </TableRow>
                       ) : (
                         searchedLeads.map((lead) => (
-                          <TableRow key={lead.chat_id}>
+                          <TableRow key={lead.chat_id} className="hover:bg-slate-50/80 transition-colors">
                             <TableCell className="font-medium">{lead.name || "-"}</TableCell>
                             <TableCell>{lead.email || "-"}</TableCell>
                             <TableCell>{lead.phone || "-"}</TableCell>
@@ -359,53 +360,58 @@ export default function SalesLeadsPage() {
                               )}
                             </TableCell>
                             <TableCell className="text-right">
-                              {lead.hubspot_synched ? (
-                                <span className="text-xs text-muted-foreground">—</span>
-                              ) : (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        disabled={!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]}
-                                        onClick={async () => {
-                                          if (!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]) {
-                                            toast.error("Connect HubSpot for this AI in Integrations to enable syncing.");
-                                            return;
-                                          }
-                                          if (!lead.end_user_id) {
-                                            toast.error("This lead cannot be synced (missing user ID)");
-                                            return;
-                                          }
-                                          try {
-                                            const res = await fetch("/api/hubspot/sync-lead", {
-                                              method: "POST",
-                                              headers: { "Content-Type": "application/json" },
-                                              body: JSON.stringify({ leadId: lead.end_user_id, ai_id: lead.ai_id ?? null })
-                                            });
-                                            const data = await res.json();
-                                            if (res.ok && data.success) {
-                                              toast.success("Lead synced to HubSpot!");
-                                            } else {
-                                              toast.error(data.error || "Failed to sync lead to HubSpot");
+                              <div className="flex justify-end gap-2">
+                                <Link href={`/chat-history?chatId=${encodeURIComponent(lead.chat_id)}`}>
+                                  <Button variant="ghost" size="sm">
+                                    <MessageSquare className="h-4 w-4 mr-1" /> View
+                                  </Button>
+                                </Link>
+                                {!lead.hubspot_synched && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          disabled={!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]}
+                                          onClick={async () => {
+                                            if (!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]) {
+                                              toast.error("Connect HubSpot for this AI in Integrations to enable syncing.");
+                                              return;
                                             }
-                                          } catch (err) {
-                                            toast.error("Failed to sync lead to HubSpot");
-                                          }
-                                        }}
-                                      >
-                                        Sync to HubSpot
-                                      </Button>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]
-                                      ? "Connect HubSpot for this AI in Integrations to enable syncing"
-                                      : "Sync this lead to the connected HubSpot for this AI"}
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
+                                            if (!lead.end_user_id) {
+                                              toast.error("This lead cannot be synced (missing user ID)");
+                                              return;
+                                            }
+                                            try {
+                                              const res = await fetch("/api/hubspot/sync-lead", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ leadId: lead.end_user_id, ai_id: lead.ai_id ?? null })
+                                              });
+                                              const data = await res.json();
+                                              if (res.ok && data.success) {
+                                                toast.success("Lead synced to HubSpot!");
+                                              } else {
+                                                toast.error(data.error || "Failed to sync lead to HubSpot");
+                                              }
+                                            } catch (err) {
+                                              toast.error("Failed to sync lead to HubSpot");
+                                            }
+                                          }}
+                                        >
+                                          Sync to HubSpot
+                                        </Button>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]
+                                        ? "Connect HubSpot for this AI in Integrations to enable syncing"
+                                        : "Sync this lead to the connected HubSpot for this AI"}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
