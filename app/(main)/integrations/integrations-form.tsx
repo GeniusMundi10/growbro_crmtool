@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Shimmer } from "@/components/ui/shimmer";
 
 export default function IntegrationsForm() {
   const { user } = useUser();
@@ -370,7 +373,34 @@ export default function IntegrationsForm() {
   };
 
   if (loading) {
-    return <div className="text-center text-gray-500 py-10">Loading...</div>;
+    return (
+      <section className="w-full max-w-4xl">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i} className="max-w-md w-full shadow-sm border">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shimmer className="h-5 w-5 rounded" />
+                    <Shimmer className="h-5 w-28" />
+                  </div>
+                  <Shimmer className="h-5 w-16 rounded-full" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Array.from({ length: 4 }).map((__, j) => (
+                  <Shimmer key={j} className="h-4 w-[80%]" />
+                ))}
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <Shimmer className="h-9 w-full rounded-md" />
+                  <Shimmer className="h-9 w-full rounded-md" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+    );
   }
 
   return (
@@ -382,7 +412,12 @@ export default function IntegrationsForm() {
             <BrandIcon icon={siHubspot} className="h-5 w-5" />
             <CardTitle className="text-lg font-semibold">HubSpot</CardTitle>
           </div>
-          {hubspotConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+          <div className="flex items-center gap-2">
+            {hubspotConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+            <Badge variant={hubspotConnected ? "default" : "secondary"} className={hubspotConnected ? "bg-emerald-100 text-emerald-800" : ""}>
+              {hubspotConnected ? "Connected" : "Not connected"}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">Sync leads you capture in GrowBro directly into your HubSpot CRM.</p>
@@ -406,7 +441,17 @@ export default function IntegrationsForm() {
               {hubspotConnected ? (
                 <Button variant="destructive" onClick={handleDisconnectHubspot} size="sm">Disconnect</Button>
               ) : (
-                <Button onClick={handleConnectHubspot} size="sm" disabled={!hubspotAiId}>Connect</Button>
+                <div className="flex items-center gap-2">
+                  <Button onClick={handleConnectHubspot} size="sm" disabled={!hubspotAiId}>Connect</Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <a href="https://app.hubspot.com/" target="_blank" rel="noreferrer" className="text-xs text-slate-500 hover:underline inline-flex items-center gap-1">
+                        Docs <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </TooltipTrigger>
+                    <TooltipContent>Open HubSpot to verify the connection</TooltipContent>
+                  </Tooltip>
+                </div>
               )}
             </div>
           ) : (
@@ -420,7 +465,12 @@ export default function IntegrationsForm() {
             <BrandIcon icon={siWhatsapp} className="h-5 w-5" />
             <CardTitle className="text-lg font-semibold">WhatsApp</CardTitle>
           </div>
-          {whatsappConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+          <div className="flex items-center gap-2">
+            {whatsappConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+            <Badge variant={whatsappConnected ? "default" : "secondary"} className={whatsappConnected ? "bg-emerald-100 text-emerald-800" : ""}>
+              {whatsappConnected ? "Connected" : "Not connected"}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600 mb-4">
