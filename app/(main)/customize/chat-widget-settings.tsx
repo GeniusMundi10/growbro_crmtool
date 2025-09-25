@@ -589,6 +589,7 @@ export default function ChatWidgetSettings() {
                   {/* Chat Messages */}
                   <div 
                     className="p-4 h-64 overflow-y-auto space-y-3"
+                    style={{ backgroundColor: widgetSettings.widgetColor || '#f8fafc' }}
                   >
                     {/* AI Message */}
                     <div className="flex items-start gap-2">

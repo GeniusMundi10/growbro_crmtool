@@ -5,7 +5,12 @@ import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Copy, X, RefreshCw } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Copy, X, RefreshCw, Monitor, Smartphone, ExternalLink, CheckCircle2, Code2 } from "lucide-react"
 import { toast } from "sonner"
 import { getUserAIs } from "@/lib/supabase"
 import { useUser } from "@/context/UserContext"
@@ -23,11 +28,12 @@ function EmbedCodeContent() {
   const [loading, setLoading] = useState(true)
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
+  const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop")
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   // Generate code snippets with the selected AI ID
   const htmlCode = `<script defer src="https://chatbox.growbro.ai/assets/chatbox-widget-bundle.js" data-ai-id="${selectedAI}"></script>`
-  const iframeCode = `<iframe src="https://chatbox.growbro.ai/iframe.html?agentId=${selectedAI}" width="450" height="650"></iframe>`
+  const iframeCode = `<iframe src="https://chatbox.growbro.ai/iframe.html?agentId=${selectedAI}" width="450" height="650" style="border:0; border-radius:12px; box-shadow:0 8px 30px rgba(2,6,23,0.08)"></iframe>`
   
   // Load user's AIs on component mount
   useEffect(() => {
@@ -94,6 +100,20 @@ function EmbedCodeContent() {
     setPreviewKey(prev => prev + 1)
   }
 
+  const openPreviewInNewTab = () => {
+    try {
+      const html = createChatbotHtml(selectedAI)
+      const win = window.open('', '_blank')
+      if (win) {
+        win.document.open()
+        win.document.write(html)
+        win.document.close()
+      }
+    } catch (e) {
+      toast.error('Could not open preview in a new tab')
+    }
+  }
+
   // Create HTML content for the chatbot iframe
   const createChatbotHtml = (aiId: string) => {
     return `
@@ -118,137 +138,198 @@ function EmbedCodeContent() {
   }
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm border">      
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left column - Form & Code snippets */}
-        <div className="w-full lg:w-5/12 flex flex-col bg-white p-6 rounded-lg shadow-sm border">
-          <div className="mb-6">
-            <p className="text-sm font-medium mb-2">Select AI:</p>
-            <Select value={selectedAI} onValueChange={handleAIChange}>
-              <SelectTrigger className={loading ? "opacity-50" : ""}>
-                <SelectValue placeholder="Select AI" />
-              </SelectTrigger>
-              <SelectContent>
-                {aiOptions.length > 0 ? (
-                  aiOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))
-                ) : (
-                  <div className="py-2 px-2 text-sm text-gray-500">
-                    {loading ? "Loading..." : "No AIs available"}
-                  </div>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="mb-6">
-            <div className="flex items-center mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-green-600 text-white hover:bg-green-700"
-                onClick={handleCopyHtml}
-                disabled={!selectedAI}
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                {copiedHtml ? "Copied!" : "Copy HTML"}
-              </Button>
-            </div>
-            <p className="mb-2 text-sm">Copy and add the following script to your website html:</p>
-            <Textarea 
-              value={selectedAI ? htmlCode : "Please select an AI first"} 
-              readOnly 
-              className="font-mono text-sm h-24" 
-            />
-          </div>
-
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-green-600 text-white hover:bg-green-700"
-                onClick={handleCopyFrame}
-                disabled={!selectedAI}
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                {copiedFrame ? "Copied!" : "Copy iframe"}
-              </Button>
-            </div>
-            <p className="mb-2 text-sm">Or use iframe if you want to embed to specific section:</p>
-            <Textarea 
-              value={selectedAI ? iframeCode : "Please select an AI first"} 
-              readOnly 
-              className="font-mono text-sm h-24" 
-            />
-          </div>
-        </div>
-
-        {/* Right column - Preview area */}
-        <div className="w-full lg:w-7/12">
-          <div className="w-full h-[650px] relative rounded-lg border bg-gray-50 overflow-hidden">
-            {!selectedAI ? (
-              <div className="w-full h-full flex items-center justify-center text-center p-4">
-                <p className="text-gray-500">Please select an AI agent to preview.</p>
-              </div>
-            ) : !previewOpen ? (
-              <div className="w-full h-full flex items-center justify-center text-center p-4">
-                <div>
-                  <p className="text-gray-500 mb-4">Preview your chatbot here</p>
-                  <Button 
-                    variant="outline" 
-                    className="bg-green-600 text-white hover:bg-green-700"
-                    onClick={togglePreview}
-                  >
-                    Open Preview
-                  </Button>
+    <TooltipProvider>
+      <div className="relative rounded-2xl border bg-gradient-to-b from-slate-50 to-white p-6 shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left column - Selection & Code */}
+          <div className="lg:col-span-5 space-y-6">
+            <Card className="border-emerald-200/60 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-base">Choose your AI assistant</CardTitle>
+                <CardDescription>Select which assistant to embed on your site</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <Select value={selectedAI} onValueChange={handleAIChange}>
+                    <SelectTrigger className={loading ? "opacity-50" : ""}>
+                      <SelectValue placeholder="Select AI" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aiOptions.length > 0 ? (
+                        aiOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))
+                      ) : (
+                        <div className="py-2 px-2 text-sm text-gray-500">
+                          {loading ? "Loading..." : "No AIs available"}
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {!!selectedAI && (
+                    <div className="text-xs text-muted-foreground">
+                      Agent ID: <Badge variant="outline" className="align-middle ml-1">{selectedAI}</Badge>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ) : (
-              <div className="absolute inset-0 w-full h-full flex flex-col">
-                <div className="bg-gray-100 p-2 flex justify-between items-center border-b">
-                  <h4 className="text-sm font-medium">AI Chatbot Preview</h4>
+              </CardContent>
+            </Card>
+
+            <Card className="border-emerald-200/60 shadow-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
                   <div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={refreshPreview} 
-                      className="h-8 w-8 p-0 mr-1"
-                      title="Refresh preview"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={togglePreview}
-                      className="h-8 w-8 p-0"
-                      title="Close preview"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <CardTitle className="text-base">Install on your website</CardTitle>
+                    <CardDescription>Copy the code and paste before the closing body tag</CardDescription>
                   </div>
+                  <Code2 className="h-5 w-5 text-emerald-600" />
                 </div>
-                <div className="flex-1 overflow-hidden" id="preview-container">
-                  <iframe
-                    ref={iframeRef}
-                    key={previewKey} // This forces re-render when AI changes
-                    srcDoc={createChatbotHtml(selectedAI)}
-                    style={{ width: '100%', height: '100%', border: 'none' }}
-                    title="Chatbot Preview"
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation"
-                  />
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="script" className="w-full">
+                  <TabsList className="mb-3">
+                    <TabsTrigger value="script">Floating widget</TabsTrigger>
+                    <TabsTrigger value="iframe">Inline iframe</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="script" className="space-y-2">
+                    <div className="relative rounded-lg bg-slate-950 text-slate-50 p-3 font-mono text-xs">
+                      <pre className="whitespace-pre-wrap break-all">{selectedAI ? htmlCode : "Please select an AI first"}</pre>
+                      <div className="absolute top-2 right-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="secondary" className="h-8" onClick={handleCopyHtml} disabled={!selectedAI}>
+                              <Copy className="h-4 w-4 mr-1" /> {copiedHtml ? "Copied" : "Copy"}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Copy HTML snippet</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Add just before <code className="px-1 rounded bg-slate-100">&lt;/body&gt;</code> on pages where you want the chat bubble.
+                    </p>
+                  </TabsContent>
+                  <TabsContent value="iframe" className="space-y-2">
+                    <div className="relative rounded-lg bg-slate-950 text-slate-50 p-3 font-mono text-xs">
+                      <pre className="whitespace-pre-wrap break-all">{selectedAI ? iframeCode : "Please select an AI first"}</pre>
+                      <div className="absolute top-2 right-2">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button size="sm" variant="secondary" className="h-8" onClick={handleCopyFrame} disabled={!selectedAI}>
+                              <Copy className="h-4 w-4 mr-1" /> {copiedFrame ? "Copied" : "Copy"}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Copy iframe snippet</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Place inside any section to show the assistant inline.
+                    </p>
+                  </TabsContent>
+                </Tabs>
+                <Separator className="my-4" />
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Script loads from <span className="font-mono">chatbox.growbro.ai</span></div>
+                  <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> No code changes needed after updates</div>
+                  <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Works with all site builders</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right column - Preview */}
+          <div className="lg:col-span-7">
+            <Card className="overflow-hidden border-emerald-200/60 shadow-sm">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-slate-50 to-emerald-50/60 border-b">
+                <div className="text-sm font-medium">AI Chatbot Preview</div>
+                <div className="flex items-center gap-1.5">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant={viewport === 'desktop' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-2" onClick={() => setViewport('desktop')}>
+                        <Monitor className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Desktop viewport</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant={viewport === 'mobile' ? 'secondary' : 'ghost'} size="sm" className="h-8 px-2" onClick={() => setViewport('mobile')}>
+                        <Smartphone className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Mobile viewport</TooltipContent>
+                  </Tooltip>
+                  <Separator orientation="vertical" className="mx-1 h-6" />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={refreshPreview} title="Refresh preview">
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Refresh</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={openPreviewInNewTab} title="Open in new tab">
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Open in new tab</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={togglePreview} title="Close preview">
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Close</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
-            )}
+              <CardContent className="p-0">
+                <div className="w-full h-[650px] relative bg-gray-50/60 flex items-center justify-center">
+                  {!selectedAI ? (
+                    <div className="text-center p-6">
+                      <p className="text-gray-500">Please select an AI agent to preview.</p>
+                    </div>
+                  ) : !previewOpen ? (
+                    <div className="text-center p-6">
+                      <p className="text-gray-500 mb-4">Preview your chatbot here</p>
+                      <Button 
+                        variant="default" 
+                        className="bg-emerald-600 text-white hover:bg-emerald-700"
+                        onClick={togglePreview}
+                      >
+                        Open Preview
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden">
+                      <div className={viewport === 'mobile' ? "w-[410px] max-w-full px-2" : "w-full h-full"}>
+                        <div className={viewport === 'mobile' ? "mx-auto rounded-[20px] border bg-white shadow-2xl overflow-hidden" : "w-full h-full"}>
+                          <div className={viewport === 'mobile' ? "relative w-full h-[700px] bg-gray-50" : "relative w-full h-full"}>
+                            <iframe
+                              ref={iframeRef}
+                              key={previewKey}
+                              srcDoc={createChatbotHtml(selectedAI)}
+                              style={{ width: '100%', height: '100%', border: 'none' }}
+                              title="Chatbot Preview"
+                              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground text-center py-2">This preview shows how the chatbot will appear on your site.</p>
+              </CardContent>
+            </Card>
           </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            This preview shows how the chatbot will appear on your website.
-          </p>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   )
 }
 
