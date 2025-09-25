@@ -19,6 +19,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +71,7 @@ export default function SalesLeadsPage() {
   const [aiFilter, setAIFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [hubspotConnectionByAi, setHubspotConnectionByAi] = useState<Record<string, boolean>>({});
+  const [query, setQuery] = useState("");
 
   // Memoized fetch function for use in both useEffect and refresh button
   const fetchLeadsAndAIs = React.useCallback(async () => {
@@ -176,6 +180,19 @@ export default function SalesLeadsPage() {
   }, []);
 
   const filteredLeads = leads.filter(row => aiFilter === "all" || row.ai_name === aiFilter);
+  const searchedLeads = filteredLeads.filter((l) => {
+    if (!query.trim()) return true;
+    const q = query.toLowerCase();
+    return (
+      (l.name || "").toLowerCase().includes(q) ||
+      (l.email || "").toLowerCase().includes(q) ||
+      (l.phone || "").toLowerCase().includes(q) ||
+      (l.ai_name || "").toLowerCase().includes(q)
+    );
+  });
+  const totalLeads = filteredLeads.length;
+  const syncedCount = filteredLeads.filter((l) => !!l.hubspot_synched).length;
+  const unsyncedCount = totalLeads - syncedCount;
 
   if (loading || hubspotConnected === null) {
     return <div className="p-6 text-center">Loading leads...</div>;
@@ -185,154 +202,222 @@ export default function SalesLeadsPage() {
     <div className="min-h-screen bg-white">
       <Header 
         title="Sales Leads" 
-        description="Manage and track potential customers from your AI assistant conversations."
+        description="Qualified contacts captured by your AI assistants. Filter, export, and sync to HubSpot in one place."
         showTitleInHeader={false}
       />
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col gap-6">
-          {hubspotConnected === false && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-yellow-700 font-medium">You are not connected to HubSpot. Connect your account to sync leads.</div>
-              <Button
-                className="bg-orange-600 hover:bg-orange-700 text-white"
-                onClick={() => window.location.href = "/integrations"}
-              >
-                Connect HubSpot
-              </Button>
+      <TooltipProvider>
+        <div className="container mx-auto px-4 py-8">
+          <div className="space-y-6">
+            {hubspotConnected === false && (
+              <Card className="border-yellow-200 bg-yellow-50/70">
+                <CardContent className="py-4 flex flex-col md:flex-row items-center justify-between gap-3">
+                  <div className="text-yellow-800 text-sm md:text-base font-medium">You are not connected to HubSpot. Connect your account to sync leads.</div>
+                  <Button
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                    onClick={() => (window.location.href = "/integrations")}
+                  >
+                    Connect HubSpot
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Total Leads</CardDescription>
+                  <CardTitle className="text-2xl">{totalLeads}</CardTitle>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Synced to HubSpot</CardDescription>
+                  <CardTitle className="text-2xl text-emerald-600">{syncedCount}</CardTitle>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Not Yet Synced</CardDescription>
+                  <CardTitle className="text-2xl text-slate-700">{unsyncedCount}</CardTitle>
+                </CardHeader>
+              </Card>
             </div>
-          )}
-          
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div className="flex items-center gap-4">
-              <span className="text-gray-500">Filter by AI:</span>
-              <select
-                value={aiFilter}
-                onChange={e => setAIFilter(e.target.value)}
-                className="border rounded px-2 py-1"
-                style={{ minWidth: 150 }}
-              >
-                {aiOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  // Export filteredLeads as CSV with correct columns and Excel compatibility
-                  const csvRows = [
-                    ["Visitor Name", "Email ID", "Phone Number"],
-                    ...filteredLeads.map(l => [
-                      l.name ?? "",
-                      l.email ?? "",
-                      l.phone ?? ""
-                    ])
-                  ];
-                  // Proper CSV escaping and BOM for Excel
-                  const escapeCSV = (v: string) => '"' + (v || '').replace(/"/g, '""') + '"';
-                  const csvContent = '\uFEFF' + csvRows.map(row => row.map(escapeCSV).join(",")).join("\r\n");
-                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = 'sales_leads.csv';
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url);
-                }}
-                className="ml-4 px-3 py-1 border rounded bg-blue-500 hover:bg-blue-600 text-white text-sm"
-                title="Export as CSV"
-              >
-                Export as CSV
-              </button>
-              <button
-                onClick={() => {
-                  setLoading(true);
-                  // re-run fetchLeadsAndAIs
-                  (async () => {
-                    await fetchLeadsAndAIs();
-                  })();
-                }}
-                className="ml-2 px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200 text-sm"
-                disabled={loading}
-                title="Refresh Leads"
-              >
-                &#x21bb; Refresh
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-lg border shadow">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Visitor Name</TableHead>
-                <TableHead>Email ID</TableHead>
-                <TableHead>Phone Number</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLeads.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8 text-gray-500">
-                    No leads available.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredLeads.map((lead) => (
-                  <TableRow key={lead.chat_id}>
-                    <TableCell className="font-medium">{lead.name || "-"}</TableCell>
-                    <TableCell>{lead.email || "-"}</TableCell>
-                    <TableCell>{lead.phone || "-"}</TableCell>
-                    <TableCell>
-                      {lead.hubspot_synched ? (
-                        <span className="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded">Synced</span>
-                      ) : (
+
+            {/* Filters & Actions */}
+            <Card className="shadow-sm">
+              <CardContent className="py-4">
+                <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Filter by AI:</span>
+                      <Select value={aiFilter} onValueChange={(v) => setAIFilter(v)}>
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="All AI" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {aiOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search name, email, phone, AI"
+                        className="w-[260px]"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
                         <Button
-                          size="sm"
                           variant="outline"
-                          disabled={!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]}
-                          title={!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]
-                            ? "Connect HubSpot for this AI in Integrations to enable syncing"
-                            : "Sync this lead to the connected HubSpot for this AI"}
-                          onClick={async () => {
-                            if (!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]) {
-                              toast.error("Connect HubSpot for this AI in Integrations to enable syncing.");
-                              return;
-                            }
-                            if (!lead.end_user_id) {
-                              toast.error("This lead cannot be synced (missing user ID)");
-                              return;
-                            }
-                            try {
-                              const res = await fetch("/api/hubspot/sync-lead", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ leadId: lead.end_user_id, ai_id: lead.ai_id ?? null })
-                              });
-                              const data = await res.json();
-                              if (res.ok && data.success) {
-                                toast.success("Lead synced to HubSpot!");
-                              } else {
-                                toast.error(data.error || "Failed to sync lead to HubSpot");
-                              }
-                            } catch (err) {
-                              toast.error("Failed to sync lead to HubSpot");
-                            }
+                          size="sm"
+                          onClick={() => {
+                            const csvRows = [
+                              ["Visitor Name", "Email ID", "Phone Number"],
+                              ...searchedLeads.map((l) => [l.name ?? "", l.email ?? "", l.phone ?? ""]),
+                            ];
+                            const escapeCSV = (v: string) => '"' + (v || '').replace(/"/g, '""') + '"';
+                            const csvContent = '\uFEFF' + csvRows.map((row) => row.map(escapeCSV).join(",")).join("\r\n");
+                            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'sales_leads.csv';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
                           }}
                         >
-                          Sync to HubSpot
+                          <Download className="h-4 w-4 mr-1" /> Export CSV
                         </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Export filtered results</TooltipContent>
+                    </Tooltip>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={loading}
+                      onClick={() => {
+                        setLoading(true);
+                        (async () => { await fetchLeadsAndAIs(); })();
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Leads Table */}
+            <Card className="shadow-sm overflow-hidden">
+              <CardHeader className="py-4">
+                <CardTitle className="text-base">Leads</CardTitle>
+                <CardDescription>Contacts captured from conversations</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Visitor Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>AI</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {searchedLeads.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                            No leads found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        searchedLeads.map((lead) => (
+                          <TableRow key={lead.chat_id}>
+                            <TableCell className="font-medium">{lead.name || "-"}</TableCell>
+                            <TableCell>{lead.email || "-"}</TableCell>
+                            <TableCell>{lead.phone || "-"}</TableCell>
+                            <TableCell>
+                              {lead.ai_name ? <Badge variant="outline">{lead.ai_name}</Badge> : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {lead.hubspot_synched ? (
+                                <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Synced</Badge>
+                              ) : (
+                                <Badge variant="secondary">Not synced</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {lead.hubspot_synched ? (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              ) : (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]}
+                                        onClick={async () => {
+                                          if (!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]) {
+                                            toast.error("Connect HubSpot for this AI in Integrations to enable syncing.");
+                                            return;
+                                          }
+                                          if (!lead.end_user_id) {
+                                            toast.error("This lead cannot be synced (missing user ID)");
+                                            return;
+                                          }
+                                          try {
+                                            const res = await fetch("/api/hubspot/sync-lead", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ leadId: lead.end_user_id, ai_id: lead.ai_id ?? null })
+                                            });
+                                            const data = await res.json();
+                                            if (res.ok && data.success) {
+                                              toast.success("Lead synced to HubSpot!");
+                                            } else {
+                                              toast.error(data.error || "Failed to sync lead to HubSpot");
+                                            }
+                                          } catch (err) {
+                                            toast.error("Failed to sync lead to HubSpot");
+                                          }
+                                        }}
+                                      >
+                                        Sync to HubSpot
+                                      </Button>
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {!lead.ai_id || !hubspotConnectionByAi[lead.ai_id]
+                                      ? "Connect HubSpot for this AI in Integrations to enable syncing"
+                                      : "Sync this lead to the connected HubSpot for this AI"}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
                       )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </TooltipProvider>
     </div>
   );
 }
