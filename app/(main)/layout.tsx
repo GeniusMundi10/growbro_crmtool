@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import TrialExpiredLockScreen from "@/components/TrialExpiredLockScreen";
 import { useEffect } from "react";
 import type React from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 function MainLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, loading, isTrialExpired } = useUser();
@@ -22,13 +23,15 @@ function MainLayoutInner({ children }: { children: React.ReactNode }) {
 
   // Always render children on /billing/pricing-plans, even if locked
   return (
-    <div className="flex min-h-screen">
-      <Sidebar locked={locked} />
-      <main className="flex-1 overflow-auto ml-[70px] md:ml-[280px] transition-all duration-300 bg-gray-50 dark:bg-black/40">
-        {children}
-      </main>
-      <Toaster position="top-right" richColors expand closeButton />
-    </div>
+    <TooltipProvider>
+      <div className="flex min-h-screen">
+        <Sidebar locked={locked} />
+        <main className="flex-1 overflow-auto ml-[70px] md:ml-[280px] transition-all duration-300 bg-gray-50 dark:bg-black/40">
+          {children}
+        </main>
+        <Toaster position="top-right" richColors expand closeButton />
+      </div>
+    </TooltipProvider>
   );
 }
 

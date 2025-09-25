@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
-import { CheckCircle2, Trash2, ExternalLink, ArrowRight, Plug, MessageCircle } from "lucide-react";
+import { CheckCircle2, Trash2, ExternalLink, ArrowRight } from "lucide-react";
+import { siHubspot, siWhatsapp } from 'simple-icons';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +32,13 @@ export default function IntegrationsForm() {
   const waSessionDataRef = useRef<{ waba_id?: string; phone_number_id?: string } | null>(null);
   const processingCodeRef = useRef(false);
 
-  // Replaced brand SVGs with Lucide icons to avoid external icon package issues
+  // Official brand icons using simple-icons
+  const BrandIcon = ({ icon, className = "h-5 w-5" }: { icon: { path: string; hex: string; title: string }, className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" role="img" aria-label={icon.title} xmlns="http://www.w3.org/2000/svg">
+      <title>{icon.title}</title>
+      <path d={icon.path} fill={`#${icon.hex}`} />
+    </svg>
+  );
 
   // Load connection status from backend
   useEffect(() => {
@@ -402,7 +409,7 @@ export default function IntegrationsForm() {
       <Card className="max-w-md w-full shadow-sm border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div className="flex items-center gap-2">
-            <Plug className="h-5 w-5 text-orange-500" />
+            <BrandIcon icon={siHubspot} className="h-5 w-5" />
             <CardTitle className="text-lg font-semibold">HubSpot</CardTitle>
           </div>
           <div className="flex items-center gap-2">
@@ -455,7 +462,7 @@ export default function IntegrationsForm() {
       <Card className="max-w-md w-full shadow-sm border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-green-600" />
+            <BrandIcon icon={siWhatsapp} className="h-5 w-5" />
             <CardTitle className="text-lg font-semibold">WhatsApp</CardTitle>
           </div>
           <div className="flex items-center gap-2">
