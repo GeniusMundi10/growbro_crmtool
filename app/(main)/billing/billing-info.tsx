@@ -7,6 +7,9 @@ import PricingPlans from "./pricing-plans"
 import { useRouter } from "next/navigation"
 import { createClient } from "@supabase/supabase-js"
 import { useUser } from "@/context/UserContext"
+import { Badge } from "@/components/ui/badge"
+import { Shimmer } from "@/components/ui/shimmer"
+import { Crown, ArrowRight, BarChart2, Calendar, MessageSquare, CreditCard } from "lucide-react"
 
 export default function BillingInfo() {
   const router = useRouter()
@@ -178,109 +181,122 @@ export default function BillingInfo() {
       {showPricingPlans ? (
         <PricingPlans onClose={() => setShowPricingPlans(false)} />
       ) : (
-        <Card className="max-w-md mx-auto">
-          <CardHeader className={`${subscription ? 'bg-green-600' : 'bg-gray-600'} text-white`}>
-            <CardTitle>{loading ? 'Loading...' : subscription ? subscription.plans?.name || 'Subscription' : 'Free Plan'}</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <ul className="space-y-2 mb-6">
-              {loading ? (
-                <li>Loading plan details...</li>
-              ) : subscription ? (
-                // Display features based on subscription plan
-                <>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>{subscription.plans?.chat_messages || '250000'} chat messages</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>{subscription.plans?.voice_messages || '0'} voice minutes</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>{subscription.plans?.ai_agents || '1'} AI Agents</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>Unlimited Sales Leads</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>Custom Branding: {subscription.plans?.custom_branding ? 'Yes' : 'No'}</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>Remove Watermark: {subscription.plans?.remove_watermark ? 'Yes' : 'No'}</span>
-                  </li>
-                </>
-              ) : (
-                // Free plan features
-                <>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>100 chat messages</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>0 voice minutes</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>1 AI Agents</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>Unlimited Sales Leads</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>Custom Branding: No</span>
-                  </li>
-                  <li className="flex items-center">
-                    <span className="mr-2">•</span>
-                    <span>Remove Watermark: No</span>
-                  </li>
-                </>
-              )}
-            </ul>
-
-            <div className="space-y-2 mb-6">
-              <div className="flex justify-between">
-                <span>Total Due:</span>
-                <span>$0</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Chat Messages:</span>
-                <span>{totalChatMessages}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Total Voice Messages:</span>
-                <span>0</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Days left in Free Trial:</span>
-                <span>{daysLeftInTrial}</span>
+        <div className="space-y-6">
+          {loading ? (
+            <div className="space-y-4">
+              <Card className="shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <Shimmer className="h-5 w-40" />
+                      <Shimmer className="h-4 w-24" />
+                    </div>
+                    <Shimmer className="h-8 w-24 rounded-full" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Shimmer key={i} className="h-4 w-[70%]" />
+                  ))}
+                </CardContent>
+              </Card>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {["Total Due", "Messages", "Voice", "Trial Days"].map((_, i) => (
+                  <Card key={i} className="shadow-sm">
+                    <CardContent className="py-4">
+                      <Shimmer className="h-4 w-24 mb-2" />
+                      <Shimmer className="h-6 w-16" />
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
+          ) : (
+            <>
+              {/* Current Plan */}
+              <Card className="shadow-sm overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-emerald-50 to-blue-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">
+                        {subscription ? (subscription.plans?.name || 'Subscription') : 'Free Plan'}
+                      </CardTitle>
+                      <div className="text-sm text-muted-foreground">
+                        {subscription ? 'Your current plan' : 'You are currently on the free plan'}
+                      </div>
+                    </div>
+                    {subscription ? (
+                      <Badge variant="outline" className="bg-white">Active</Badge>
+                    ) : (
+                      <Badge variant="secondary">Free</Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <ul className="space-y-2 mb-6 text-sm">
+                    {subscription ? (
+                      <>
+                        <li className="flex items-center"><MessageSquare className="h-4 w-4 mr-2 text-emerald-600" />{subscription.plans?.chat_messages || '250000'} chat messages</li>
+                        <li className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-blue-600" />{subscription.plans?.voice_messages || '0'} voice minutes</li>
+                        <li className="flex items-center"><Crown className="h-4 w-4 mr-2 text-purple-600" />{subscription.plans?.ai_agents || '1'} AI Agents</li>
+                        <li className="flex items-center"><ArrowRight className="h-4 w-4 mr-2 text-slate-600" />Unlimited Sales Leads</li>
+                        <li className="flex items-center"><ArrowRight className="h-4 w-4 mr-2 text-slate-600" />Custom Branding: {subscription.plans?.custom_branding ? 'Yes' : 'No'}</li>
+                        <li className="flex items-center"><ArrowRight className="h-4 w-4 mr-2 text-slate-600" />Remove Watermark: {subscription.plans?.remove_watermark ? 'Yes' : 'No'}</li>
+                      </>
+                    ) : (
+                      <>
+                        <li className="flex items-center"><MessageSquare className="h-4 w-4 mr-2 text-emerald-600" />100 chat messages</li>
+                        <li className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-blue-600" />0 voice minutes</li>
+                        <li className="flex items-center"><Crown className="h-4 w-4 mr-2 text-purple-600" />1 AI Agents</li>
+                        <li className="flex items-center"><ArrowRight className="h-4 w-4 mr-2 text-slate-600" />Unlimited Sales Leads</li>
+                        <li className="flex items-center"><ArrowRight className="h-4 w-4 mr-2 text-slate-600" />Custom Branding: No</li>
+                        <li className="flex items-center"><ArrowRight className="h-4 w-4 mr-2 text-slate-600" />Remove Watermark: No</li>
+                      </>
+                    )}
+                  </ul>
 
-            <div className="space-y-2">
-              <Button 
-                onClick={() => setShowPricingPlans(true)} 
-                className="w-full bg-green-600 hover:bg-green-700"
-              >
-                {subscription ? 'Upgrade Plan' : 'Subscribe'}
-              </Button>
-              <Button 
-                variant="outline" 
-                className="w-full" 
-                onClick={() => router.push("/billing/usage")}
-              >
-                View Usage
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+                  {/* Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <Card className="shadow-none border">
+                      <CardContent className="py-4">
+                        <div className="text-xs text-muted-foreground">Total Due</div>
+                        <div className="text-xl font-semibold">$0</div>
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-none border">
+                      <CardContent className="py-4">
+                        <div className="text-xs text-muted-foreground">Total Chat Messages</div>
+                        <div className="text-xl font-semibold">{totalChatMessages}</div>
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-none border">
+                      <CardContent className="py-4">
+                        <div className="text-xs text-muted-foreground">Total Voice Messages</div>
+                        <div className="text-xl font-semibold">0</div>
+                      </CardContent>
+                    </Card>
+                    <Card className="shadow-none border">
+                      <CardContent className="py-4">
+                        <div className="text-xs text-muted-foreground">Days left in Free Trial</div>
+                        <div className="text-xl font-semibold">{daysLeftInTrial}</div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button onClick={() => setShowPricingPlans(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                      <Crown className="h-4 w-4 mr-2" /> {subscription ? 'Upgrade Plan' : 'Subscribe'}
+                    </Button>
+                    <Button variant="outline" className="flex-1" onClick={() => router.push("/billing/usage")}>
+                      <BarChart2 className="h-4 w-4 mr-2" /> View Usage
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
       )}
     </>
   )
