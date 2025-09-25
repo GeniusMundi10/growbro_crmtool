@@ -2,9 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { HelpCircle, Book, Video, MessageSquare, PhoneCall } from "lucide-react"
+import { HelpCircle, Book, Video, MessageSquare, PhoneCall, Link as LinkIcon, Bot, Puzzle } from "lucide-react"
 import Header from "@/components/header"
 import React from 'react';
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { AspectRatio } from "@/components/ui/aspect-ratio"
+import Link from "next/link"
 
 // GuideItem component
 function GuideItem({ title, children }: { title: string; children: React.ReactNode }) {
@@ -142,15 +146,21 @@ After uploading, the AI will process and learn from your materials. Use the chat
 ];
 
 export default function HelpPage() {
+  const [faqQuery, setFaqQuery] = React.useState("")
+  const filteredFaqs = faqData.filter(f => {
+    const q = faqQuery.trim().toLowerCase();
+    if (!q) return true;
+    return f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)
+  })
   return (
     <div className="min-h-screen bg-white">
-      <Header title="Help Center" />
+      <Header 
+        title="Help Center" 
+        description="Guides, FAQs, videos, and support to help you get the most out of GrowBro."
+        showTitleInHeader={false}
+      />
       
-      <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">Help Center</h1>
-          <p className="text-gray-600">Get the assistance you need with GrowBro AI</p>
-        </div>
+      <div className="container mx-auto px-4 py-8">
         
         <Tabs defaultValue="guides">
           <TabsList className="mb-6">
@@ -161,6 +171,54 @@ export default function HelpPage() {
           </TabsList>
           
           <TabsContent value="guides">
+            {/* Quick resources */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <Link href="/ai-code">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <LinkIcon className="h-5 w-5" />
+                      <CardTitle className="text-base">Get AI Code</CardTitle>
+                    </div>
+                    <CardDescription>Embed and test your AI widget</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+              <Link href="/integrations">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <Puzzle className="h-5 w-5" />
+                      <CardTitle className="text-base">Integrations</CardTitle>
+                    </div>
+                    <CardDescription>Connect HubSpot and more</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+              <Link href="/analytics">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2 text-purple-700">
+                      <Bot className="h-5 w-5" />
+                      <CardTitle className="text-base">Analytics</CardTitle>
+                    </div>
+                    <CardDescription>Track engagement and leads</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+              <Link href="/sales-leads">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2 text-emerald-700">
+                      <MessageSquare className="h-5 w-5" />
+                      <CardTitle className="text-base">Sales Leads</CardTitle>
+                    </div>
+                    <CardDescription>View and export captured leads</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -311,10 +369,17 @@ export default function HelpPage() {
                 <CardDescription>Quick answers to common questions</CardDescription>
               </CardHeader>
               <CardContent>
+                <div className="mb-4">
+                  <Input value={faqQuery} onChange={(e) => setFaqQuery(e.target.value)} placeholder="Search FAQs" className="max-w-md" />
+                </div>
                 <div className="space-y-2">
-                  {faqData.map((faq, idx) => (
-                    <FaqItem key={idx} question={faq.q} answer={faq.a} />
-                  ))}
+                  {filteredFaqs.length > 0 ? (
+                    filteredFaqs.map((faq, idx) => (
+                      <FaqItem key={idx} question={faq.q} answer={faq.a} />
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground">No FAQs match your search.</div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -329,19 +394,19 @@ export default function HelpPage() {
     </CardHeader>
     <CardContent>
       <div className="w-full max-w-3xl mx-auto mb-4">
-        <div className="aspect-w-16 aspect-h-9">
+        <AspectRatio ratio={16/9}>
           <iframe
             src="https://drive.google.com/file/d/1_blmYsmeJlTSFbthN6bhI6C8meQKdynb/preview"
-            width="100%"
-            height="480"
+            className="w-full h-full"
             allow="autoplay"
             allowFullScreen
             style={{ border: 0 }}
             title="GrowBro CRM Walkthrough Video"
           />
-        </div>
+        </AspectRatio>
       </div>
-      <p className="text-gray-500 text-sm">If the video does not load, <a href="https://drive.google.com/file/d/1_blmYsmeJlTSFbthN6bhI6C8meQKdynb/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-green-700 underline">click here to watch it on Google Drive</a>.</p>    </CardContent>
+      <p className="text-gray-500 text-sm">If the video does not load, <a href="https://drive.google.com/file/d/1_blmYsmeJlTSFbthN6bhI6C8meQKdynb/view?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-green-700 underline">click here to watch it on Google Drive</a>.</p>
+    </CardContent>
   </Card>
 </TabsContent>
           
@@ -355,7 +420,7 @@ export default function HelpPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="mb-4">Our support team is available to help you with any questions or issues.</p>
-                  <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">Start Chat</button>
+                  <Button className="bg-emerald-600 hover:bg-emerald-700">Start Chat</Button>
                 </CardContent>
               </Card>
               
@@ -367,7 +432,8 @@ export default function HelpPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="mb-4">Schedule a call with our support team to get personalized assistance.</p>
-                  <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition">Book a Call</button>
+                  <Button variant="outline">Book a Call</Button>
+                  <p className="text-xs text-muted-foreground mt-3">Prefer email? Contact us at <a className="underline" href="mailto:support@growbro.ai">support@growbro.ai</a></p>
                 </CardContent>
               </Card>
             </div>
@@ -376,4 +442,5 @@ export default function HelpPage() {
       </div>
     </div>
   )
-} 
+}
+ 
