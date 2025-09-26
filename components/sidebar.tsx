@@ -104,6 +104,23 @@ export default function Sidebar({ locked = false }: SidebarProps) {
     }
   }, [expanded])
 
+  // Persist Manage AI expanded state across sessions
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const v = localStorage.getItem("manageAIExpanded");
+      if (v !== null) setManageAIExpanded(v === "true");
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("manageAIExpanded", String(manageAIExpanded));
+    } catch {}
+  }, [manageAIExpanded])
+
   // Fix the fetchUserAIs function reference and dependencies
   const fetchUserAIs = React.useCallback(async () => {
     if (!user?.id) return;
@@ -389,72 +406,61 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                           
                         </div>
                       ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Add New AI button */}
-              <div className="flex justify-center my-2">
-                <Button
-                  variant="ghost"
-                  className="w-full flex items-center justify-center text-green-100 bg-gradient-to-r from-emerald-500/20 to-green-500/20 hover:from-emerald-500/30 hover:to-green-500/30 border border-white/20 rounded-xl hover:text-white"
-                  onClick={() => router.push('/dashboard/info?new=true')}
-                  aria-label="Add New AI"
-                >
-                  <PlusCircle className="h-5 w-5 mr-2" />
-                  {(expanded || isHovering) && <span>Add New AI</span>}
-                </Button>
-              </div>
 
               {/* Main menu items */}
               {menuItems.map((item) => {
-  const isBilling = item.name === "Billing";
-  const isDisabled = locked && !isBilling;
-  const isActive = pathname === item.path || (pathname.startsWith(item.path + "/") && item.path !== "/");
-  return (
-    <div key={item.name}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Link
-            href={item.path}
-            tabIndex={isDisabled ? -1 : 0}
-            className={cn(
-              "relative flex items-center rounded-xl px-3 py-3 text-sm transition-all",
-              isActive
-                ? "bg-white/15 font-medium ring-1 ring-white/20 shadow-sm"
-                : "hover:bg-white/10",
-              !expanded && !isHovering && "justify-center",
-              isDisabled && "opacity-50 pointer-events-none select-none cursor-not-allowed"
-            )}
-            aria-disabled={isDisabled ? "true" : undefined}
-          >
-            {isActive && <span className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.7)]" />}
-            <div
-              className={cn(
-                "flex items-center",
-                !expanded && !isHovering && "justify-center",
-                (expanded || isHovering) && "w-full"
-              )}
-            >
-              <span className={cn(!expanded && !isHovering && "w-5 h-5", "flex items-center")}>{item.icon}</span>
-              {(expanded || isHovering) && (
-                <div className="ml-3 flex w-full justify-between items-center">
-                  <span>{item.name}</span>
-                </div>
-              )}
-            </div>
-          </Link>
-        </TooltipTrigger>
-        {!expanded && !isHovering && (
-          <TooltipContent side="right" className="border-none bg-gray-900 text-white">
-            {item.name}
-          </TooltipContent>
-        )}
-      </Tooltip>
-    </div>
-  );
-})}
+                const isBilling = item.name === "Billing";
+                const isDisabled = locked && !isBilling;
+                const isActive = pathname === item.path || (pathname.startsWith(item.path + "/") && item.path !== "/");
+                return (
+                  <div key={item.name}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={item.path}
+                          tabIndex={isDisabled ? -1 : 0}
+                          className={cn(
+                            "group relative flex items-center rounded-xl px-3 py-3 text-sm transition-all duration-200",
+                            isActive
+                              ? "bg-gradient-to-r from-emerald-500/25 to-green-500/20 ring-1 ring-white/15 shadow-sm"
+                              : "hover:bg-white/10 hover:ring-1 hover:ring-white/10",
+                            !expanded && !isHovering && "justify-center",
+                            isDisabled && "opacity-50 pointer-events-none select-none cursor-not-allowed"
+                          )}
+                          aria-disabled={isDisabled ? "true" : undefined}
+                        >
+                          {isActive && (
+                            <motion.span
+                              layoutId="sidebarActiveIndicator"
+                              className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-emerald-300/90 shadow-[0_0_10px_rgba(16,185,129,0.6)]"
+                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            />
+                          )}
+                          <div
+                            className={cn(
+                              "flex items-center",
+                              !expanded && !isHovering && "justify-center",
+                              (expanded || isHovering) && "w-full"
+                            )}
+                          >
+                            <span className={cn(!expanded && !isHovering && "w-5 h-5", "flex items-center")}>{item.icon}</span>
+                            {(expanded || isHovering) && (
+                              <div className="ml-3 flex w-full justify-between items-center">
+                                <span>{item.name}</span>
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      </TooltipTrigger>
+                      {!expanded && !isHovering && (
+                        <TooltipContent side="right" className="border-none bg-gray-900 text-white">
+                          {item.name}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </div>
+                );
+              })}
             </nav>
           </div>
 
