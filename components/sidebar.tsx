@@ -30,7 +30,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { supabase, getAIsForUser, deleteAIAndData } from "@/lib/supabase"
+import { supabase, getAIsForUser, deleteAIAndData, getPlanAILimit } from "@/lib/supabase"
 import { useUser } from "@/context/UserContext"
 import React from "react"
 import { toast } from "sonner"
@@ -231,6 +231,12 @@ export default function Sidebar({ locked = false }: SidebarProps) {
     ? "expanded" 
     : (isHovering ? "hovering" : "collapsed");
 
+  // Plan-based Add AI gating
+  const planLimit = getPlanAILimit(user?.plan);
+  const aiCount = aiList.length;
+  const canAddAI = !locked && aiCount < planLimit;
+  const addAiHref = canAddAI ? "/dashboard/info?new=true" : "/billing/pricing-plans";
+
   return (
     <div
       ref={sidebarRef}
@@ -353,8 +359,8 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                     <TooltipContent side="right" className="border-none bg-gray-900 text-white">
                       Manage AI
                     </TooltipContent>
-                  )}
-                </Tooltip>
+                )}
+              </Tooltip>
                 {(manageAIExpanded && (expanded || isHovering)) ? (
                   <div className="ml-7 mt-1 mb-1 overflow-hidden transition-all duration-200">
                     <div className="py-2 text-sm text-green-100 flex items-center">All AIs</div>
@@ -403,17 +409,39 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                               </Tooltip>
                             )}
                           </Link>
-                          
                         </div>
                       ))
                     )}
+                    <div className="mt-3 pr-2">
+                      <Button
+                        asChild
+                        variant="secondary"
+                        className={cn(
+                          "w-full justify-center bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm",
+                          !canAddAI && "bg-emerald-700/30 hover:bg-emerald-700/40 text-emerald-100",
+                        )}
+                      >
+                        <Link
+                          href={addAiHref}
+                          tabIndex={0}
+                          aria-disabled={canAddAI ? undefined : "true"}
+                        >
+                          {canAddAI ? (
+                            <span className="inline-flex items-center"><PlusCircle className="h-4 w-4 mr-2" />Add AI</span>
+                          ) : (
+                            <span className="inline-flex items-center"><CreditCard className="h-4 w-4 mr-2" />Upgrade to add more</span>
+                          )}
+                        </Link>
+                      </Button>
+                      <div className="mt-1 text-[11px] text-white/70">
+                        {aiCount} of {planLimit} agents used
+                      </div>
+                    </div>
                   </div>
                 ) : null}
 
                 {/* Main menu items */}
               </div>
-
-              {/* Main menu items */}
               {menuItems.map((item) => {
                 const isBilling = item.name === "Billing";
                 const isDisabled = locked && !isBilling;
