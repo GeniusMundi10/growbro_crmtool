@@ -28,7 +28,6 @@ import { Button } from "@/components/ui/button"
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { supabase, getAIsForUser, deleteAIAndData } from "@/lib/supabase"
@@ -219,17 +218,12 @@ export default function Sidebar({ locked = false }: SidebarProps) {
     <div
       ref={sidebarRef}
       className={cn(
-        "fixed top-0 left-0 z-40 h-screen relative text-white shadow-lg transition-colors",
+        "fixed top-0 left-0 z-40 h-screen bg-gradient-to-b from-emerald-900 to-green-700 text-white shadow-lg transition-colors",
         expanded ? "w-[280px]" : (isHovering ? "w-[280px]" : "w-[70px]")
       )}
       onMouseEnter={() => !expanded && setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
 >
-      {/* Background gradients / glows */}
-      <div className="absolute inset-0 bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-800" aria-hidden />
-      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" aria-hidden />
-      <div className="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-emerald-400/10 blur-2xl" aria-hidden />
-      <div className="absolute bottom-10 -right-10 h-48 w-48 rounded-full bg-green-300/10 blur-3xl" aria-hidden />
       {/* Context menu for AI delete, rendered at root level for correct positioning */}
       {contextMenu && (
         <div
@@ -277,8 +271,6 @@ export default function Sidebar({ locked = false }: SidebarProps) {
           </div>
         </div>
       )}
-
-      <TooltipProvider delayDuration={0}>
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between p-6">
             <div 
@@ -499,7 +491,6 @@ export default function Sidebar({ locked = false }: SidebarProps) {
             </div>
           </div>
         </div>
-      </TooltipProvider>
     </div>
   )
 }

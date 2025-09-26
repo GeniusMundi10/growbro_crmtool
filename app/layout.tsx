@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter as FontSans } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 const fontSans = FontSans({
   subsets: ["latin"],
@@ -43,7 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             enableSystem={false}
             disableTransitionOnChange
           >
-            {children}
+            <TooltipProvider delayDuration={0}>
+              {children}
+            </TooltipProvider>
           </ThemeProvider>
         </NotificationProvider>
       </body>
