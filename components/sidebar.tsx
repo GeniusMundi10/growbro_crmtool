@@ -219,12 +219,17 @@ export default function Sidebar({ locked = false }: SidebarProps) {
     <div
       ref={sidebarRef}
       className={cn(
-        "fixed top-0 left-0 z-40 h-screen bg-gradient-to-b from-emerald-900 to-green-700 text-white shadow-lg transition-colors",
+        "fixed top-0 left-0 z-40 h-screen relative text-white shadow-lg transition-colors",
         expanded ? "w-[280px]" : (isHovering ? "w-[280px]" : "w-[70px]")
       )}
       onMouseEnter={() => !expanded && setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
 >
+      {/* Background gradients / glows */}
+      <div className="absolute inset-0 bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-800" aria-hidden />
+      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" aria-hidden />
+      <div className="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-emerald-400/10 blur-2xl" aria-hidden />
+      <div className="absolute bottom-10 -right-10 h-48 w-48 rounded-full bg-green-300/10 blur-3xl" aria-hidden />
       {/* Context menu for AI delete, rendered at root level for correct positioning */}
       {contextMenu && (
         <div
@@ -316,8 +321,8 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                   <TooltipTrigger asChild>
                     <div
                       className={cn(
-                        "flex items-center rounded-lg px-3 py-3 text-sm transition-colors cursor-pointer",
-                        manageAIExpanded ? "bg-white/20 font-medium" : "hover:bg-white/10",
+                        "flex items-center rounded-xl px-3 py-3 text-sm transition-all cursor-pointer ring-1 ring-white/10",
+                        manageAIExpanded ? "bg-white/15 font-medium shadow-sm" : "hover:bg-white/10",
                         !expanded && !isHovering && "justify-center"
                       )}
                       onClick={() => setManageAIExpanded(!manageAIExpanded)}
@@ -360,7 +365,7 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                         >
                           <Link
                             href={`/dashboard/info?aiId=${ai.id}`}
-                            className="flex items-center rounded-md py-2 px-3 text-sm text-green-100 hover:bg-white/10 hover:text-white"
+                            className="flex items-center rounded-lg py-2 px-3 text-sm text-green-100 hover:bg-white/10 hover:text-white"
                           >
                             <span className="mr-2">🤖</span>
                             <span className="flex-1">{ai.ai_name || "Untitled AI"}</span>
@@ -401,7 +406,7 @@ export default function Sidebar({ locked = false }: SidebarProps) {
               <div className="flex justify-center my-2">
                 <Button
                   variant="ghost"
-                  className="w-full flex items-center justify-center text-green-200 border border-green-500 hover:bg-green-800/80 hover:text-white"
+                  className="w-full flex items-center justify-center text-green-100 bg-gradient-to-r from-emerald-500/20 to-green-500/20 hover:from-emerald-500/30 hover:to-green-500/30 border border-white/20 rounded-xl hover:text-white"
                   onClick={() => router.push('/dashboard/info?new=true')}
                   aria-label="Add New AI"
                 >
@@ -414,6 +419,7 @@ export default function Sidebar({ locked = false }: SidebarProps) {
               {menuItems.map((item) => {
   const isBilling = item.name === "Billing";
   const isDisabled = locked && !isBilling;
+  const isActive = pathname === item.path || (pathname.startsWith(item.path + "/") && item.path !== "/");
   return (
     <div key={item.name}>
       <Tooltip>
@@ -422,16 +428,16 @@ export default function Sidebar({ locked = false }: SidebarProps) {
             href={item.path}
             tabIndex={isDisabled ? -1 : 0}
             className={cn(
-              "flex items-center rounded-lg px-3 py-3 text-sm transition-colors",
-              pathname === item.path ||
-                (pathname.startsWith(item.path + "/") && item.path !== "/")
-                ? "bg-white/20 font-medium"
+              "relative flex items-center rounded-xl px-3 py-3 text-sm transition-all",
+              isActive
+                ? "bg-white/15 font-medium ring-1 ring-white/20 shadow-sm"
                 : "hover:bg-white/10",
               !expanded && !isHovering && "justify-center",
               isDisabled && "opacity-50 pointer-events-none select-none cursor-not-allowed"
             )}
             aria-disabled={isDisabled ? "true" : undefined}
           >
+            {isActive && <span className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.7)]" />}
             <div
               className={cn(
                 "flex items-center",
