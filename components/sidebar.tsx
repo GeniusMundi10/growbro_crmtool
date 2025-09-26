@@ -438,7 +438,7 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                           {isActive && (
                             <motion.span
                               layoutId="sidebarActiveIndicator"
-                              className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-emerald-300/90 shadow-[0_0_10px_rgba(16,185,129,0.6)]"
+                              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 h-6 w-1 rounded-full bg-emerald-300/90 shadow-[0_0_10px_rgba(16,185,129,0.6)]"
                               transition={{ type: "spring", stiffness: 500, damping: 30 }}
                             />
                           )}
