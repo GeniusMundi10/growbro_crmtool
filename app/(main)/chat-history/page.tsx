@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, parseISO } from "date-fns";
 
-function ConversationViewer({ chat, onBack }: { chat: any; onBack?: () => void }) {
+function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: { chat: any; onBack?: () => void; onEmailSummary?: (chat: any) => void; sendingSummaryId?: string | null }) {
   const { user } = useUser();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,20 +113,35 @@ function ConversationViewer({ chat, onBack }: { chat: any; onBack?: () => void }
             </div>
           </div>
           
-          {/* Premium Contact Info Pills */}
-          <div className="flex items-center space-x-2">
-            {chat.email && chat.email !== "Anonymous" && (
-              <Badge className="bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1">
-                <AtSign className="h-3 w-3 mr-1" />
-                {chat.email.length > 25 ? `${chat.email.substring(0, 25)}...` : chat.email}
-              </Badge>
-            )}
-            {chat.phone && chat.phone !== "Anonymous" && (
-              <Badge className="bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border-orange-200 px-3 py-1">
-                <Phone className="h-3 w-3 mr-1" />
-                {chat.phone}
-              </Badge>
-            )}
+          {/* Premium Contact Info Pills + Actions */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-2">
+              {chat.email && chat.email !== "Anonymous" && (
+                <Badge className="bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1">
+                  <AtSign className="h-3 w-3 mr-1" />
+                  {chat.email.length > 25 ? `${chat.email.substring(0, 25)}...` : chat.email}
+                </Badge>
+              )}
+              {chat.phone && chat.phone !== "Anonymous" && (
+                <Badge className="bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border-orange-200 px-3 py-1">
+                  <Phone className="h-3 w-3 mr-1" />
+                  {chat.phone}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="default"
+              className="ml-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm"
+              onClick={() => onEmailSummary && onEmailSummary(chat)}
+              disabled={sendingSummaryId === chat.chat_id}
+            >
+              {sendingSummaryId === chat.chat_id ? (
+                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white/60 border-t-white rounded-full" />
+              ) : (
+                <Mail className="h-4 w-4 mr-2" />
+              )}
+              Email Summary
+            </Button>
           </div>
         </div>
       </div>
@@ -598,6 +613,8 @@ export default function ChatHistoryPage() {
           <ConversationViewer 
             chat={selectedChat} 
             onBack={() => setSelectedChat(null)}
+            onEmailSummary={(chat) => sendSummaryEmail(chat)}
+            sendingSummaryId={sendingSummaryId}
           />
         </div>
       </div>
