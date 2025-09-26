@@ -7,6 +7,8 @@ import { getAIFiles, uploadAIFileToStorage, upsertAIFile, deleteAIFile, AIFile, 
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Files as FilesIcon } from "lucide-react";
 import HelpButton from "@/components/help-button";
 import ActionButtons from "@/components/action-buttons";
 import { Upload, Trash2 } from "lucide-react";
@@ -244,64 +246,76 @@ export default function FilesForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">6. Upload Your Files</h2>
-        <HelpButton />
-      </div>
-      <div className="mb-6">
-        <p className="text-gray-700">
-          The files you add here will train your AI agent, so include as many as you possibly can about your business. You can always come back and add more files whenever you want.
-        </p>
-      </div>
-      <div
-        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-8 min-h-[180px] flex flex-col items-center justify-center cursor-pointer hover:border-purple-400"
-        onDrop={handleDrop}
-        onDragOver={e => e.preventDefault()}
-        onClick={() => fileInputRef.current?.click()}
-        style={{ background: uploading ? '#f3f4f6' : undefined }}
-      >
-        <Upload className="h-10 w-10 text-gray-400 mb-3" />
-        <p className="text-gray-600">Drag and drop or select files to train your AI</p>
-        <p className="text-xs text-gray-400 mt-1">Supported: DOC, TXT, XLS, PDF, etc. (max 5 at a time)</p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={handleFileChange}
-          accept=".doc,.docx,.txt,.xls,.xlsx,.pdf,.csv,.md,.rtf,.ppt,.pptx,.json,.xml"
-        />
-      </div>
-      {loading ? (
-        <div className="text-center text-gray-500">Loading files...</div>
-      ) : files.length === 0 ? (
-        <div className="text-center text-gray-400">No files uploaded yet.</div>
-      ) : (
-        <div className="mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {files.map((file) => (
-              <div key={file.id} className="flex items-center justify-between border rounded p-3 bg-gray-50">
-                <div className="truncate max-w-[70%]">
-                  <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
-                    {file.file_name}
-                  </a>
-                  <div className="text-xs text-gray-500">{file.file_type || 'Unknown type'} • {(file.file_size ? (file.file_size/1024).toFixed(1) : '?')} KB</div>
-                </div>
-                <Button size="icon" variant="destructive" onClick={() => handleDelete(file)} disabled={uploading}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+    <Card className="overflow-hidden border-none shadow-md">
+      <CardHeader className="bg-gradient-to-r from-emerald-900 to-green-800 text-white">
+        <CardTitle className="flex items-center text-2xl">
+          <FilesIcon className="mr-2 h-5 w-5" />
+          Upload Your Files
+        </CardTitle>
+        <CardDescription className="text-emerald-100">
+          Add documents that train your AI assistant. Changes and processing run automatically.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-slate-800">6. Upload Your Files</h2>
+          <HelpButton />
         </div>
-      )}
-      <ActionButtons 
-  showCustomize={true}
-  onCustomize={() => {
-    if (aiId) window.location.href = `/customize?aiId=${aiId}`;
-  }}
-showSave={false} saving={uploading} />
-    </div>
+        <div className="mb-6">
+          <p className="text-slate-600">
+            The files you add here will train your AI agent, so include as many as you possibly can about your business.
+            You can always come back and add more files whenever you want.
+          </p>
+        </div>
+        <div
+          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-8 min-h-[180px] flex flex-col items-center justify-center cursor-pointer hover:border-green-400 hover:bg-green-50/40"
+          onDrop={handleDrop}
+          onDragOver={e => e.preventDefault()}
+          onClick={() => fileInputRef.current?.click()}
+          style={{ background: uploading ? '#f3f4f6' : undefined }}
+        >
+          <Upload className="h-10 w-10 text-gray-400 mb-3" />
+          <p className="text-gray-600">Drag and drop or select files to train your AI</p>
+          <p className="text-xs text-gray-400 mt-1">Supported: DOC, TXT, XLS, PDF, etc. (max 5 at a time)</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
+            accept=".doc,.docx,.txt,.xls,.xlsx,.pdf,.csv,.md,.rtf,.ppt,.pptx,.json,.xml"
+          />
+        </div>
+        {loading ? (
+          <div className="text-center text-gray-500">Loading files...</div>
+        ) : files.length === 0 ? (
+          <div className="text-center text-gray-400">No files uploaded yet.</div>
+        ) : (
+          <div className="mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {files.map((file) => (
+                <div key={file.id} className="flex items-center justify-between border rounded p-3 bg-gray-50">
+                  <div className="truncate max-w-[70%]">
+                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                      {file.file_name}
+                    </a>
+                    <div className="text-xs text-gray-500">{file.file_type || 'Unknown type'} • {(file.file_size ? (file.file_size/1024).toFixed(1) : '?')} KB</div>
+                  </div>
+                  <Button size="icon" variant="destructive" onClick={() => handleDelete(file)} disabled={uploading}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        <ActionButtons 
+          showCustomize={true}
+          onCustomize={() => {
+            if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+          }}
+          showSave={false} saving={uploading} />
+      </CardContent>
+    </Card>
   );
 }

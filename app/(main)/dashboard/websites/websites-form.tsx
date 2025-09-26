@@ -7,7 +7,8 @@ import { getAIWebsites, upsertAIWebsites, deleteAIWebsiteByLabel, AIWebsite, sup
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Plus, Globe } from "lucide-react"
 import HelpButton from "@/components/help-button"
 import ActionButtons from "@/components/action-buttons"
 
@@ -248,80 +249,90 @@ export default function WebsitesForm() {
   }
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">5. Add websites for training</h2>
-        <HelpButton />
-      </div>
+    <Card className="overflow-hidden border-none shadow-md">
+      <CardHeader className="bg-gradient-to-r from-emerald-900 to-green-800 text-white">
+        <CardTitle className="flex items-center text-2xl">
+          <Globe className="mr-2 h-5 w-5" />
+          Add Websites for Training
+        </CardTitle>
+        <CardDescription className="text-emerald-100">
+          Add links your AI should learn from. We’ll extract text and update its knowledge automatically.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-slate-800">5. Add websites for training</h2>
+          <HelpButton />
+        </div>
 
-      <div className="mb-6">
-        <p className="text-gray-700">
-          Our system will extract the text from the website links you add to train your AI agent. So make sure the links
-          you add are either text based, or transcripts.
-        </p>
-      </div>
+        <div className="mb-6">
+          <p className="text-slate-600">
+            Our system will extract the text from the website links you add to train your AI agent. Make sure the links you add are text-based or transcripts.
+          </p>
+        </div>
 
-      <div className="space-y-4 mb-8">
-        {websites.map((website, idx) => (
-          <div key={website.id || idx} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-            <div className="md:col-span-1 flex items-center gap-2">
-              {website.isCustom && editingLabelIdx === idx ? (
+        <div className="space-y-4 mb-8">
+          {websites.map((website, idx) => (
+            <div key={website.id || idx} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+              <div className="md:col-span-1 flex items-center gap-2">
+                {website.isCustom && editingLabelIdx === idx ? (
+                  <Input
+                    value={editingLabelValue}
+                    onChange={e => handleLabelChange(idx, e.target.value)}
+                    onBlur={handleLabelEditDone}
+                    onKeyDown={e => { if (e.key === 'Enter') handleLabelEditDone(); }}
+                    autoFocus
+                  />
+                ) : (
+                  <span className="text-gray-700">
+                    {website.label}
+                    {website.isCustom && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="ml-2 px-1 py-0 text-xs"
+                        onClick={() => handleLabelEdit(idx, website.label)}
+                      >
+                        ✏️
+                      </Button>
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="md:col-span-3">
                 <Input
-                  value={editingLabelValue}
-                  onChange={e => handleLabelChange(idx, e.target.value)}
-                  onBlur={handleLabelEditDone}
-                  onKeyDown={e => { if (e.key === 'Enter') handleLabelEditDone(); }}
-                  autoFocus
+                  value={website.url}
+                  onChange={async (e) => await handleUrlChange(website.id, e.target.value) }
+                  placeholder="https://example.com"
                 />
-              ) : (
-                <span className="text-gray-700">
-                  {website.label}
-                  {website.isCustom && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="ml-2 px-1 py-0 text-xs"
-                      onClick={() => handleLabelEdit(idx, website.label)}
-                    >
-                      ✏️
-                    </Button>
-                  )}
-                </span>
-              )}
+              </div>
+              <div className="md:col-span-1 flex justify-end">
+                {website.isCustom && (
+                  <Button size="sm" variant="destructive" className="ml-2 px-2 py-0 text-xs" onClick={async () => await handleRemoveWebsite(idx)}>Delete</Button>
+                )}
+              </div>
             </div>
-            <div className="md:col-span-3">
-              <Input
-                value={website.url}
-                onChange={async (e) => await handleUrlChange(website.id, e.target.value) }
-                placeholder="https://example.com"
-              />
-            </div>
-            <div className="md:col-span-1 flex justify-end">
-              {website.isCustom && (
-                <Button size="sm" variant="destructive" className="ml-2 px-2 py-0 text-xs" onClick={async () => await handleRemoveWebsite(idx)}>Delete</Button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <div className="flex justify-center mb-8">
-        <Button
-          variant="outline"
-          className="border-purple-600 text-purple-600 hover:bg-purple-50"
-          onClick={handleAddWebsite}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add URL
-        </Button>
-      </div>
+        <div className="flex justify-center mb-8">
+          <Button
+            variant="outline"
+            className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+            onClick={handleAddWebsite}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add URL
+          </Button>
+        </div>
 
-      <ActionButtons 
-  showCustomize={true}
-  onCustomize={() => {
-    if (aiId) window.location.href = `/customize?aiId=${aiId}`;
-  }}
-showSave={false} onSave={handleSave} saving={saving} />
-    </div>
+        <ActionButtons 
+          showCustomize={true}
+          onCustomize={() => {
+            if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+          }}
+          showSave={false} onSave={handleSave} saving={saving} />
+      </CardContent>
+    </Card>
   );
 }

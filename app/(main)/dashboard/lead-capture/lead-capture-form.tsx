@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertTriangle } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { AlertTriangle, SlidersHorizontal } from "lucide-react"
 import HelpButton from "@/components/help-button"
 import ActionButtons from "@/components/action-buttons"
 import { useUser } from "@/context/UserContext"
@@ -147,56 +148,68 @@ export default function LeadCaptureForm() {
   }
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Customize Lead Capture Settings</h2>
-        <HelpButton />
-      </div>
+    <Card className="overflow-hidden border-none shadow-md">
+      <CardHeader className="bg-gradient-to-r from-emerald-900 to-green-800 text-white">
+        <CardTitle className="flex items-center text-2xl">
+          <SlidersHorizontal className="mr-2 h-5 w-5" />
+          Lead Capture
+        </CardTitle>
+        <CardDescription className="text-emerald-100">
+          Choose what information your AI collects from visitors. Changes save automatically.
+        </CardDescription>
+      </CardHeader>
 
-      <div className="mb-8">
-        <p className="text-gray-700">
-          Control what information your AI agent collects from website visitors. Choose whether to capture their name,
-          email, and phone number, only some of this information, or none at all. Adjust these settings based on your
-          business needs and lead generation strategy.
-        </p>
-      </div>
-
-      <div className="space-y-6 mb-8">
-        {[
-          { key: "name", label: "Name", help: "Collect the visitor's name so you can personalise follow-ups." },
-          { key: "email", label: "Email", help: "Capture an email address for direct outreach." },
-          { key: "phone", label: "Phone Number", help: "Optionally gather a phone number for quick contact." },
-        ].map(opt => (
-          <div key={opt.key} className="flex items-start justify-between gap-4 p-4 rounded-lg border hover:bg-gray-50">
-            <div>
-              <p className="font-medium">{opt.label}</p>
-              <p className="text-sm text-gray-500 leading-snug">{opt.help}</p>
-            </div>
-            <Switch
-              checked={captureSettings[opt.key as keyof typeof captureSettings]}
-              onCheckedChange={(checked) => handleCheckboxChange(opt.key, checked as boolean)}
-            />
-          </div>
-        ))}
-      </div>
-
-      <Alert className="mb-8" variant="default">
-        <AlertTriangle className="h-4 w-4" />
-        <div>
-          <AlertTitle>Heads up</AlertTitle>
-          <AlertDescription>
-            Reducing the amount of information you capture may lower your lead count. Visitors will still consume chat minutes, but you’ll have fewer details for follow-up.
-          </AlertDescription>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-slate-800">Customize Lead Capture Settings</h2>
+          <HelpButton />
         </div>
-      </Alert>
 
-      <ActionButtons
-        showSave={false}
-        showCustomize={true}
-        onCustomize={() => {
-          if (aiId) window.location.href = `/customize?aiId=${aiId}`;
-        }}
-      />
-    </div>
+        <div className="mb-8">
+          <p className="text-slate-600">
+            Control what information your AI agent collects from website visitors. Choose whether to capture their name,
+            email, and phone number, only some of this information, or none at all. Adjust these settings based on your
+            business needs and lead generation strategy.
+          </p>
+        </div>
+
+        <div className="space-y-3 mb-8">
+          {[
+            { key: "name", label: "Name", help: "Collect the visitor's name so you can personalise follow-ups." },
+            { key: "email", label: "Email", help: "Capture an email address for direct outreach." },
+            { key: "phone", label: "Phone Number", help: "Optionally gather a phone number for quick contact." },
+          ].map(opt => (
+            <div key={opt.key} className="flex items-start justify-between gap-4 p-4 rounded-lg border bg-white/60 hover:bg-white/80 transition-colors">
+              <div>
+                <p className="font-medium text-slate-800">{opt.label}</p>
+                <p className="text-sm text-slate-500 leading-snug">{opt.help}</p>
+              </div>
+              <Switch
+                checked={captureSettings[opt.key as keyof typeof captureSettings]}
+                onCheckedChange={(checked) => handleCheckboxChange(opt.key, checked as boolean)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <Alert className="mb-8 bg-amber-50 border-amber-200" variant="default">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <div>
+            <AlertTitle className="text-amber-800">Heads up</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              Reducing the amount of information you capture may lower your lead count. Visitors will still consume chat minutes, but you’ll have fewer details for follow-up.
+            </AlertDescription>
+          </div>
+        </Alert>
+
+        <ActionButtons
+          showSave={false}
+          showCustomize={true}
+          onCustomize={() => {
+            if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+          }}
+        />
+      </CardContent>
+    </Card>
   );
 }

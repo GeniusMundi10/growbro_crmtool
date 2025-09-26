@@ -8,7 +8,8 @@ import { useUser } from "@/context/UserContext"
 import { getResourceLinkCSV, uploadResourceLinkCSVToStorage, upsertResourceLinkCSV, deleteResourceLinkCSV, AIResourceLinkCSV } from "@/lib/supabase"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Upload, Trash2 } from "lucide-react"
+import { Upload, Trash2, Link2 } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import HelpButton from "@/components/help-button"
 import ActionButtons from "@/components/action-buttons"
 
@@ -114,65 +115,77 @@ export default function ResourceLinksForm() {
   const sampleCSVUrl = "https://ksoldxvgeqtkatezdwnv.supabase.co/storage/v1/object/public/public-assets//sample-csv-file-format.csv";
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">7. Add Resource Links</h2>
-        <HelpButton />
-      </div>
-      <div className="mb-6">
-        <p className="text-gray-700">
-          You can either add links manually with the button below, or upload our CSV template filled with links. But you have to choose one or the other. These links will be provided by your AI agent to website visitors as resources. For example, if someone asks about filmmaking, the AI would use that "category" to say: You might want to check out my film production company Delphia Films at this link: https://delphiafilms.com
-        </p>
-      </div>
-      <div className="flex justify-end mb-4">
-        <Button
-          variant="outline"
-          className="text-purple-600 border-purple-600 hover:bg-purple-50"
-          asChild
-        >
-          <a href={sampleCSVUrl} download target="_blank" rel="noopener noreferrer">
-            Download Sample CSV File
-          </a>
-        </Button>
-      </div>
-      <div className="flex justify-center mb-8">
-        <div
-          className={`border-2 border-dashed rounded-lg p-8 w-full max-w-xl h-48 flex flex-col items-center justify-center cursor-pointer ${isDragging ? "border-purple-500 bg-purple-50" : "border-gray-300"}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          style={{ background: uploading ? '#f3f4f6' : undefined }}
-        >
-          <Upload className="h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-gray-500 text-center">Select or drag and drop a CSV file</p>
-          <input ref={fileInputRef} id="csv-upload" type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
+    <Card className="overflow-hidden border-none shadow-md">
+      <CardHeader className="bg-gradient-to-r from-emerald-900 to-green-800 text-white">
+        <CardTitle className="flex items-center text-2xl">
+          <Link2 className="mr-2 h-5 w-5" />
+          Resource Links
+        </CardTitle>
+        <CardDescription className="text-emerald-100">
+          Upload a CSV of resource links your AI can share with visitors.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-slate-800">7. Add Resource Links</h2>
+          <HelpButton />
         </div>
-      </div>
-      {loading ? (
-        <div className="text-center text-gray-500">Loading...</div>
-      ) : currentCSV ? (
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between border rounded p-3 bg-gray-50">
-          <div>
-            <span className="text-sm text-gray-700">Current CSV: </span>
-            <a href={currentCSV.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-              {currentCSV.file_name}
+        <div className="mb-6">
+          <p className="text-slate-600">
+            You can either add links manually with the button below, or upload our CSV template filled with links. Choose one method.
+            These links will be provided by your AI agent to visitors as helpful resources.
+          </p>
+        </div>
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="outline"
+            className="text-emerald-700 border-emerald-600 hover:bg-emerald-50"
+            asChild
+          >
+            <a href={sampleCSVUrl} download target="_blank" rel="noopener noreferrer">
+              Download Sample CSV File
             </a>
-            <span className="ml-2 text-xs text-gray-500">({(currentCSV.file_size ? (currentCSV.file_size/1024).toFixed(1) : '?')} KB)</span>
-          </div>
-          <div className="flex gap-2 mt-2 md:mt-0">
-            <Button size="sm" variant="destructive" onClick={handleDelete} disabled={uploading}>
-              <Trash2 className="h-4 w-4" /> Delete
-            </Button>
+          </Button>
+        </div>
+        <div className="flex justify-center mb-8">
+          <div
+            className={`border-2 border-dashed rounded-lg p-8 w-full max-w-xl h-48 flex flex-col items-center justify-center cursor-pointer ${isDragging ? "border-emerald-500 bg-emerald-50" : "border-gray-300"}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ background: uploading ? '#f3f4f6' : undefined }}
+          >
+            <Upload className="h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-gray-500 text-center">Select or drag and drop a CSV file</p>
+            <input ref={fileInputRef} id="csv-upload" type="file" accept=".csv" className="hidden" onChange={handleFileChange} />
           </div>
         </div>
-      ) : null}
-      <ActionButtons 
-  showCustomize={true}
-  onCustomize={() => {
-    if (aiId) window.location.href = `/customize?aiId=${aiId}`;
-  }}
-showSave={false} saving={uploading} />
-    </div>
+        {loading ? (
+          <div className="text-center text-gray-500">Loading...</div>
+        ) : currentCSV ? (
+          <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between border rounded p-3 bg-gray-50">
+            <div>
+              <span className="text-sm text-gray-700">Current CSV: </span>
+              <a href={currentCSV.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                {currentCSV.file_name}
+              </a>
+              <span className="ml-2 text-xs text-gray-500">({(currentCSV.file_size ? (currentCSV.file_size/1024).toFixed(1) : '?')} KB)</span>
+            </div>
+            <div className="flex gap-2 mt-2 md:mt-0">
+              <Button size="sm" variant="destructive" onClick={handleDelete} disabled={uploading}>
+                <Trash2 className="h-4 w-4" /> Delete
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        <ActionButtons 
+          showCustomize={true}
+          onCustomize={() => {
+            if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+          }}
+          showSave={false} saving={uploading} />
+      </CardContent>
+    </Card>
   );
 }

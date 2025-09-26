@@ -7,7 +7,8 @@ import { getAIGreetings, upsertAIGreetings, deleteAIGreetingByLabel, AIGreeting 
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, MessageSquareHeart } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import HelpButton from "@/components/help-button"
 import ActionButtons from "@/components/action-buttons"
 
@@ -143,53 +144,64 @@ export default function GreetingsForm() {
   }, [greetings]);
 
   return (
-    <div className="bg-white rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">8. Add Your Customer Greetings</h2>
-        <HelpButton />
-      </div>
-      <div className="space-y-4 mb-8">
-        {loading ? (
-          <div className="text-center text-gray-500">Loading...</div>
-        ) : greetings.map((greeting, index) => (
-          <div key={greeting.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-            <div className="md:col-span-1">
-              <span className="text-gray-700">{greeting.label}</span>
+    <Card className="overflow-hidden border-none shadow-md">
+      <CardHeader className="bg-gradient-to-r from-emerald-900 to-green-800 text-white">
+        <CardTitle className="flex items-center text-2xl">
+          <MessageSquareHeart className="mr-2 h-5 w-5" />
+          Customer Greetings
+        </CardTitle>
+        <CardDescription className="text-emerald-100">
+          Define friendly greetings your AI uses to start conversations.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-slate-800">8. Add Your Customer Greetings</h2>
+          <HelpButton />
+        </div>
+        <div className="space-y-4 mb-8">
+          {loading ? (
+            <div className="text-center text-gray-500">Loading...</div>
+          ) : greetings.map((greeting, index) => (
+            <div key={greeting.id} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+              <div className="md:col-span-1">
+                <span className="text-gray-700">{greeting.label}</span>
+              </div>
+              <div className="md:col-span-3">
+                <Input
+                  value={greeting.message}
+                  onChange={async (e) => await handleGreetingChange(greeting.id, e.target.value)}
+                  placeholder="Enter greeting message"
+                />
+              </div>
+              <div className="md:col-span-1 flex justify-end">
+                {greeting.isCustom && (
+                  <Button size="sm" variant="destructive" className="ml-2 px-2 py-0 text-xs" onClick={async () => await handleRemoveGreeting(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="md:col-span-3">
-              <Input
-                value={greeting.message}
-                onChange={async (e) => await handleGreetingChange(greeting.id, e.target.value)}
-                placeholder="Enter greeting message"
-              />
-            </div>
-            <div className="md:col-span-1 flex justify-end">
-              {greeting.isCustom && (
-                <Button size="sm" variant="destructive" className="ml-2 px-2 py-0 text-xs" onClick={async () => await handleRemoveGreeting(index)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="flex justify-center mb-8">
-        <Button
-          variant="outline"
-          className="border-purple-600 text-purple-600 hover:bg-purple-50"
-          onClick={handleAddGreeting}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Greeting
-        </Button>
-      </div>
-      <ActionButtons 
-        showCustomize={true}
-        onCustomize={() => {
-          if (aiId) window.location.href = `/customize?aiId=${aiId}`;
-        }}
-        showSave={false} saving={saving} 
-      />
-    </div>
+          ))}
+        </div>
+        <div className="flex justify-center mb-8">
+          <Button
+            variant="outline"
+            className="border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+            onClick={handleAddGreeting}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Greeting
+          </Button>
+        </div>
+        <ActionButtons 
+          showCustomize={true}
+          onCustomize={() => {
+            if (aiId) window.location.href = `/customize?aiId=${aiId}`;
+          }}
+          showSave={false} saving={saving} 
+        />
+      </CardContent>
+    </Card>
   );
 }
