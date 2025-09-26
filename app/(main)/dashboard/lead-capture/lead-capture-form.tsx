@@ -160,8 +160,7 @@ export default function LeadCaptureForm() {
       </CardHeader>
 
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-slate-800">Customize Lead Capture Settings</h2>
+        <div className="flex items-center justify-end mb-4">
           <HelpButton />
         </div>
 

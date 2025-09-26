@@ -39,8 +39,7 @@ export default function FilesUploadForm() {
 
   return (
     <div className="bg-white rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold">6. Upload Your Files</h2>
+      <div className="flex items-center justify-end mb-6">
         <HelpButton />
       </div>
 

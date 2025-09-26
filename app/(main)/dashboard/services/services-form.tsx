@@ -91,8 +91,7 @@ export default function ServicesForm() {
         </CardDescription>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-slate-800">9. Your Business Services</h2>
+        <div className="flex items-center justify-end mb-6">
           <HelpButton />
         </div>
         <div className="space-y-8 mb-8">
