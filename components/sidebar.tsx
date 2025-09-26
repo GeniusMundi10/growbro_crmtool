@@ -20,6 +20,7 @@ import {
   Menu,
   Loader2,
   Circle,
+  Bot,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -382,32 +383,34 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                             href={`/dashboard/info?aiId=${ai.id}`}
                             className="flex items-center rounded-lg py-2 px-3 text-sm text-green-100 hover:bg-white/10 hover:text-white"
                           >
-                            <span className="mr-2">🤖</span>
-                            <span className="flex-1">{ai.ai_name || "Untitled AI"}</span>
-                            {/* Show either training indicator or online indicator */}
-                            {aiTrainingStatus[ai.id] ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="ml-1">
-                                    <Loader2 className="h-3.5 w-3.5 text-amber-400 animate-spin" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="border-none bg-gray-900 text-white">
-                                  AI is still being trained
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span className="ml-1">
-                                    <Circle className="h-3 w-3 text-green-500 fill-green-500" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="border-none bg-gray-900 text-white">
-                                  AI is online and ready
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
+                            {/* Premium AI avatar with status dot */}
+                            <div className="relative mr-2">
+                              <div className="h-6 w-6 rounded-full bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center ring-1 ring-white/20">
+                                <Bot className="h-3.5 w-3.5 text-white" />
+                              </div>
+                              <span
+                                className={cn(
+                                  "absolute -bottom-0 -right-0 h-2.5 w-2.5 rounded-full ring-2 ring-emerald-900",
+                                  aiTrainingStatus[ai.id] ? "bg-amber-400 animate-pulse" : "bg-emerald-400"
+                                )}
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <span className="flex-1 truncate">{ai.ai_name || "Untitled AI"}</span>
+                            {/* Status pill */}
+                            <div className="ml-2">
+                              {aiTrainingStatus[ai.id] ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-100 border border-amber-400/20 px-2 py-0.5 text-[11px]">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Training
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-100 border border-emerald-400/20 px-2 py-0.5 text-[11px]">
+                                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                                  Ready
+                                </span>
+                              )}
+                            </div>
                           </Link>
                         </div>
                       ))
