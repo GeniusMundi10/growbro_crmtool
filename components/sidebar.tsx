@@ -355,7 +355,7 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                     </TooltipContent>
                   )}
                 </Tooltip>
-                {manageAIExpanded && (expanded || isHovering) && (
+                {(manageAIExpanded && (expanded || isHovering)) ? (
                   <div className="ml-7 mt-1 mb-1 overflow-hidden transition-all duration-200">
                     <div className="py-2 text-sm text-green-100 flex items-center">All AIs</div>
                     {loadingAIs ? (
@@ -406,6 +406,12 @@ export default function Sidebar({ locked = false }: SidebarProps) {
                           
                         </div>
                       ))
+                    )}
+                  </div>
+                ) : null}
+
+                {/* Main menu items */}
+              </div>
 
               {/* Main menu items */}
               {menuItems.map((item) => {
