@@ -11,7 +11,10 @@ const publicRoutes = [
   '/favicon.ico',
   '/_next',
   '/api/auth/request-password-reset',
-  '/api/public'
+  '/api/public',
+  // Public OAuth redirect endpoint for WhatsApp Embedded Signup (must not redirect or require auth)
+  '/wa-es-redirect',
+  '/wa-es-redirect/'
 ];
 
 // Helper function to check if a path is public

@@ -14,8 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui/shimmer";
 
-// WhatsApp OAuth redirect URI - MUST match exactly between FB.login and token exchange
-const WA_REDIRECT_URI = "https://crm.growbro.ai/integrations";
+// WhatsApp OAuth redirect URI - MUST be a public, non-redirecting URL
+// This avoids auth or slash normalization during Meta's code binding step
+const WA_REDIRECT_URI = "https://crm.growbro.ai/wa-es-redirect";
 
 export default function IntegrationsForm() {
   const { user } = useUser();
