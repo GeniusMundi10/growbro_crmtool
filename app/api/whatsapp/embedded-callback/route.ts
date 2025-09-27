@@ -21,6 +21,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Missing code" }, { status: 400 });
   }
 
+  // Debug: log code details and redirect comparison
+  try {
+    console.debug('[WA_ES][API] Received code from FE', {
+      code_len: body.code?.length,
+      code_preview: body.code?.slice(0, 8),
+      redirect_uri: body.redirect_uri,
+    });
+  } catch {}
+
   // Determine ai_id: prefer value passed from client selector, else fallback to user's first AI
   let ai_id = body.ai_id as string | undefined;
   if (ai_id) {

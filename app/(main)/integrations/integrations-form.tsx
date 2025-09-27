@@ -14,6 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Shimmer } from "@/components/ui/shimmer";
 
+// WhatsApp OAuth redirect URI - MUST match exactly between FB.login and token exchange
+const WA_REDIRECT_URI = "https://crm.growbro.ai/integrations";
+
 export default function IntegrationsForm() {
   const { user } = useUser();
   const [hubspotConnected, setHubspotConnected] = useState<boolean>(false);
@@ -257,14 +260,20 @@ export default function IntegrationsForm() {
           }
           processingCodeRef.current = true;
           const code = response.authResponse.code as string;
-          // Use the current page URL as redirect URI (Facebook's natural behavior)
-          const redirectUri = window.location.href.split('?')[0]; // Remove query params if any
+          // Debug: print the exact code once to help diagnose exchange issues (short-lived, single-use)
+          try {
+            console.debug('[WA_ES] Received auth code from Meta', { code, length: code?.length });
+          } catch {}
+          // Use the SAME redirect URI as used in FB.login() for consistency
+          const redirectUri = WA_REDIRECT_URI;
           console.log('[WA_ES] About to POST embedded-callback', {
             redirectUri,
             currentHref: window.location.href,
             configId,
             selectedAiId,
             hasCode: !!code,
+            codePreview: code?.slice(0, 8),
+            codeLen: code?.length,
           });
           const body = {
             code,
@@ -317,7 +326,7 @@ export default function IntegrationsForm() {
         config_id: configId,
         response_type: "code",
         override_default_response_type: true,
-        redirect_uri: "https://crm.growbro.ai/integrations",
+        redirect_uri: WA_REDIRECT_URI,
         extras: { setup: {}, sessionInfoVersion: "3" },
       });
     } catch (e) {
