@@ -416,23 +416,31 @@ export default function IntegrationsForm() {
   }
 
   return (
-    <section className="w-full max-w-4xl">
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <Card className="max-w-md w-full shadow-sm border border-gray-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <div className="flex items-center gap-2">
-            <BrandIcon icon={siHubspot} className="h-5 w-5" />
-            <CardTitle className="text-lg font-semibold">HubSpot</CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            {hubspotConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-            <Badge variant={hubspotConnected ? "default" : "secondary"} className={hubspotConnected ? "bg-emerald-100 text-emerald-800" : ""}>
+    <section className="w-full max-w-6xl">
+      <div className="grid gap-6 md:grid-cols-2">
+      <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200/60 bg-white/50 backdrop-blur">
+        <CardHeader className="space-y-0 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 ring-1 ring-orange-200/50">
+                <BrandIcon icon={siHubspot} className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold">HubSpot</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">CRM Integration</p>
+              </div>
+            </div>
+            <Badge 
+              variant={hubspotConnected ? "default" : "secondary"} 
+              className={hubspotConnected ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm" : "bg-gray-100 text-gray-600"}
+            >
+              {hubspotConnected && <CheckCircle2 className="h-3 w-3 mr-1" />}
               {hubspotConnected ? "Connected" : "Not connected"}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-600 mb-4">Sync leads you capture in GrowBro directly into your HubSpot CRM.</p>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">Sync leads you capture in GrowBro directly into your HubSpot CRM.</p>
           {aiList.length > 0 ? (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -471,21 +479,29 @@ export default function IntegrationsForm() {
           )}
         </CardContent>
       </Card>
-      <Card className="max-w-md w-full shadow-sm border border-gray-200">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <div className="flex items-center gap-2">
-            <BrandIcon icon={siWhatsapp} className="h-5 w-5" />
-            <CardTitle className="text-lg font-semibold">WhatsApp</CardTitle>
-          </div>
-          <div className="flex items-center gap-2">
-            {whatsappConnected && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-            <Badge variant={whatsappConnected ? "default" : "secondary"} className={whatsappConnected ? "bg-emerald-100 text-emerald-800" : ""}>
+      <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200/60 bg-white/50 backdrop-blur">
+        <CardHeader className="space-y-0 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 ring-1 ring-green-200/50">
+                <BrandIcon icon={siWhatsapp} className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold">WhatsApp</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Business Messaging</p>
+              </div>
+            </div>
+            <Badge 
+              variant={whatsappConnected ? "default" : "secondary"} 
+              className={whatsappConnected ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm" : "bg-gray-100 text-gray-600"}
+            >
+              {whatsappConnected && <CheckCircle2 className="h-3 w-3 mr-1" />}
               {whatsappConnected ? "Connected" : "Not connected"}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-600 mb-4">
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {whatsappConnected
               ? `Connected${whatsappInfo?.phone_number ? ` to +${whatsappInfo.phone_number}` : ""}.`
               : "Connect your WhatsApp Business number via Meta Embedded Signup."}
@@ -509,13 +525,22 @@ export default function IntegrationsForm() {
                   </Select>
                 </div>
               )}
-              <div className="text-xs text-slate-600 bg-slate-50 border rounded p-3">
-                <div><span className="font-medium">Status:</span> {whatsappInfo?.status || "connected"}</div>
+              <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
+                  <span className="text-sm font-semibold text-gray-900">{whatsappInfo?.status || "connected"}</span>
+                </div>
                 {whatsappInfo?.phone_number && (
-                  <div><span className="font-medium">Phone:</span> +{whatsappInfo.phone_number}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone</span>
+                    <span className="text-sm font-mono font-semibold text-gray-900">+{whatsappInfo.phone_number}</span>
+                  </div>
                 )}
                 {whatsappInfo?.phone_number_id && (
-                  <div><span className="font-medium">Phone Number ID:</span> {whatsappInfo.phone_number_id}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Phone ID</span>
+                    <span className="text-xs font-mono text-gray-600">{whatsappInfo.phone_number_id}</span>
+                  </div>
                 )}
               </div>
 
@@ -527,19 +552,24 @@ export default function IntegrationsForm() {
                 <Label htmlFor="msg">Message</Label>
                 <Input id="msg" placeholder="Hello from GrowBro" value={testMsg} onChange={(e) => setTestMsg(e.target.value)} />
               </div>
-              <div className="flex gap-2">
-                <Button onClick={handleTestSend} size="sm" disabled={testSending}>Send Test</Button>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleTestSend} size="sm" disabled={testSending} className="flex-1 min-w-[100px]">
+                  Send Test
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => router.push(`/integrations/whatsapp-settings?ai_id=${encodeURIComponent(selectedAiId || whatsappInfo?.ai_id || '')}`)}
                   size="sm"
                   disabled={!selectedAiId && !whatsappInfo?.ai_id}
+                  className="flex-1 min-w-[100px]"
                 >
-                  <Settings className="h-4 w-4 mr-1" />
+                  <Settings className="h-4 w-4 mr-1.5" />
                   Settings
                 </Button>
                 <Button
                   variant="destructive"
+                  size="sm"
+                  className="flex-1 min-w-[100px]"
                   onClick={async () => {
                     try {
                       const resp = await fetch("/api/whatsapp/disconnect", {
@@ -565,12 +595,15 @@ export default function IntegrationsForm() {
                       toast.error("Failed to disconnect WhatsApp");
                     }
                   }}
-                  size="sm"
                 >
                   Disconnect
                 </Button>
               </div>
-              <p className="text-[11px] text-slate-500">Note: Test numbers require recipients to be verified in Meta's API Setup, or start a session by messaging your number first.</p>
+              <div className="rounded-md bg-blue-50/50 border border-blue-200/50 p-3">
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  <span className="font-medium">Note:</span> Test numbers require recipients to be verified in Meta's API Setup, or start a session by messaging your number first.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
