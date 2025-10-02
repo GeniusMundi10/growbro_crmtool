@@ -52,8 +52,11 @@ export default function WhatsAppSettingsPage() {
   const [website2, setWebsite2] = useState("");
 
   // Display name
-  const [displayName, setDisplayName] = useState("");
-  const [displayNameRequests, setDisplayNameRequests] = useState<any[]>([]);
+  const [currentDisplayName, setCurrentDisplayName] = useState("");
+  const [displayNameStatus, setDisplayNameStatus] = useState("");
+  const [newDisplayName, setNewDisplayName] = useState("");
+  const [newDisplayNameStatus, setNewDisplayNameStatus] = useState("");
+  const [displayNameInput, setDisplayNameInput] = useState("");
   const [requestingName, setRequestingName] = useState(false);
 
   useEffect(() => {
@@ -110,8 +113,12 @@ export default function WhatsAppSettingsPage() {
     try {
       const resp = await fetch(`/api/whatsapp/display-name/status?ai_id=${encodeURIComponent(ai_id!)}`);
       const data = await resp.json();
-      if (resp.ok && data.data) {
-        setDisplayNameRequests(Array.isArray(data.data) ? data.data : []);
+      console.log("[WhatsApp Settings] Display name response:", data);
+      if (resp.ok) {
+        setCurrentDisplayName(data.verified_name || "");
+        setDisplayNameStatus(data.name_status || "");
+        setNewDisplayName(data.new_display_name || "");
+        setNewDisplayNameStatus(data.new_name_status || "");
       }
     } catch (e) {
       console.error("Failed to load display name status:", e);
@@ -185,7 +192,7 @@ export default function WhatsAppSettingsPage() {
   };
 
   const handleRequestDisplayName = async () => {
-    if (!ai_id || !displayName.trim()) {
+    if (!ai_id || !displayNameInput.trim()) {
       toast.error("Please enter a display name");
       return;
     }
@@ -194,15 +201,15 @@ export default function WhatsAppSettingsPage() {
       const resp = await fetch("/api/whatsapp/display-name/request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ai_id, display_name: displayName.trim() }),
+        body: JSON.stringify({ ai_id, display_name: displayNameInput.trim() }),
       });
       const data = await resp.json();
-      if (resp.ok) {
-        toast.success("Display name change requested. Meta will review it.");
-        setDisplayName("");
+      if (resp.ok && data.success) {
+        toast.success("Display name updated successfully. It will undergo verification.");
+        setDisplayNameInput("");
         loadDisplayNameStatus();
       } else {
-        toast.error("Failed to request display name: " + (data.error?.message || data.error || "Unknown error"));
+        toast.error("Failed to update display name: " + (data.error?.message || data.error || "Unknown error"));
       }
     } catch (e: any) {
       toast.error("Error: " + (e?.message || "Unknown error"));
@@ -357,58 +364,53 @@ export default function WhatsAppSettingsPage() {
             <CardHeader>
               <CardTitle>Display Name</CardTitle>
               <CardDescription>
-                Request a change to your WhatsApp Business display name. Meta will review your request.
+                Update your WhatsApp Business display name. Changes will undergo Meta verification.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {currentDisplayName && (
+                <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Current Display Name</span>
+                    <Badge variant={displayNameStatus === "APPROVED" ? "default" : "secondary"} className={displayNameStatus === "APPROVED" ? "bg-emerald-500" : ""}>
+                      {displayNameStatus === "APPROVED" && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                      {displayNameStatus || "Unknown"}
+                    </Badge>
+                  </div>
+                  <p className="text-lg font-semibold text-gray-900">{currentDisplayName}</p>
+                </div>
+              )}
+
+              {newDisplayName && newDisplayNameStatus && (
+                <div className="rounded-lg bg-blue-50/50 border border-blue-200/50 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-blue-700 uppercase tracking-wide">Pending Update</span>
+                    <Badge variant="secondary">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {newDisplayNameStatus}
+                    </Badge>
+                  </div>
+                  <p className="text-sm font-medium text-blue-900">{newDisplayName}</p>
+                  <p className="text-xs text-blue-700">This name is under review by Meta.</p>
+                </div>
+              )}
+
               <div>
-                <Label htmlFor="displayName">New Display Name</Label>
+                <Label htmlFor="displayNameInput">New Display Name</Label>
                 <Input
-                  id="displayName"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="Your Business Name"
+                  id="displayNameInput"
+                  value={displayNameInput}
+                  onChange={(e) => setDisplayNameInput(e.target.value)}
+                  placeholder={currentDisplayName || "Your Business Name"}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Choose a name that represents your business. Meta reviews all display name requests.
+                  Choose a name that represents your business. Meta reviews all display name changes.
                 </p>
               </div>
 
-              <Button onClick={handleRequestDisplayName} disabled={requestingName || !displayName.trim()} className="w-full">
-                {requestingName ? "Requesting..." : "Request Display Name Change"}
+              <Button onClick={handleRequestDisplayName} disabled={requestingName || !displayNameInput.trim()} className="w-full">
+                {requestingName ? "Updating..." : "Update Display Name"}
               </Button>
-
-              {displayNameRequests.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="font-semibold mb-3">Recent Requests</h3>
-                  <div className="space-y-2">
-                    {displayNameRequests.map((req, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{req.display_name}</p>
-                          {req.rejection_reason && (
-                            <p className="text-xs text-destructive mt-1">Reason: {req.rejection_reason}</p>
-                          )}
-                        </div>
-                        <Badge
-                          variant={
-                            req.status === "APPROVED"
-                              ? "default"
-                              : req.status === "REJECTED"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {req.status === "APPROVED" && <CheckCircle2 className="h-3 w-3 mr-1" />}
-                          {req.status === "REJECTED" && <AlertCircle className="h-3 w-3 mr-1" />}
-                          {req.status === "PENDING" && <Clock className="h-3 w-3 mr-1" />}
-                          {req.status || "Pending"}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
