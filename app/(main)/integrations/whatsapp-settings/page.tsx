@@ -75,7 +75,15 @@ export default function WhatsAppSettingsPage() {
         body: JSON.stringify({ ai_id }),
       });
       const data = await resp.json();
-      if (resp.ok && data.data && data.data.length > 0) {
+      
+      console.log("[WhatsApp Settings] Profile response:", data);
+      
+      if (!resp.ok) {
+        toast.error("Failed to load profile: " + (data.error || "Unknown error"));
+        return;
+      }
+      
+      if (data.data && data.data.length > 0) {
         const profile = data.data[0];
         setAbout(profile.about || "");
         setAddress(profile.address || "");
@@ -85,8 +93,13 @@ export default function WhatsAppSettingsPage() {
         const websites = profile.websites || [];
         setWebsite1(websites[0] || "");
         setWebsite2(websites[1] || "");
+        toast.success("Profile loaded successfully");
+      } else {
+        // Profile exists but is empty - this is normal for new accounts
+        toast.info("No profile data found. You can set it up below.");
       }
     } catch (e: any) {
+      console.error("[WhatsApp Settings] Load error:", e);
       toast.error("Failed to load profile: " + (e?.message || "Unknown error"));
     } finally {
       setLoading(false);
