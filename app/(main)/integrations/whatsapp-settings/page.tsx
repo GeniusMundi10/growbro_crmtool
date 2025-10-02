@@ -59,6 +59,11 @@ export default function WhatsAppSettingsPage() {
   const [displayNameInput, setDisplayNameInput] = useState("");
   const [requestingName, setRequestingName] = useState(false);
 
+  // Profile photo
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   useEffect(() => {
     if (!ai_id) {
       toast.error("No AI selected");
@@ -226,6 +231,62 @@ export default function WhatsAppSettingsPage() {
       toast.error("Error: " + (e?.message || "Unknown error"));
     } finally {
       setRequestingName(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!ai_id || !selectedFile) {
+      toast.error("Please select a photo first");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const formData = new FormData();
+      formData.append('ai_id', ai_id);
+      formData.append('file', selectedFile);
+
+      const resp = await fetch("/api/whatsapp/profile/photo/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        toast.success("Profile photo updated successfully!");
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        loadProfile();
+      } else {
+        toast.error("Failed to upload photo: " + (data.error?.message || data.error || "Unknown error"));
+      }
+    } catch (e: any) {
+      toast.error("Error: " + (e?.message || "Unknown error"));
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -432,15 +493,50 @@ export default function WhatsAppSettingsPage() {
                 Upload a profile photo for your WhatsApp Business account.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="text-sm text-muted-foreground p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-2">Note:</p>
-                <p>
-                  Profile photo upload requires using Meta's Resumable Upload API to obtain a handle first.
-                  This feature will be available in a future update. For now, you can set your profile photo
-                  directly through the WhatsApp Business Manager.
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="photoUpload">Select Image</Label>
+                <Input
+                  id="photoUpload"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={handleFileSelect}
+                  disabled={uploadingPhoto}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  JPEG or PNG, max 5MB. Square images work best.
                 </p>
               </div>
+
+              {previewUrl && (
+                <div className="flex items-center gap-4">
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
+                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{selectedFile?.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedFile && `${(selectedFile.size / 1024).toFixed(1)} KB`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <Button 
+                onClick={handleUploadPhoto} 
+                disabled={!selectedFile || uploadingPhoto} 
+                className="w-full"
+              >
+                {uploadingPhoto ? (
+                  <>Uploading...</>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Profile Photo
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
