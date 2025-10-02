@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
-import { CheckCircle2, Trash2, ExternalLink, ArrowRight } from "lucide-react";
+import { CheckCircle2, Trash2, ExternalLink, ArrowRight, Settings } from "lucide-react";
 import { siHubspot, siWhatsapp } from 'simple-icons';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ const WA_REDIRECT_URI = "https://crm.growbro.ai/wa-es-redirect";
 
 export default function IntegrationsForm() {
   const { user } = useUser();
+  const router = useRouter();
   const [hubspotConnected, setHubspotConnected] = useState<boolean>(false);
   const [whatsappConnected, setWhatsappConnected] = useState<boolean>(false);
   const [whatsappInfo, setWhatsappInfo] = useState<any>(null);
@@ -527,6 +529,15 @@ export default function IntegrationsForm() {
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleTestSend} size="sm" disabled={testSending}>Send Test</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push(`/integrations/whatsapp-settings?ai_id=${encodeURIComponent(selectedAiId || whatsappInfo?.ai_id || '')}`)}
+                  size="sm"
+                  disabled={!selectedAiId && !whatsappInfo?.ai_id}
+                >
+                  <Settings className="h-4 w-4 mr-1" />
+                  Settings
+                </Button>
                 <Button
                   variant="destructive"
                   onClick={async () => {
