@@ -79,26 +79,37 @@ export default function WhatsAppSettingsPage() {
       });
       const data = await resp.json();
       
-      console.log("[WhatsApp Settings] Profile response:", data);
+      console.log("[WhatsApp Settings] Full profile response:", JSON.stringify(data, null, 2));
       
       if (!resp.ok) {
         toast.error("Failed to load profile: " + (data.error || "Unknown error"));
+        setLoading(false);
         return;
       }
       
-      if (data.data && data.data.length > 0) {
-        const profile = data.data[0];
+      // Handle different response structures
+      let profile = null;
+      if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+        profile = data.data[0];
+      } else if (data.data && !Array.isArray(data.data)) {
+        profile = data.data;
+      }
+      
+      if (profile) {
+        console.log("[WhatsApp Settings] Parsed profile:", profile);
         setAbout(profile.about || "");
         setAddress(profile.address || "");
         setDescription(profile.description || "");
         setEmail(profile.email || "");
         setVertical(profile.vertical || "");
         const websites = profile.websites || [];
+        console.log("[WhatsApp Settings] Websites:", websites);
         setWebsite1(websites[0] || "");
         setWebsite2(websites[1] || "");
         toast.success("Profile loaded successfully");
       } else {
         // Profile exists but is empty - this is normal for new accounts
+        console.log("[WhatsApp Settings] No profile data in response");
         toast.info("No profile data found. You can set it up below.");
       }
     } catch (e: any) {
