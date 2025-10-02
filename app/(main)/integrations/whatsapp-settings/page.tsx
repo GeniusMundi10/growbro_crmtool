@@ -60,6 +60,7 @@ export default function WhatsAppSettingsPage() {
   const [requestingName, setRequestingName] = useState(false);
 
   // Profile photo
+  const [currentProfilePicture, setCurrentProfilePicture] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -107,6 +108,7 @@ export default function WhatsAppSettingsPage() {
         setDescription(profile.description || "");
         setEmail(profile.email || "");
         setVertical(profile.vertical || "");
+        setCurrentProfilePicture(profile.profile_picture_url || null);
         const websites = profile.websites || [];
         console.log("[WhatsApp Settings] Websites:", websites);
         setWebsite1(websites[0] || "");
@@ -494,8 +496,22 @@ export default function WhatsAppSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {currentProfilePicture && (
+                <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Current Profile Picture</p>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-gray-300 shadow-sm">
+                      <img src={currentProfilePicture} alt="Current profile" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">This is your current WhatsApp Business profile photo</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
-                <Label htmlFor="photoUpload">Select Image</Label>
+                <Label htmlFor="photoUpload">Select New Image</Label>
                 <Input
                   id="photoUpload"
                   type="file"
@@ -510,15 +526,18 @@ export default function WhatsAppSettingsPage() {
               </div>
 
               {previewUrl && (
-                <div className="flex items-center gap-4">
-                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200">
-                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{selectedFile?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedFile && `${(selectedFile.size / 1024).toFixed(1)} KB`}
-                    </p>
+                <div className="rounded-lg bg-blue-50/50 border border-blue-200/50 p-4">
+                  <p className="text-xs font-medium text-blue-700 uppercase tracking-wide mb-3">Preview</p>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-blue-300 shadow-sm">
+                      <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900">{selectedFile?.name}</p>
+                      <p className="text-xs text-blue-700">
+                        {selectedFile && `${(selectedFile.size / 1024).toFixed(1)} KB`}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
