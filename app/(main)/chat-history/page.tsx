@@ -13,6 +13,27 @@ import { Search, Download, Mail, MessageCircle, Clock, User, Phone, AtSign, Cale
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, parseISO } from "date-fns";
+import { siWhatsapp } from 'simple-icons';
+
+// WhatsApp brand icon component
+const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" role="img" xmlns="http://www.w3.org/2000/svg">
+    <path d={siWhatsapp.path} fill="#25D366" />
+  </svg>
+);
+
+// Helper to check if conversation is from WhatsApp
+const isWhatsAppConversation = (chat: any, messages: any[] = []) => {
+  // Check if any message has message_type === 'whatsapp'
+  if (messages.length > 0 && messages.some((m: any) => m.message_type === 'whatsapp')) {
+    return true;
+  }
+  // Check if phone number exists and no email (WhatsApp users typically don't have email)
+  if (chat?.phone && chat.phone !== 'Anonymous' && (!chat?.email || chat.email === 'Anonymous')) {
+    return true;
+  }
+  return false;
+};
 
 function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: { chat: any; onBack?: () => void; onEmailSummary?: (chat: any) => void; sendingSummaryId?: string | null }) {
   const { user } = useUser();
@@ -70,10 +91,12 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
     );
   }
 
+  const isWhatsApp = isWhatsAppConversation(chat, messages);
+
   return (
     <div className="flex-1 flex flex-col bg-white/95 backdrop-blur-sm rounded-tr-2xl shadow-xl border border-gray-200/50">
       {/* Premium Conversation Header */}
-      <div className="border-b border-gray-100 bg-gradient-to-r from-white to-blue-50/30 p-6">
+      <div className={`border-b border-gray-100 p-6 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Mobile back button */}
@@ -81,26 +104,40 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
               <Button
                 variant="ghost"
                 size="sm"
-                className="lg:hidden p-2 hover:bg-blue-100 rounded-xl transition-colors"
+                className={`lg:hidden p-2 rounded-xl transition-colors ${isWhatsApp ? 'hover:bg-green-100' : 'hover:bg-blue-100'}`}
                 onClick={onBack}
               >
-                <ArrowLeft className="h-4 w-4 text-blue-600" />
+                <ArrowLeft className={`h-4 w-4 ${isWhatsApp ? 'text-green-600' : 'text-blue-600'}`} />
               </Button>
             )}
-            <Avatar className="h-12 w-12 shadow-lg ring-2 ring-blue-100">
-              <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold">
+            <Avatar className={`h-12 w-12 shadow-lg ring-2 ${isWhatsApp ? 'ring-green-100' : 'ring-blue-100'}`}>
+              <AvatarFallback className={`text-white font-semibold ${isWhatsApp ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-blue-500 to-purple-600'}`}>
                 {chat.name && chat.name !== "Anonymous" ? chat.name.charAt(0).toUpperCase() : <User className="h-6 w-6" />}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h2 className="font-bold text-xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                {chat.name || "Anonymous Visitor"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  {chat.name || "Anonymous Visitor"}
+                </h2>
+                {isWhatsApp && (
+                  <Badge className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-1">
+                    <WhatsAppIcon className="h-3 w-3" />
+                    WhatsApp
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                <span className="flex items-center px-2 py-1 bg-blue-50 rounded-lg">
-                  <Bot className="h-3 w-3 mr-1 text-blue-600" />
-                  <span className="font-medium text-blue-700">{chat.ai_name}</span>
+                <span className={`flex items-center px-2 py-1 rounded-lg ${isWhatsApp ? 'bg-green-50' : 'bg-blue-50'}`}>
+                  <Bot className={`h-3 w-3 mr-1 ${isWhatsApp ? 'text-green-600' : 'text-blue-600'}`} />
+                  <span className={`font-medium ${isWhatsApp ? 'text-green-700' : 'text-blue-700'}`}>{chat.ai_name}</span>
                 </span>
+                {isWhatsApp && chat.phone && chat.phone !== 'Anonymous' && (
+                  <span className="flex items-center px-2 py-1 bg-green-50 rounded-lg">
+                    <Phone className="h-3 w-3 mr-1 text-green-600" />
+                    <span className="font-medium text-green-700">{chat.phone}</span>
+                  </span>
+                )}
                 <span className="flex items-center">
                   <Calendar className="h-3 w-3 mr-1 text-emerald-600" />
                   <span className="font-medium">{format(parseISO(chat.date), "MMM dd, yyyy")}</span>
@@ -233,23 +270,31 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
   onEmailSummary: () => void;
   sendingSummaryId: string | null;
 }) {
+  const isWhatsApp = isWhatsAppConversation(chat);
+  
   return (
     <div
       className={`mx-2 mb-1 p-4 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-md ${
         isSelected 
-          ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-[1.02]" 
-          : "bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 border border-gray-100"
+          ? isWhatsApp
+            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg transform scale-[1.02]"
+            : "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-[1.02]"
+          : isWhatsApp
+            ? "bg-white hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 border border-green-100"
+            : "bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 border border-gray-100"
       }`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-3 mb-3">
-            <Avatar className={`h-10 w-10 flex-shrink-0 shadow-md ${isSelected ? 'ring-2 ring-white/30' : ''}`}>
+            <Avatar className={`h-10 w-10 flex-shrink-0 shadow-md ${isSelected ? 'ring-2 ring-white/30' : isWhatsApp ? 'ring-2 ring-green-200' : ''}`}>
               <AvatarFallback className={`text-sm font-semibold ${
                 isSelected 
                   ? "bg-white/20 text-white" 
-                  : "bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700"
+                  : isWhatsApp
+                    ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-700"
+                    : "bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700"
               }`}>
                 {chat.name && chat.name !== "Anonymous" ? chat.name.charAt(0).toUpperCase() : "A"}
               </AvatarFallback>
@@ -259,12 +304,27 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
                 <p className={`font-semibold truncate ${isSelected ? "text-white" : "text-gray-900"}`}>
                   {chat.name || "Anonymous Visitor"}
                 </p>
+                {isWhatsApp && (
+                  <Badge 
+                    variant={isSelected ? "secondary" : "outline"} 
+                    className={`text-xs flex items-center ${
+                      isSelected 
+                        ? "bg-white/20 text-white border-white/30" 
+                        : "bg-green-50 text-green-700 border-green-200"
+                    }`}
+                  >
+                    <WhatsAppIcon className="h-3 w-3 mr-1" />
+                    WhatsApp
+                  </Badge>
+                )}
                 <Badge 
                   variant={isSelected ? "secondary" : "outline"} 
                   className={`text-xs flex items-center ${
                     isSelected 
                       ? "bg-white/20 text-white border-white/30" 
-                      : "bg-blue-50 text-blue-700 border-blue-200"
+                      : isWhatsApp
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : "bg-blue-50 text-blue-700 border-blue-200"
                   }`}
                 >
                   <Bot className="h-3 w-3 mr-1" />
@@ -309,7 +369,9 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
                 className={`text-xs ${
                   isSelected 
                     ? "bg-white/15 text-white border-white/20" 
-                    : "bg-orange-50 text-orange-700 border-orange-200"
+                    : isWhatsApp
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : "bg-orange-50 text-orange-700 border-orange-200"
                 }`}
               >
                 <Phone className="h-3 w-3 mr-1" />
