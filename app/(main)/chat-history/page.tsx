@@ -279,7 +279,7 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
   
   return (
     <div
-      className={`mx-2 mb-1 p-4 rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-md ${
+      className={`mx-1 sm:mx-2 mb-1 p-2.5 sm:p-4 rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.01] sm:hover:scale-[1.02] hover:shadow-md ${
         isSelected 
           ? isWhatsApp
             ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg transform scale-[1.02]"
@@ -292,8 +292,8 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-3 mb-3">
-            <Avatar className={`h-10 w-10 flex-shrink-0 shadow-md ${isSelected ? 'ring-2 ring-white/30' : isWhatsApp ? 'ring-2 ring-green-200' : ''}`}>
+          <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
+            <Avatar className={`h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 shadow-md ${isSelected ? 'ring-2 ring-white/30' : isWhatsApp ? 'ring-2 ring-green-200' : ''}`}>
               <AvatarFallback className={`text-sm font-semibold ${
                 isSelected 
                   ? "bg-white/20 text-white" 
@@ -305,14 +305,14 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-1">
-                <p className={`font-semibold truncate ${isSelected ? "text-white" : "text-gray-900"}`}>
+              <div className="flex items-center space-x-1.5 sm:space-x-2 mb-1 flex-wrap">
+                <p className={`text-sm sm:text-base font-semibold truncate ${isSelected ? "text-white" : "text-gray-900"}`}>
                   {chat.name || "Anonymous Visitor"}
                 </p>
                 {isWhatsApp ? (
                   <Badge 
                     variant={isSelected ? "secondary" : "outline"} 
-                    className={`text-xs flex items-center ${
+                    className={`text-[10px] sm:text-xs flex items-center px-1.5 sm:px-2 py-0.5 ${
                       isSelected 
                         ? "bg-white/20 text-white border-white/30" 
                         : "bg-green-50 text-green-700 border-green-200"
@@ -324,19 +324,20 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
                 ) : (
                   <Badge 
                     variant={isSelected ? "secondary" : "outline"} 
-                    className={`text-xs flex items-center ${
+                    className={`text-[10px] sm:text-xs flex items-center px-1.5 sm:px-2 py-0.5 ${
                       isSelected 
                         ? "bg-white/20 text-white border-white/30" 
                         : "bg-blue-50 text-blue-700 border-blue-200"
                     }`}
                   >
-                    <MessageCircle className="h-3 w-3 mr-1" />
-                    Website
+                    <MessageCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                    <span className="hidden sm:inline">Website</span>
+                    <span className="sm:hidden">Web</span>
                   </Badge>
                 )}
                 <Badge 
                   variant={isSelected ? "secondary" : "outline"} 
-                  className={`text-xs flex items-center ${
+                  className={`text-[10px] sm:text-xs flex items-center px-1.5 sm:px-2 py-0.5 ${
                     isSelected 
                       ? "bg-white/20 text-white border-white/30" 
                       : isWhatsApp
@@ -348,17 +349,17 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
                   {chat.ai_name}
                 </Badge>
               </div>
-              <div className={`flex items-center space-x-3 text-xs ${isSelected ? "text-white/80" : "text-gray-500"}`}>
+              <div className={`flex items-center space-x-2 sm:space-x-3 text-[10px] sm:text-xs ${isSelected ? "text-white/80" : "text-gray-500"}`}>
                 <span className="flex items-center">
-                  <Calendar className="h-3 w-3 mr-1" />
+                  <Calendar className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                   {format(parseISO(chat.date), "MMM dd")}
                 </span>
                 <span className="flex items-center">
-                  <MessageCircle className="h-3 w-3 mr-1" />
+                  <MessageCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                   {chat.messages_count}
                 </span>
                 <span className="flex items-center">
-                  <Clock className="h-3 w-3 mr-1" />
+                  <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                   {chat.duration}
                 </span>
               </div>
@@ -575,11 +576,11 @@ export default function ChatHistoryPage() {
       />
       
       {/* Smooth Filters Section */}
-      <div className="bg-white px-6 py-8 border-b border-slate-100">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white px-3 sm:px-6 py-4 sm:py-8 border-b border-slate-100">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <div className="flex items-center space-x-3">
-            <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-              <span className="text-sm font-medium text-blue-700">
+            <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+              <span className="text-xs sm:text-sm font-medium text-blue-700">
                 {chats.length} conversations
               </span>
             </div>
@@ -587,15 +588,15 @@ export default function ChatHistoryPage() {
         </div>
 
         {/* Smooth Filters */}
-        <div className="flex flex-col sm:flex-row gap-6 p-6 bg-slate-50/50 rounded-2xl border border-slate-200/50">
+        <div className="flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 bg-slate-50/50 rounded-2xl border border-slate-200/50">
           {/* AI Filter */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg">
-              <Bot className="h-4 w-4 text-blue-600" />
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-lg">
+              <Bot className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-600" />
             </div>
-            <span className="text-gray-700 text-sm font-semibold min-w-0">AI Agent:</span>
+            <span className="text-gray-700 text-xs sm:text-sm font-semibold">AI Agent:</span>
             <Select value={aiFilter} onValueChange={setAIFilter}>
-              <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm hover:border-blue-300 transition-colors">
+              <SelectTrigger className="w-full sm:w-[180px] bg-white border-gray-200 shadow-sm hover:border-blue-300 transition-colors">
                 <SelectValue placeholder="Select AI" />
               </SelectTrigger>
               <SelectContent>
@@ -607,41 +608,45 @@ export default function ChatHistoryPage() {
           </div>
 
           {/* Date Range Filter */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 bg-emerald-100 rounded-lg">
-              <Calendar className="h-4 w-4 text-emerald-600" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 bg-emerald-100 rounded-lg">
+                <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-600" />
+              </div>
+              <span className="text-gray-700 text-xs sm:text-sm font-semibold">From:</span>
+              <Input
+                type="date"
+                value={dateRange.from}
+                onChange={e => setDateRange({ ...dateRange, from: e.target.value })}
+                className="flex-1 sm:w-[140px] bg-white border-gray-200 shadow-sm hover:border-emerald-300 transition-colors text-xs sm:text-sm"
+              />
             </div>
-            <span className="text-gray-700 text-sm font-semibold">From:</span>
-            <Input
-              type="date"
-              value={dateRange.from}
-              onChange={e => setDateRange({ ...dateRange, from: e.target.value })}
-              className="w-[140px] bg-white border-gray-200 shadow-sm hover:border-emerald-300 transition-colors"
-            />
-            <span className="text-gray-700 text-sm font-semibold">To:</span>
-            <Input
-              type="date"
-              value={dateRange.to}
-              onChange={e => setDateRange({ ...dateRange, to: e.target.value })}
-              className="w-[140px] bg-white border-gray-200 shadow-sm hover:border-emerald-300 transition-colors"
-            />
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <span className="text-gray-700 text-xs sm:text-sm font-semibold sm:ml-0 ml-11">To:</span>
+              <Input
+                type="date"
+                value={dateRange.to}
+                onChange={e => setDateRange({ ...dateRange, to: e.target.value })}
+                className="flex-1 sm:w-[140px] bg-white border-gray-200 shadow-sm hover:border-emerald-300 transition-colors text-xs sm:text-sm"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Elegant Two-Pane Layout */}
-      <div className="flex h-[calc(100vh-200px)] gap-4 px-6">
+      <div className="flex h-[calc(100vh-280px)] sm:h-[calc(100vh-240px)] lg:h-[calc(100vh-200px)] gap-2 sm:gap-4 px-2 sm:px-6">
         {/* Smooth Chat List Pane */}
-        <div className={`${selectedChat ? "hidden lg:flex lg:w-1/3" : "flex w-full lg:w-1/3"} bg-white flex-col rounded-2xl shadow-sm border border-slate-200`}>
+        <div className={`${selectedChat ? "hidden lg:flex lg:w-1/3 xl:w-2/5" : "flex w-full lg:w-1/3 xl:w-2/5"} bg-white flex-col rounded-xl sm:rounded-2xl shadow-sm border border-slate-200`}>
           {/* Clean Search Header */}
-          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
+          <div className="p-3 sm:p-6 border-b border-slate-100 bg-slate-50/30">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-4">
                 <Search className="h-4 w-4 text-gray-400" />
               </div>
               <Input
                 placeholder="Search conversations..."
-                className="pl-11 h-11 bg-white/80 border-gray-200 shadow-sm hover:shadow-md focus:shadow-lg transition-all duration-200 rounded-xl"
+                className="pl-10 sm:pl-11 h-9 sm:h-11 text-sm sm:text-base bg-white/80 border-gray-200 shadow-sm hover:shadow-md focus:shadow-lg transition-all duration-200 rounded-lg sm:rounded-xl"
                 // Add search functionality later if needed
               />
             </div>
@@ -688,7 +693,7 @@ export default function ChatHistoryPage() {
         </div>
 
         {/* Smooth Conversation View Pane */}
-        <div className={`flex-col ${selectedChat ? "flex w-full lg:w-2/3" : "hidden lg:flex lg:w-2/3"}`}>
+        <div className={`flex-col ${selectedChat ? "flex w-full lg:w-2/3 xl:w-3/5" : "hidden lg:flex lg:w-2/3 xl:w-3/5"}`}>
           <ConversationViewer 
             chat={selectedChat} 
             onBack={() => setSelectedChat(null)}
