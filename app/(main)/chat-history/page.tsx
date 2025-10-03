@@ -96,9 +96,9 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
   return (
     <div className="flex-1 flex flex-col bg-white/95 backdrop-blur-sm rounded-tr-2xl shadow-xl border border-gray-200/50">
       {/* Premium Conversation Header */}
-      <div className={`border-b border-gray-100 p-6 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+      <div className={`border-b border-gray-100 p-3 sm:p-6 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'}`}>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Mobile back button */}
             {onBack && (
               <Button
@@ -110,14 +110,14 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
                 <ArrowLeft className={`h-4 w-4 ${isWhatsApp ? 'text-green-600' : 'text-blue-600'}`} />
               </Button>
             )}
-            <Avatar className={`h-12 w-12 shadow-lg ring-2 ${isWhatsApp ? 'ring-green-100' : 'ring-blue-100'}`}>
+            <Avatar className={`h-10 w-10 sm:h-12 sm:w-12 shadow-lg ring-2 ${isWhatsApp ? 'ring-green-100' : 'ring-blue-100'}`}>
               <AvatarFallback className={`text-white font-semibold ${isWhatsApp ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-blue-500 to-purple-600'}`}>
-                {chat.name && chat.name !== "Anonymous" ? chat.name.charAt(0).toUpperCase() : <User className="h-6 w-6" />}
+                {chat.name && chat.name !== "Anonymous" ? chat.name.charAt(0).toUpperCase() : <User className="h-5 w-5 sm:h-6 sm:w-6" />}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-bold text-xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-bold text-base sm:text-xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   {chat.name || "Anonymous Visitor"}
                 </h2>
                 {isWhatsApp ? (
@@ -132,7 +132,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+              <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm text-gray-600 mt-1">
                 <span className={`flex items-center px-2 py-1 rounded-lg ${isWhatsApp ? 'bg-green-50' : 'bg-blue-50'}`}>
                   <Bot className={`h-3 w-3 mr-1 ${isWhatsApp ? 'text-green-600' : 'text-blue-600'}`} />
                   <span className={`font-medium ${isWhatsApp ? 'text-green-700' : 'text-blue-700'}`}>{chat.ai_name}</span>
@@ -156,16 +156,17 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
           </div>
           
           {/* Premium Contact Info Pills + Actions */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+            <div className="flex items-center flex-wrap gap-2">
               {chat.email && chat.email !== "Anonymous" && (
-                <Badge className="bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 px-3 py-1">
+                <Badge className="bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 px-2 sm:px-3 py-1 text-xs">
                   <AtSign className="h-3 w-3 mr-1" />
-                  {chat.email.length > 25 ? `${chat.email.substring(0, 25)}...` : chat.email}
+                  <span className="hidden sm:inline">{chat.email.length > 25 ? `${chat.email.substring(0, 25)}...` : chat.email}</span>
+                  <span className="sm:hidden">{chat.email.length > 15 ? `${chat.email.substring(0, 15)}...` : chat.email}</span>
                 </Badge>
               )}
-              {chat.phone && chat.phone !== "Anonymous" && (
-                <Badge className="bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border-orange-200 px-3 py-1">
+              {chat.phone && chat.phone !== "Anonymous" && !isWhatsApp && (
+                <Badge className="bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border-orange-200 px-2 sm:px-3 py-1 text-xs">
                   <Phone className="h-3 w-3 mr-1" />
                   {chat.phone}
                 </Badge>
@@ -173,16 +174,18 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
             </div>
             <Button
               variant="default"
-              className="ml-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm"
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm text-xs sm:text-sm"
               onClick={() => onEmailSummary && onEmailSummary(chat)}
               disabled={sendingSummaryId === chat.chat_id}
             >
               {sendingSummaryId === chat.chat_id ? (
-                <div className="animate-spin h-4 w-4 mr-2 border-2 border-white/60 border-t-white rounded-full" />
+                <div className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 border-2 border-white/60 border-t-white rounded-full" />
               ) : (
-                <Mail className="h-4 w-4 mr-2" />
+                <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               )}
-              Email Summary
+              <span className="hidden sm:inline">Email Summary</span>
+              <span className="sm:hidden">Email</span>
             </Button>
           </div>
         </div>
@@ -214,27 +217,32 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
             </div>
           ) : (
             <div className="space-y-6">
-              {messages.map((msg, index) => (
-                <div key={msg.id} className={`flex ${msg.sender === "bot" ? "justify-start" : "justify-end"} group`}>
-                  <div className={`max-w-[75%] rounded-2xl px-5 py-4 shadow-md hover:shadow-lg transition-all duration-200 ${
-                    msg.sender === "bot" 
-                      ? "bg-white border border-gray-100 text-gray-800 hover:border-blue-200" 
-                      : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-blue-200"
-                  }`}>
-                    <div className="whitespace-pre-line text-sm leading-relaxed font-medium">{msg.content}</div>
-                    <div className={`text-xs mt-3 flex items-center justify-between opacity-70 group-hover:opacity-100 transition-opacity ${
-                      msg.sender === "bot" ? "text-gray-500" : "text-blue-100"
+              {messages.map((msg, index) => {
+                // Check if message is from bot using metadata or sender field
+                const isBot = msg.metadata?.is_bot === true || msg.sender === "bot";
+                
+                return (
+                  <div key={msg.id} className={`flex ${isBot ? "justify-start" : "justify-end"} group`}>
+                    <div className={`max-w-[75%] rounded-2xl px-5 py-4 shadow-md hover:shadow-lg transition-all duration-200 ${
+                      isBot
+                        ? "bg-white border border-gray-100 text-gray-800 hover:border-blue-200" 
+                        : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-blue-200"
                     }`}>
-                      <span className="font-medium">
-                        {msg.sender === "bot" ? chat.ai_name : "Customer"}
-                      </span>
-                      <span>
-                        {msg.timestamp ? format(new Date(msg.timestamp), "HH:mm") : ""}
-                      </span>
+                      <div className="whitespace-pre-line text-sm leading-relaxed font-medium">{msg.content}</div>
+                      <div className={`text-xs mt-3 flex items-center justify-between opacity-70 group-hover:opacity-100 transition-opacity ${
+                        isBot ? "text-gray-500" : "text-blue-100"
+                      }`}>
+                        <span className="font-medium">
+                          {isBot ? chat.ai_name : "Customer"}
+                        </span>
+                        <span>
+                          {msg.timestamp ? format(new Date(msg.timestamp), "HH:mm") : ""}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>
