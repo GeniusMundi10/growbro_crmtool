@@ -94,9 +94,9 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
   const isWhatsApp = isWhatsAppConversation(chat, messages);
 
   return (
-    <div className="flex-1 flex flex-col bg-white/95 backdrop-blur-sm rounded-tr-2xl shadow-xl border border-gray-200/50">
+    <div className="flex-1 flex flex-col bg-white/95 backdrop-blur-sm rounded-tr-2xl shadow-xl border border-gray-200/50 overflow-hidden">
       {/* Premium Conversation Header */}
-      <div className={`border-b border-gray-100 p-3 sm:p-6 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'}`}>
+      <div className={`border-b border-gray-100 p-3 sm:p-6 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'} overflow-x-auto`}>
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Mobile back button */}
@@ -192,8 +192,9 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
       </div>
 
       {/* Premium Messages Area */}
-      <div className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative overflow-hidden">
-        <ScrollArea className="h-full p-3 sm:p-6">
+      <div className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative overflow-hidden w-full">
+        <ScrollArea className="h-full w-full">
+          <div className="p-3 sm:p-6 w-full">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -245,6 +246,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
               })}
             </div>
           )}
+          </div>
         </ScrollArea>
       </div>
 
