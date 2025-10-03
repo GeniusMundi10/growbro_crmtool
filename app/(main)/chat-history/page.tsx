@@ -192,9 +192,8 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
       </div>
 
       {/* Premium Messages Area */}
-      <div className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative overflow-hidden w-full">
-        <ScrollArea className="h-full w-full">
-          <div className="p-3 sm:p-6 w-full">
+      <div className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative overflow-x-hidden overflow-y-auto w-full">
+        <div className="p-3 sm:p-6 w-full max-w-full">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -246,8 +245,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
               })}
             </div>
           )}
-          </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Premium Conversation Info Footer */}
