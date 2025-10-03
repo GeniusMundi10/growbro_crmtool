@@ -120,10 +120,15 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
                 <h2 className="font-bold text-xl bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   {chat.name || "Anonymous Visitor"}
                 </h2>
-                {isWhatsApp && (
+                {isWhatsApp ? (
                   <Badge className="bg-green-500 hover:bg-green-600 text-white flex items-center gap-1">
                     <WhatsAppIcon className="h-3 w-3" />
                     WhatsApp
+                  </Badge>
+                ) : (
+                  <Badge className="bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-1">
+                    <MessageCircle className="h-3 w-3" />
+                    Website
                   </Badge>
                 )}
               </div>
@@ -304,7 +309,7 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
                 <p className={`font-semibold truncate ${isSelected ? "text-white" : "text-gray-900"}`}>
                   {chat.name || "Anonymous Visitor"}
                 </p>
-                {isWhatsApp && (
+                {isWhatsApp ? (
                   <Badge 
                     variant={isSelected ? "secondary" : "outline"} 
                     className={`text-xs flex items-center ${
@@ -315,6 +320,18 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
                   >
                     <WhatsAppIcon className="h-3 w-3 mr-1" />
                     WhatsApp
+                  </Badge>
+                ) : (
+                  <Badge 
+                    variant={isSelected ? "secondary" : "outline"} 
+                    className={`text-xs flex items-center ${
+                      isSelected 
+                        ? "bg-white/20 text-white border-white/30" 
+                        : "bg-blue-50 text-blue-700 border-blue-200"
+                    }`}
+                  >
+                    <MessageCircle className="h-3 w-3 mr-1" />
+                    Website
                   </Badge>
                 )}
                 <Badge 
