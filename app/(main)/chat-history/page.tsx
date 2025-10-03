@@ -192,8 +192,8 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
       </div>
 
       {/* Premium Messages Area */}
-      <div className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative">
-        <ScrollArea className="h-full p-6">
+      <div className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative overflow-hidden">
+        <ScrollArea className="h-full p-3 sm:p-6">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -216,26 +216,26 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {messages.map((msg, index) => {
                 // Check if message is from bot using metadata or sender field
                 const isBot = msg.metadata?.is_bot === true || msg.sender === "bot";
                 
                 return (
                   <div key={msg.id} className={`flex ${isBot ? "justify-start" : "justify-end"} group`}>
-                    <div className={`max-w-[75%] rounded-2xl px-5 py-4 shadow-md hover:shadow-lg transition-all duration-200 ${
+                    <div className={`max-w-[85%] sm:max-w-[75%] rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-4 shadow-md hover:shadow-lg transition-all duration-200 ${
                       isBot
                         ? "bg-white border border-gray-100 text-gray-800 hover:border-blue-200" 
                         : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-blue-200"
                     }`}>
-                      <div className="whitespace-pre-line text-sm leading-relaxed font-medium">{msg.content}</div>
-                      <div className={`text-xs mt-3 flex items-center justify-between opacity-70 group-hover:opacity-100 transition-opacity ${
+                      <div className="whitespace-pre-line text-xs sm:text-sm leading-relaxed font-medium break-words">{msg.content}</div>
+                      <div className={`text-[10px] sm:text-xs mt-2 sm:mt-3 flex items-center justify-between opacity-70 group-hover:opacity-100 transition-opacity ${
                         isBot ? "text-gray-500" : "text-blue-100"
                       }`}>
-                        <span className="font-medium">
+                        <span className="font-medium truncate mr-2">
                           {isBot ? chat.ai_name : "Customer"}
                         </span>
-                        <span>
+                        <span className="whitespace-nowrap">
                           {msg.timestamp ? format(new Date(msg.timestamp), "HH:mm") : ""}
                         </span>
                       </div>
