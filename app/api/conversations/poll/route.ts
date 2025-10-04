@@ -14,15 +14,21 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Verify user is authenticated
-    const sessionCookie = cookieStore.get('sb-access-token');
-    if (!sessionCookie) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Try to find Supabase auth cookie (it might have different names)
+    const allCookies = cookieStore.getAll();
+    const authCookie = allCookies.find(c => 
+      c.name.includes('sb-') && c.name.includes('auth-token')
+    );
+    
+    if (!authCookie) {
+      console.error('[Poll] No auth cookie found. Available cookies:', allCookies.map(c => c.name));
+      return NextResponse.json({ error: 'Unauthorized - No auth cookie' }, { status: 401 });
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(sessionCookie.value);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authCookie.value);
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error('[Poll] Auth error:', authError);
+      return NextResponse.json({ error: 'Unauthorized - Invalid session' }, { status: 401 });
     }
 
     const userId = user.id;

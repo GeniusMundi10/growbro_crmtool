@@ -12,14 +12,20 @@ export async function GET(request: NextRequest) {
     const cookieStore = await cookies();
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    // Verify user is authenticated
-    const sessionCookie = cookieStore.get('sb-access-token');
-    if (!sessionCookie) {
+    // Try to find Supabase auth cookie
+    const allCookies = cookieStore.getAll();
+    const authCookie = allCookies.find(c => 
+      c.name.includes('sb-') && c.name.includes('auth-token')
+    );
+    
+    if (!authCookie) {
+      console.error('[Auto-disable] No auth cookie found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(sessionCookie.value);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authCookie.value);
     if (authError || !user) {
+      console.error('[Auto-disable] Auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
