@@ -24,6 +24,23 @@ export async function POST(
     const userId = user.id;
 
     if (action === 'enable') {
+      // First check if conversation exists
+      const { data: existingConvo, error: checkError } = await supabase
+        .from('conversations')
+        .select('id, client_id')
+        .eq('id', conversationId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('[Intervention] Error checking conversation:', checkError);
+        return NextResponse.json({ error: checkError.message }, { status: 500 });
+      }
+
+      if (!existingConvo) {
+        console.error('[Intervention] Conversation not found:', conversationId);
+        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+      }
+
       // Enable intervention
       const { data, error } = await supabase
         .from('conversations')
@@ -38,7 +55,7 @@ export async function POST(
         .single();
 
       if (error) {
-        console.error('Error enabling intervention:', error);
+        console.error('[Intervention] Error enabling intervention:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
