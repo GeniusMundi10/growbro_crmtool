@@ -45,31 +45,43 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
   const [messageInput, setMessageInput] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
 
+  const fetchMessages = async () => {
+    if (!chat?.chat_id) {
+      setLoading(false);
+      return;
+    }
+    
+    const trimmedId = typeof chat.chat_id === 'string' ? chat.chat_id.trim() : chat.chat_id;
+    
+    const { data, error } = await (await import("@/lib/supabase")).supabase
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", trimmedId)
+      .eq("client_id", user?.id)
+      .order("timestamp", { ascending: true });
+    
+    if (!error && data) setMessages(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
     setLoading(true);
-    async function fetchMessages() {
-      if (!chat?.chat_id) {
-        setLoading(false);
-        return;
-      }
-      
-      const trimmedId = typeof chat.chat_id === 'string' ? chat.chat_id.trim() : chat.chat_id;
-      
-      const { data, error } = await (await import("@/lib/supabase")).supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", trimmedId)
-        .eq("client_id", user?.id)
-        .order("timestamp", { ascending: true });
-      
-      if (!error && data) setMessages(data);
-      setLoading(false);
-    }
     fetchMessages();
     
     // Load intervention status
     setInterventionEnabled(chat?.intervention_enabled || false);
   }, [chat, user?.id]);
+
+  // Auto-refresh messages every 10 seconds when conversation is open
+  useEffect(() => {
+    if (!chat?.chat_id) return;
+
+    const interval = setInterval(() => {
+      fetchMessages();
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [chat?.chat_id, user?.id]);
 
   const toggleIntervention = async () => {
     if (!chat?.chat_id) return;
@@ -646,6 +658,41 @@ export default function ChatHistoryPage() {
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const searchParams = useSearchParams();
   const deepLinkChatId = searchParams.get('chatId');
+
+  // Check for stale interventions on mount and periodically
+  useEffect(() => {
+    const checkStaleInterventions = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Call the auto-disable function
+        const response = await fetch('/api/conversations/auto-disable-stale');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.disabled_count > 0) {
+            console.log(`[Auto-disable] Disabled ${data.disabled_count} stale interventions`);
+            // Refresh chat list to show updated states
+            const { data: freshChats } = await (await import("@/lib/supabase")).supabase
+              .from("chat_history")
+              .select("*")
+              .eq("client_id", user.id)
+              .order("date", { ascending: false });
+            if (freshChats) setChats(freshChats);
+          }
+        }
+      } catch (error) {
+        console.error('[Auto-disable] Error:', error);
+      }
+    };
+
+    // Check on mount
+    checkStaleInterventions();
+
+    // Check every 5 minutes
+    const interval = setInterval(checkStaleInterventions, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   // Real-time polling for conversation updates
   useConversationPolling(user?.id, {
