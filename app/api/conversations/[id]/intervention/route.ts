@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 export async function POST(
   request: NextRequest,
@@ -12,29 +10,15 @@ export async function POST(
     const conversationId = params.id;
     const { action } = await request.json();
 
-    // Create Supabase client with service role for admin operations
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create Supabase client with auth helpers (handles cookies automatically)
+    const supabase = createRouteHandlerClient({ cookies });
 
-    // Get user from session cookies (Next.js 13+ way)
-    const { cookies } = await import('next/headers');
-    const cookieStore = await cookies();
-    
-    // Try to find Supabase auth cookie
-    const allCookies = cookieStore.getAll();
-    const authCookie = allCookies.find(c => 
-      c.name.includes('sb-') && c.name.includes('auth-token')
-    );
-    
-    if (!authCookie) {
-      console.error('[Intervention] No auth cookie found. Available cookies:', allCookies.map(c => c.name));
-      return NextResponse.json({ error: 'Unauthorized - No session' }, { status: 401 });
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authCookie.value);
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       console.error('[Intervention] Auth error:', authError);
-      return NextResponse.json({ error: 'Unauthorized - Invalid session' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = user.id;

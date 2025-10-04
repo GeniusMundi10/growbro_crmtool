@@ -1,29 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 // Client-side auto-disable endpoint (no cron needed)
 export async function GET(request: NextRequest) {
   try {
-    // Get user from session
-    const cookieStore = await cookies();
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Try to find Supabase auth cookie
-    const allCookies = cookieStore.getAll();
-    const authCookie = allCookies.find(c => 
-      c.name.includes('sb-') && c.name.includes('auth-token')
-    );
-    
-    if (!authCookie) {
-      console.error('[Auto-disable] No auth cookie found');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Create Supabase client with auth helpers (handles cookies automatically)
+    const supabase = createRouteHandlerClient({ cookies });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authCookie.value);
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       console.error('[Auto-disable] Auth error:', authError);
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
