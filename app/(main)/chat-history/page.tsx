@@ -9,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Download, Mail, MessageCircle, Clock, User, Phone, AtSign, Calendar, Bot, MoreVertical, ArrowLeft } from "lucide-react";
+import { Search, Download, Mail, MessageCircle, Clock, User, Phone, AtSign, Calendar, Bot, MoreVertical, ArrowLeft, UserCheck, Send } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format, parseISO } from "date-fns";
 import { siWhatsapp } from 'simple-icons';
+import { useConversationPolling } from "@/hooks/useConversationPolling";
 
 // WhatsApp brand icon component
 const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
@@ -39,6 +40,10 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
   const { user } = useUser();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [interventionEnabled, setInterventionEnabled] = useState(false);
+  const [togglingIntervention, setTogglingIntervention] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -61,7 +66,73 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
       setLoading(false);
     }
     fetchMessages();
+    
+    // Load intervention status
+    setInterventionEnabled(chat?.intervention_enabled || false);
   }, [chat, user?.id]);
+
+  const toggleIntervention = async () => {
+    if (!chat?.chat_id) return;
+    
+    setTogglingIntervention(true);
+    try {
+      const action = interventionEnabled ? 'disable' : 'enable';
+      const response = await fetch(`/api/conversations/${chat.chat_id}/intervention`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      
+      if (response.ok) {
+        setInterventionEnabled(!interventionEnabled);
+        // Optionally refresh the chat list here
+      } else {
+        alert('Failed to toggle intervention');
+      }
+    } catch (error) {
+      console.error('Error toggling intervention:', error);
+      alert('Error toggling intervention');
+    } finally {
+      setTogglingIntervention(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!messageInput.trim() || !chat?.chat_id) return;
+    
+    setSendingMessage(true);
+    try {
+      const platform = isWhatsAppConversation(chat, messages) ? 'whatsapp' : 'website';
+      const response = await fetch(`/api/conversations/${chat.chat_id}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: messageInput,
+          platform,
+        }),
+      });
+      
+      if (response.ok) {
+        // Add message to local state immediately for better UX
+        const newMessage = {
+          id: Date.now().toString(),
+          content: messageInput,
+          sender: 'agent',
+          timestamp: new Date().toISOString(),
+          metadata: { is_bot: false, sent_by_human: true },
+        };
+        setMessages([...messages, newMessage]);
+        setMessageInput('');
+      } else {
+        alert('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Error sending message');
+    } finally {
+      setSendingMessage(false);
+    }
+  };
 
   if (!chat) {
     return (
@@ -175,6 +246,27 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
             <Button
               variant="default"
               size="sm"
+              className={`rounded-lg shadow-sm text-xs sm:text-sm transition-all ${
+                interventionEnabled
+                  ? "bg-orange-600 hover:bg-orange-700 text-white ring-2 ring-orange-300"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
+              onClick={toggleIntervention}
+              disabled={togglingIntervention}
+            >
+              {togglingIntervention ? (
+                <div className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 border-2 border-white/60 border-t-white rounded-full" />
+              ) : interventionEnabled ? (
+                <UserCheck className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              ) : (
+                <Bot className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              )}
+              <span className="hidden sm:inline">{interventionEnabled ? "Intervening" : "AI Responding"}</span>
+              <span className="sm:hidden">{interventionEnabled ? "You" : "AI"}</span>
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
               className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm text-xs sm:text-sm"
               onClick={() => onEmailSummary && onEmailSummary(chat)}
               disabled={sendingSummaryId === chat.chat_id}
@@ -248,6 +340,50 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
         </div>
       </div>
 
+      {/* Message Input (shown only when intervening) */}
+      {interventionEnabled && (
+        <div className="border-t-2 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 p-4">
+          <div className="flex gap-2 items-center">
+            <div className="flex-1 relative">
+              <Input
+                placeholder="Type your message to the customer..."
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                className="pr-12 border-orange-300 focus:ring-orange-500 focus:border-orange-500"
+                disabled={sendingMessage}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                Press Enter
+              </div>
+            </div>
+            <Button
+              onClick={sendMessage}
+              disabled={!messageInput.trim() || sendingMessage}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              {sendingMessage ? (
+                <div className="animate-spin h-4 w-4 border-2 border-white/60 border-t-white rounded-full" />
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Send
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-orange-600 mt-2 flex items-center">
+            <UserCheck className="h-3 w-3 mr-1" />
+            You are intervening - AI will not respond to new messages
+          </p>
+        </div>
+      )}
+
       {/* Premium Conversation Info Footer */}
       <div className="border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -284,17 +420,33 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
   sendingSummaryId: string | null;
 }) {
   const isWhatsApp = isWhatsAppConversation(chat);
+  const isIntervening = chat.intervention_enabled === true;
+  const unreadCount = chat.unread_count || 0;
+  
+  // Check if conversation is active (last message within 30 minutes)
+  const isActive = (() => {
+    const lastMessageTime = chat.last_customer_message_at || chat.date;
+    if (!lastMessageTime) return false;
+    const lastMessageDate = new Date(lastMessageTime);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastMessageDate.getTime()) / (1000 * 60);
+    return diffMinutes <= 30;
+  })();
   
   return (
     <div
-      className={`mx-1 sm:mx-2 mb-1 p-2.5 sm:p-4 rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.01] sm:hover:scale-[1.02] hover:shadow-md ${
+      className={`mx-1 sm:mx-2 mb-1 p-2.5 sm:p-4 rounded-lg sm:rounded-xl cursor-pointer transition-all duration-300 hover:scale-[1.01] sm:hover:scale-[1.02] hover:shadow-md relative ${
         isSelected 
-          ? isWhatsApp
-            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg transform scale-[1.02]"
-            : "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-[1.02]"
-          : isWhatsApp
-            ? "bg-white hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 border border-green-100"
-            : "bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 border border-gray-100"
+          ? isIntervening
+            ? "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg transform scale-[1.02] ring-2 ring-orange-300"
+            : isWhatsApp
+              ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg transform scale-[1.02]"
+              : "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-[1.02]"
+          : isIntervening
+            ? "bg-white hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 border-2 border-orange-400 shadow-orange-200"
+            : isWhatsApp
+              ? "bg-white hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 border border-green-100"
+              : "bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 border border-gray-100"
       }`}
       onClick={onClick}
     >
@@ -356,6 +508,39 @@ function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, s
                   <Bot className="h-3 w-3 mr-1" />
                   {chat.ai_name}
                 </Badge>
+                {isIntervening && (
+                  <Badge 
+                    variant={isSelected ? "secondary" : "outline"} 
+                    className={`text-[10px] sm:text-xs flex items-center px-1.5 sm:px-2 py-0.5 animate-pulse ${
+                      isSelected 
+                        ? "bg-white/20 text-white border-white/30" 
+                        : "bg-orange-100 text-orange-700 border-orange-300"
+                    }`}
+                  >
+                    <UserCheck className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
+                    Intervening
+                  </Badge>
+                )}
+                {unreadCount > 0 && (
+                  <Badge 
+                    className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 min-w-[20px] justify-center"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
+                {isActive && !isIntervening && (
+                  <Badge 
+                    variant={isSelected ? "secondary" : "outline"} 
+                    className={`text-[10px] sm:text-xs flex items-center px-1.5 sm:px-2 py-0.5 ${
+                      isSelected 
+                        ? "bg-white/20 text-white border-white/30" 
+                        : "bg-emerald-50 text-emerald-700 border-emerald-300"
+                    }`}
+                  >
+                    <div className="h-2 w-2 bg-emerald-500 rounded-full mr-1 animate-pulse" />
+                    Active
+                  </Badge>
+                )}
               </div>
               <div className={`flex items-center space-x-2 sm:space-x-3 text-[10px] sm:text-xs ${isSelected ? "text-white/80" : "text-gray-500"}`}>
                 <span className="flex items-center">
@@ -461,6 +646,48 @@ export default function ChatHistoryPage() {
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const searchParams = useSearchParams();
   const deepLinkChatId = searchParams.get('chatId');
+
+  // Real-time polling for conversation updates
+  useConversationPolling(user?.id, {
+    enabled: !userLoading && !!user?.id,
+    interval: 10000, // Poll every 10 seconds
+    onUpdate: async (data) => {
+      if (data.updated_conversations && data.updated_conversations.length > 0) {
+        console.log('[Chat History] Received updates:', data.updated_conversations.length);
+        
+        // Merge updates into existing chats
+        setChats(prevChats => {
+          const updatedChatsMap = new Map(data.updated_conversations.map((c: any) => [c.chat_id, c]));
+          
+          // Update existing chats or add new ones
+          const mergedChats = prevChats.map(chat => {
+            const updated = updatedChatsMap.get(chat.chat_id);
+            if (updated) {
+              updatedChatsMap.delete(chat.chat_id);
+              return updated;
+            }
+            return chat;
+          });
+          
+          // Add any new conversations
+          const newChats = Array.from(updatedChatsMap.values());
+          return [...newChats, ...mergedChats].sort((a, b) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+        });
+        
+        // Update selected chat if it was updated
+        if (selectedChat) {
+          const updatedSelected = data.updated_conversations.find(
+            (c: any) => c.chat_id === selectedChat.chat_id
+          );
+          if (updatedSelected) {
+            setSelectedChat(updatedSelected);
+          }
+        }
+      }
+    },
+  });
 
   // Move fetchChats inside useEffect to fix dependency issue
   useEffect(() => {

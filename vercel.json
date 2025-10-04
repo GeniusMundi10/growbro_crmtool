@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/auto-disable-intervention",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
