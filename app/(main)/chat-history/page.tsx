@@ -45,6 +45,8 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
   const [messageInput, setMessageInput] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const previousScrollHeight = useRef<number>(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,18 +68,38 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
       .order("timestamp", { ascending: true });
     
     if (!error && data) {
+      // Save current scroll position before updating
+      const container = scrollContainerRef.current;
+      const wasAtBottom = container 
+        ? container.scrollHeight - container.scrollTop - container.clientHeight < 100
+        : false;
+      
       setMessages(prevMessages => {
         // Only update if messages changed (avoid unnecessary re-renders)
         if (JSON.stringify(prevMessages) === JSON.stringify(data)) {
           return prevMessages;
         }
+        
+        // Store previous scroll height
+        if (container) {
+          previousScrollHeight.current = container.scrollHeight;
+        }
+        
         return data;
       });
       
-      // Only scroll on initial load
-      if (isInitialLoad) {
-        setTimeout(scrollToBottom, 100);
-      }
+      // Handle scroll after state update
+      setTimeout(() => {
+        if (isInitialLoad) {
+          scrollToBottom();
+        } else if (container && !wasAtBottom) {
+          // Preserve scroll position when new messages arrive
+          const heightDifference = container.scrollHeight - previousScrollHeight.current;
+          if (heightDifference > 0) {
+            container.scrollTop += heightDifference;
+          }
+        }
+      }, 0);
     }
     setLoading(false);
   };
@@ -345,7 +367,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
       </div>
 
       {/* Premium Messages Area */}
-      <div className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative overflow-x-hidden overflow-y-auto w-full">
+      <div ref={scrollContainerRef} className="flex-1 bg-gradient-to-b from-blue-50/20 to-purple-50/20 relative overflow-x-hidden overflow-y-auto w-full">
         <div className="p-3 sm:p-6 w-full max-w-full">
           {loading ? (
             <div className="flex items-center justify-center h-full">
