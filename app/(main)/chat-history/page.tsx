@@ -322,22 +322,27 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
           ) : (
             <div className="space-y-4 sm:space-y-6">
               {messages.map((msg, index) => {
-                // Check if message is from bot using metadata or sender field
+                // Check message sender type
                 const isBot = msg.metadata?.is_bot === true || msg.sender === "bot";
+                const isAgent = msg.sender === "agent" || msg.metadata?.sent_by_human === true;
+                const isCustomer = msg.sender === "user" && !isAgent;
+                
+                // Determine message alignment and styling
+                const isFromCustomer = isCustomer;
                 
                 return (
-                  <div key={msg.id} className={`flex ${isBot ? "justify-start" : "justify-end"} group`}>
+                  <div key={msg.id} className={`flex ${isFromCustomer ? "justify-start" : "justify-end"} group`}>
                     <div className={`max-w-[85%] sm:max-w-[75%] rounded-xl sm:rounded-2xl px-3 py-3 sm:px-5 sm:py-4 shadow-md hover:shadow-lg transition-all duration-200 ${
-                      isBot
+                      isFromCustomer
                         ? "bg-white border border-gray-100 text-gray-800 hover:border-blue-200" 
                         : "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-blue-200"
                     }`}>
                       <div className="whitespace-pre-line text-xs sm:text-sm leading-relaxed font-medium break-words">{msg.content}</div>
                       <div className={`text-[10px] sm:text-xs mt-2 sm:mt-3 flex items-center justify-between opacity-70 group-hover:opacity-100 transition-opacity ${
-                        isBot ? "text-gray-500" : "text-blue-100"
+                        isFromCustomer ? "text-gray-500" : "text-blue-100"
                       }`}>
                         <span className="font-medium truncate mr-2">
-                          {isBot ? chat.ai_name : "Customer"}
+                          {isBot ? chat.ai_name : isAgent ? "You" : "Customer"}
                         </span>
                         <span className="whitespace-nowrap">
                           {msg.timestamp ? format(new Date(msg.timestamp), "HH:mm") : ""}
@@ -723,12 +728,17 @@ export default function ChatHistoryPage() {
           );
         });
         
-        // Update selected chat if it was updated
+        // Update selected chat if it was updated (preserve selection)
         if (selectedChat) {
           const updatedSelected = data.updated_conversations.find(
-            (c: any) => c.chat_id === selectedChat.chat_id
+            (c: any) => String(c.chat_id).trim() === String(selectedChat.chat_id).trim()
           );
           if (updatedSelected) {
+            console.log('[Chat History] Updating selected chat after poll:', {
+              oldId: selectedChat.chat_id,
+              newId: updatedSelected.chat_id,
+              interventionEnabled: updatedSelected.intervention_enabled
+            });
             setSelectedChat(updatedSelected);
           }
         }
