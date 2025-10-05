@@ -728,7 +728,7 @@ export default function ChatHistoryPage() {
           );
         });
         
-        // Update selected chat if it was updated (preserve selection)
+        // Update selected chat if it was updated (preserve selection and merge data)
         if (selectedChat) {
           const updatedSelected = data.updated_conversations.find(
             (c: any) => String(c.chat_id).trim() === String(selectedChat.chat_id).trim()
@@ -739,7 +739,16 @@ export default function ChatHistoryPage() {
               newId: updatedSelected.chat_id,
               interventionEnabled: updatedSelected.intervention_enabled
             });
-            setSelectedChat(updatedSelected);
+            // Merge: keep original chat data, only update intervention fields
+            setSelectedChat({
+              ...selectedChat,
+              intervention_enabled: updatedSelected.intervention_enabled,
+              intervention_started_at: updatedSelected.intervention_started_at,
+              last_intervention_activity: updatedSelected.last_intervention_activity,
+              intervened_by: updatedSelected.intervened_by,
+              unread_count: updatedSelected.unread_count,
+              last_customer_message_at: updatedSelected.last_customer_message_at,
+            });
           }
         }
       }

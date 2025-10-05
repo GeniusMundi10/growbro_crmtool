@@ -74,25 +74,31 @@ export async function GET(request: NextRequest) {
     }, {});
 
     // Format conversations to match expected structure
-    const conversations = rawConversations?.map((c: any) => ({
-      chat_id: c.id,
-      date: c.started_at,
-      ai_name: c.business_info?.[0]?.ai_name || 'Unknown',
-      name: c.end_users?.[0]?.name || 'Anonymous',
-      email: c.end_users?.[0]?.email || 'Anonymous',
-      phone: c.end_users?.[0]?.phone || 'Anonymous',
-      messages_count: messageCountMap[c.id] || 0,
-      duration: '0 min',
-      client_id: c.client_id,
-      ai_id: c.ai_id,
-      end_user_id: c.end_user_id,
-      intervention_enabled: c.intervention_enabled || false,
-      intervention_started_at: c.intervention_started_at,
-      last_intervention_activity: c.last_intervention_activity,
-      intervened_by: c.intervened_by,
-      unread_count: c.unread_count || 0,
-      last_customer_message_at: c.last_customer_message_at,
-    })) || [];
+    const conversations = rawConversations?.map((c: any) => {
+      // Handle joined data - Supabase returns arrays for foreign key relationships
+      const businessInfo = Array.isArray(c.business_info) ? c.business_info[0] : c.business_info;
+      const endUser = Array.isArray(c.end_users) ? c.end_users[0] : c.end_users;
+      
+      return {
+        chat_id: c.id,
+        date: c.started_at,
+        ai_name: businessInfo?.ai_name || 'Unknown',
+        name: endUser?.name || 'Anonymous',
+        email: endUser?.email || 'Anonymous',
+        phone: endUser?.phone || 'Anonymous',
+        messages_count: messageCountMap[c.id] || 0,
+        duration: '0 min',
+        client_id: c.client_id,
+        ai_id: c.ai_id,
+        end_user_id: c.end_user_id,
+        intervention_enabled: c.intervention_enabled || false,
+        intervention_started_at: c.intervention_started_at,
+        last_intervention_activity: c.last_intervention_activity,
+        intervened_by: c.intervened_by,
+        unread_count: c.unread_count || 0,
+        last_customer_message_at: c.last_customer_message_at,
+      };
+    }) || [];
 
     // Return updated conversations
     return NextResponse.json({
