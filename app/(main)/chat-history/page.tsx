@@ -707,7 +707,7 @@ export default function ChatHistoryPage() {
       if (data.updated_conversations && data.updated_conversations.length > 0) {
         console.log('[Chat History] Received updates:', data.updated_conversations.length);
         
-        // Merge updates into existing chats
+        // Merge updates into existing chats (preserve original data, update intervention fields)
         setChats(prevChats => {
           const updatedChatsMap = new Map(data.updated_conversations.map((c: any) => [c.chat_id, c]));
           
@@ -716,7 +716,16 @@ export default function ChatHistoryPage() {
             const updated = updatedChatsMap.get(chat.chat_id);
             if (updated) {
               updatedChatsMap.delete(chat.chat_id);
-              return updated;
+              // Merge: keep original chat data, only update intervention fields
+              return {
+                ...chat,
+                intervention_enabled: updated.intervention_enabled,
+                intervention_started_at: updated.intervention_started_at,
+                last_intervention_activity: updated.last_intervention_activity,
+                intervened_by: updated.intervened_by,
+                unread_count: updated.unread_count,
+                last_customer_message_at: updated.last_customer_message_at,
+              };
             }
             return chat;
           });
