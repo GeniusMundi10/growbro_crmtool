@@ -70,7 +70,32 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
     
     // Load intervention status
     setInterventionEnabled(chat?.intervention_enabled || false);
+    
+    // Mark conversation as read when opened
+    if (chat?.chat_id && chat?.unread_count > 0) {
+      markAsRead();
+    }
   }, [chat, user?.id]);
+
+  const markAsRead = async () => {
+    if (!chat?.chat_id) return;
+    
+    try {
+      const response = await fetch(`/api/conversations/${chat.chat_id}/mark-read`, {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        // Update parent to remove badge immediately
+        if (onInterventionToggle) {
+          // Reuse the callback to update unread_count
+          onInterventionToggle(chat.chat_id, chat.intervention_enabled);
+        }
+      }
+    } catch (error) {
+      console.error('[Mark Read] Error:', error);
+    }
+  };
 
   // Auto-refresh messages every 10 seconds when conversation is open
   useEffect(() => {
@@ -1014,17 +1039,17 @@ export default function ChatHistoryPage() {
             onEmailSummary={(chat) => sendSummaryEmail(chat)}
             sendingSummaryId={sendingSummaryId}
             onInterventionToggle={(chatId, enabled) => {
-              // Update chat list immediately
+              // Update chat list immediately (intervention toggle or mark as read)
               setChats(prevChats => 
                 prevChats.map(c => 
                   c.chat_id === chatId 
-                    ? { ...c, intervention_enabled: enabled }
+                    ? { ...c, intervention_enabled: enabled, unread_count: 0 }
                     : c
                 )
               );
               // Update selected chat
               if (selectedChat?.chat_id === chatId) {
-                setSelectedChat({ ...selectedChat, intervention_enabled: enabled });
+                setSelectedChat({ ...selectedChat, intervention_enabled: enabled, unread_count: 0 });
               }
             }}
           />
