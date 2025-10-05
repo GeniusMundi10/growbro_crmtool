@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@/context/UserContext";
 import Header from "@/components/header";
@@ -44,6 +44,11 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
   const [togglingIntervention, setTogglingIntervention] = useState(false);
   const [messageInput, setMessageInput] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const fetchMessages = async () => {
     if (!chat?.chat_id) {
@@ -60,7 +65,11 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
       .eq("client_id", user?.id)
       .order("timestamp", { ascending: true });
     
-    if (!error && data) setMessages(data);
+    if (!error && data) {
+      setMessages(data);
+      // Scroll to bottom after messages load
+      setTimeout(scrollToBottom, 100);
+    }
     setLoading(false);
   };
 
@@ -164,6 +173,8 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
         };
         setMessages([...messages, newMessage]);
         setMessageInput('');
+        // Scroll to bottom after sending message
+        setTimeout(scrollToBottom, 100);
       } else {
         alert('Failed to send message');
       }
@@ -381,6 +392,8 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
                   </div>
                 );
               })}
+              {/* Invisible element to scroll to */}
+              <div ref={messagesEndRef} />
             </div>
           )}
         </div>

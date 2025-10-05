@@ -57,6 +57,51 @@ export async function POST(
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      // Send handoff message to customer (only once when intervention is enabled)
+      try {
+        const handoffMessage = "An agent will assist you shortly. Please wait.";
+        
+        // Get end user details to determine platform
+        const { data: endUserData } = await supabase
+          .from('end_users')
+          .select('phone')
+          .eq('id', data.end_user_id)
+          .single();
+        
+        const isWhatsApp = endUserData?.phone && endUserData.phone !== 'Anonymous';
+        
+        if (isWhatsApp) {
+          // Send WhatsApp message
+          const backendUrl = process.env.WHATSAPP_BACKEND_URL || 'https://growbro-backend.fly.dev';
+          await fetch(`${backendUrl}/send-whatsapp-message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ai_id: data.ai_id,
+              phone_number: endUserData.phone,
+              message: handoffMessage,
+            }),
+          });
+        } else {
+          // For website, save message to DB (widget will pick it up)
+          await supabase.from('messages').insert({
+            conversation_id: conversationId,
+            ai_id: data.ai_id,
+            client_id: userId,
+            sender: 'bot',
+            content: handoffMessage,
+            message_type: 'text',
+            timestamp: new Date().toISOString(),
+            metadata: { is_bot: true, is_handoff: true },
+          });
+        }
+        
+        console.log('[Intervention] Handoff message sent');
+      } catch (handoffError) {
+        console.error('[Intervention] Error sending handoff message:', handoffError);
+        // Don't fail the intervention if handoff message fails
+      }
+
       return NextResponse.json({
         success: true,
         intervention_enabled: true,
