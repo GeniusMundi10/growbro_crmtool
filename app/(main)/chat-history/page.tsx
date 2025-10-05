@@ -36,7 +36,7 @@ const isWhatsAppConversation = (chat: any, messages: any[] = []) => {
   return false;
 };
 
-function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: { chat: any; onBack?: () => void; onEmailSummary?: (chat: any) => void; sendingSummaryId?: string | null }) {
+function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, onInterventionToggle }: { chat: any; onBack?: () => void; onEmailSummary?: (chat: any) => void; sendingSummaryId?: string | null; onInterventionToggle?: (chatId: string, enabled: boolean) => void }) {
   const { user } = useUser();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,8 +96,12 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
       });
       
       if (response.ok) {
-        setInterventionEnabled(!interventionEnabled);
-        // Optionally refresh the chat list here
+        const newState = !interventionEnabled;
+        setInterventionEnabled(newState);
+        // Update the chat list immediately
+        if (onInterventionToggle) {
+          onInterventionToggle(chat.chat_id, newState);
+        }
       } else {
         alert('Failed to toggle intervention');
       }
@@ -1009,6 +1013,20 @@ export default function ChatHistoryPage() {
             onBack={() => setSelectedChat(null)}
             onEmailSummary={(chat) => sendSummaryEmail(chat)}
             sendingSummaryId={sendingSummaryId}
+            onInterventionToggle={(chatId, enabled) => {
+              // Update chat list immediately
+              setChats(prevChats => 
+                prevChats.map(c => 
+                  c.chat_id === chatId 
+                    ? { ...c, intervention_enabled: enabled }
+                    : c
+                )
+              );
+              // Update selected chat
+              if (selectedChat?.chat_id === chatId) {
+                setSelectedChat({ ...selectedChat, intervention_enabled: enabled });
+              }
+            }}
           />
         </div>
       </div>
