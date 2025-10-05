@@ -58,6 +58,8 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
       return;
     }
     
+    console.log('[fetchMessages] Called with isInitialLoad:', isInitialLoad, 'chat_id:', chat.chat_id);
+    
     const trimmedId = typeof chat.chat_id === 'string' ? chat.chat_id.trim() : chat.chat_id;
     
     const { data, error } = await (await import("@/lib/supabase")).supabase
@@ -69,8 +71,11 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
     
     if (!error && data) {
       setMessages(prevMessages => {
+        console.log('[fetchMessages] Previous messages:', prevMessages.length, 'New data:', data.length);
+        
         // Initial load - replace all messages
         if (isInitialLoad || prevMessages.length === 0) {
+          console.log('[fetchMessages] Initial load - replacing all messages');
           return data;
         }
         
@@ -78,12 +83,16 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
         const existingIds = new Set(prevMessages.map(m => m.id));
         const newMessages = data.filter(m => !existingIds.has(m.id));
         
+        console.log('[fetchMessages] New messages found:', newMessages.length);
+        
         // If no new messages, return previous state (no re-render)
         if (newMessages.length === 0) {
+          console.log('[fetchMessages] No new messages - returning previous state');
           return prevMessages;
         }
         
         // Append only new messages (preserves existing DOM elements)
+        console.log('[fetchMessages] Appending new messages');
         return [...prevMessages, ...newMessages];
       });
       
@@ -96,7 +105,12 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
   };
 
   useEffect(() => {
-    setLoading(true);
+    // Only show loading on initial load, not when switching chats
+    const isInitialLoad = messages.length === 0;
+    if (isInitialLoad) {
+      setLoading(true);
+    }
+    
     fetchMessages(true); // Pass true for initial load to trigger scroll
     
     // Load intervention status
@@ -106,7 +120,12 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
     if (chat?.chat_id && chat?.unread_count > 0) {
       markAsRead();
     }
-  }, [chat, user?.id]);
+  }, [chat?.chat_id, user?.id]); // ← Changed from 'chat' to 'chat?.chat_id'
+
+  // Update intervention status when chat object changes (without reloading messages)
+  useEffect(() => {
+    setInterventionEnabled(chat?.intervention_enabled || false);
+  }, [chat?.intervention_enabled]);
 
   const markAsRead = async () => {
     if (!chat?.chat_id) return;
