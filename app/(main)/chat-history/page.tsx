@@ -322,8 +322,13 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
           ) : (
             <div className="space-y-4 sm:space-y-6">
               {messages.map((msg, index) => {
-                // Customer = RIGHT (blue), AI/Agent = LEFT (white)
-                const isCustomer = msg.sender === "user";
+                // Parse metadata if it's a string
+                const metadata = typeof msg.metadata === 'string' ? JSON.parse(msg.metadata) : msg.metadata;
+                
+                // Determine message type
+                const isBot = metadata?.is_bot === true || msg.sender === "bot";
+                const isAgent = msg.sender === "agent" || metadata?.sent_by_human === true;
+                const isCustomer = msg.sender === "user" || (!isBot && !isAgent);
                 
                 return (
                   <div key={msg.id} className={`flex ${isCustomer ? "justify-end" : "justify-start"} group`}>
@@ -337,7 +342,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId }: 
                         isCustomer ? "text-blue-100" : "text-gray-500"
                       }`}>
                         <span className="font-medium truncate mr-2">
-                          {isCustomer ? "Customer" : (msg.metadata?.sent_by_human ? "You" : chat.ai_name)}
+                          {isCustomer ? "Customer" : (isAgent ? "You" : chat.ai_name)}
                         </span>
                         <span className="whitespace-nowrap">
                           {msg.timestamp ? format(new Date(msg.timestamp), "HH:mm") : ""}
