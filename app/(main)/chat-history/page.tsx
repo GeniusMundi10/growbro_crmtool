@@ -68,38 +68,29 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
       .order("timestamp", { ascending: true });
     
     if (!error && data) {
-      // Save current scroll position before updating
-      const container = scrollContainerRef.current;
-      const wasAtBottom = container 
-        ? container.scrollHeight - container.scrollTop - container.clientHeight < 100
-        : false;
-      
       setMessages(prevMessages => {
-        // Only update if messages changed (avoid unnecessary re-renders)
-        if (JSON.stringify(prevMessages) === JSON.stringify(data)) {
+        // Initial load - replace all messages
+        if (isInitialLoad || prevMessages.length === 0) {
+          return data;
+        }
+        
+        // Find new messages by comparing IDs
+        const existingIds = new Set(prevMessages.map(m => m.id));
+        const newMessages = data.filter(m => !existingIds.has(m.id));
+        
+        // If no new messages, return previous state (no re-render)
+        if (newMessages.length === 0) {
           return prevMessages;
         }
         
-        // Store previous scroll height
-        if (container) {
-          previousScrollHeight.current = container.scrollHeight;
-        }
-        
-        return data;
+        // Append only new messages (preserves existing DOM elements)
+        return [...prevMessages, ...newMessages];
       });
       
-      // Handle scroll after state update
-      setTimeout(() => {
-        if (isInitialLoad) {
-          scrollToBottom();
-        } else if (container && !wasAtBottom) {
-          // Preserve scroll position when new messages arrive
-          const heightDifference = container.scrollHeight - previousScrollHeight.current;
-          if (heightDifference > 0) {
-            container.scrollTop += heightDifference;
-          }
-        }
-      }, 0);
+      // Only scroll on initial load
+      if (isInitialLoad) {
+        setTimeout(scrollToBottom, 100);
+      }
     }
     setLoading(false);
   };
