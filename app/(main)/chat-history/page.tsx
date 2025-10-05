@@ -50,7 +50,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (isInitialLoad = false) => {
     if (!chat?.chat_id) {
       setLoading(false);
       return;
@@ -66,16 +66,25 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
       .order("timestamp", { ascending: true });
     
     if (!error && data) {
-      setMessages(data);
-      // Scroll to bottom after messages load
-      setTimeout(scrollToBottom, 100);
+      setMessages(prevMessages => {
+        // Only update if messages changed (avoid unnecessary re-renders)
+        if (JSON.stringify(prevMessages) === JSON.stringify(data)) {
+          return prevMessages;
+        }
+        return data;
+      });
+      
+      // Only scroll on initial load
+      if (isInitialLoad) {
+        setTimeout(scrollToBottom, 100);
+      }
     }
     setLoading(false);
   };
 
   useEffect(() => {
     setLoading(true);
-    fetchMessages();
+    fetchMessages(true); // Pass true for initial load to trigger scroll
     
     // Load intervention status
     setInterventionEnabled(chat?.intervention_enabled || false);
