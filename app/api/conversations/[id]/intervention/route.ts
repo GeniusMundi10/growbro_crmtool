@@ -24,6 +24,20 @@ export async function POST(
     const userId = user.id;
 
     if (action === 'enable') {
+      // First, check what client_id the conversation has
+      const { data: checkData } = await supabase
+        .from('conversations')
+        .select('id, client_id')
+        .eq('id', conversationId)
+        .single();
+      
+      console.log('[Intervention] Conversation check:', {
+        conversationId,
+        conversationClientId: checkData?.client_id,
+        loggedInUserId: userId,
+        match: checkData?.client_id === userId
+      });
+
       // Enable intervention (RLS will ensure user can only update their own conversations)
       const { data, error } = await supabase
         .from('conversations')
