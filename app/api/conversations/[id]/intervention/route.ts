@@ -10,7 +10,7 @@ export async function POST(
     const conversationId = params.id;
     const { action } = await request.json();
 
-    // Create Supabase client with auth helpers (handles cookies automatically)
+    // Create Supabase client with auth helpers (uses RLS policies)
     const supabase = createRouteHandlerClient({ cookies });
 
     // Get authenticated user
@@ -24,24 +24,7 @@ export async function POST(
     const userId = user.id;
 
     if (action === 'enable') {
-      // First check if conversation exists
-      const { data: existingConvo, error: checkError } = await supabase
-        .from('conversations')
-        .select('id, client_id')
-        .eq('id', conversationId)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('[Intervention] Error checking conversation:', checkError);
-        return NextResponse.json({ error: checkError.message }, { status: 500 });
-      }
-
-      if (!existingConvo) {
-        console.error('[Intervention] Conversation not found:', conversationId);
-        return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
-      }
-
-      // Enable intervention
+      // Enable intervention (RLS will ensure user can only update their own conversations)
       const { data, error } = await supabase
         .from('conversations')
         .update({
@@ -51,6 +34,7 @@ export async function POST(
           intervened_by: userId,
         })
         .eq('id', conversationId)
+        .eq('client_id', userId)
         .select()
         .single();
 
@@ -67,7 +51,7 @@ export async function POST(
       });
 
     } else if (action === 'disable') {
-      // Disable intervention and send handoff message
+      // Disable intervention (RLS will ensure user can only update their own conversations)
       const { data, error } = await supabase
         .from('conversations')
         .update({
@@ -77,11 +61,12 @@ export async function POST(
           intervened_by: null,
         })
         .eq('id', conversationId)
+        .eq('client_id', userId)
         .select()
         .single();
 
       if (error) {
-        console.error('Error disabling intervention:', error);
+        console.error('[Intervention] Error disabling intervention:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
@@ -115,12 +100,21 @@ export async function GET(
   try {
     const conversationId = params.id;
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Create Supabase client with auth helpers (uses RLS policies)
+    const supabase = createRouteHandlerClient({ cookies });
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { data, error } = await supabase
       .from('conversations')
       .select('intervention_enabled, intervention_started_at, intervened_by, last_intervention_activity')
       .eq('id', conversationId)
+      .eq('client_id', user.id)
       .single();
 
     if (error) {
