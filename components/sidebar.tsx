@@ -21,6 +21,8 @@ import {
   Loader2,
   Circle,
   Bot,
+  Calendar,
+  Package,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -42,6 +44,8 @@ const menuItems = [
   { name: "Get AI Code & Test AI", icon: <FileText className="h-5 w-5" />, path: "/ai-code" },
   { name: "Sales Leads", icon: <Users className="h-5 w-5" />, path: "/sales-leads" },
   { name: "Chat History", icon: <History className="h-5 w-5" />, path: "/chat-history" },
+  { name: "Bookings", icon: <Calendar className="h-5 w-5" />, path: "/bookings" },
+  { name: "Booking Settings", icon: <Package className="h-5 w-5" />, path: "/settings/booking" },
   { name: "Team", icon: <Users className="h-5 w-5" />, path: "/team" },
   { name: "Account", icon: <Settings className="h-5 w-5" />, path: "/account" },
   { name: "Help Center", icon: <HelpCircle className="h-5 w-5" />, path: "/help" },
