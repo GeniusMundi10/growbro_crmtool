@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, Phone, User, MapPin, FileText, Package, Truck, CheckCircle, XCircle, Search } from "lucide-react";
 import { format } from "date-fns";
 
@@ -33,11 +34,16 @@ interface QuestionnaireResponse {
     medicine_duration?: string;
     delivery_address?: string;
     booking_id?: string;
+    appointment_type?: string;
+    reason?: string;
+    notes?: string;
   };
 }
 
 export default function BookingsPage() {
   const { user } = useUser();
+  const [aiList, setAiList] = useState<any[]>([]);
+  const [selectedAiId, setSelectedAiId] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [questionnaires, setQuestionnaires] = useState<QuestionnaireResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,20 +62,25 @@ export default function BookingsPage() {
     try {
       const { supabase } = await import("@/lib/supabase");
       
-      // Get user's AI ID
+      // Get all user's AIs
       const { data: aiData } = await supabase
         .from("business_info")
-        .select("id")
-        .eq("user_id", user?.id)
-        .single();
+        .select("id, ai_name")
+        .eq("user_id", user?.id);
 
-      if (!aiData) return;
+      if (!aiData || aiData.length === 0) return;
 
-      // Fetch bookings
+      setAiList(aiData);
+      
+      // Select first AI by default if none selected
+      const aiId = selectedAiId || aiData[0].id;
+      setSelectedAiId(aiId);
+
+      // Fetch bookings for selected AI
       const { data: bookingsData } = await supabase
         .from("bookings")
         .select("*")
-        .eq("ai_id", aiData.id)
+        .eq("ai_id", aiId)
         .order("date", { ascending: false })
         .order("time", { ascending: false });
 
@@ -77,7 +88,7 @@ export default function BookingsPage() {
       const { data: questionnaireData } = await supabase
         .from("questionnaire_responses")
         .select("*")
-        .eq("ai_id", aiData.id);
+        .eq("ai_id", aiId);
 
       setBookings(bookingsData || []);
       setQuestionnaires(questionnaireData || []);
@@ -112,16 +123,30 @@ export default function BookingsPage() {
     return questionnaires.find(q => q.customer_data.booking_id === bookingId);
   };
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
-      booking.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.customer_phone.includes(searchTerm);
-    
-    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-    const matchesService = serviceFilter === "all" || booking.service_type === serviceFilter;
+  // Separate bookings by type
+  const pharmacyBookings = bookings.filter(b => 
+    b.service_type === 'delivery' || b.service_type === 'pickup'
+  );
+  
+  const appointmentBookings = bookings.filter(b => 
+    b.service_type === 'consultation'
+  );
 
-    return matchesSearch && matchesStatus && matchesService;
-  });
+  const filterBookings = (bookingsList: Booking[]) => {
+    return bookingsList.filter(booking => {
+      const matchesSearch = 
+        booking.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        booking.customer_phone.includes(searchTerm);
+      
+      const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+      const matchesService = serviceFilter === "all" || booking.service_type === serviceFilter;
+
+      return matchesSearch && matchesStatus && matchesService;
+    });
+  };
+
+  const filteredPharmacyBookings = filterBookings(pharmacyBookings);
+  const filteredAppointmentBookings = filterBookings(appointmentBookings);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -145,7 +170,7 @@ export default function BookingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-        <Header />
+        <Header title="Bookings & Orders" description="Manage prescription orders and appointments" />
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -155,7 +180,7 @@ export default function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Header />
+      <Header title="Bookings & Orders" description="Manage prescription orders and appointments" />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -163,6 +188,36 @@ export default function BookingsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Bookings & Orders</h1>
           <p className="text-gray-600">Manage prescription orders and appointments</p>
         </div>
+
+        {/* AI Selector */}
+        {aiList.length > 1 && (
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium min-w-[100px]">Select AI:</label>
+                <Select 
+                  value={selectedAiId || undefined} 
+                  onValueChange={(value) => {
+                    setSelectedAiId(value);
+                    setLoading(true);
+                    fetchBookings();
+                  }}
+                >
+                  <SelectTrigger className="w-[300px]">
+                    <SelectValue placeholder="Select an AI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiList.map((ai) => (
+                      <SelectItem key={ai.id} value={ai.id}>
+                        {ai.ai_name || "Untitled AI"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -172,6 +227,43 @@ export default function BookingsPage() {
                 <div>
                   <p className="text-sm text-gray-600">Total Bookings</p>
                   <p className="text-2xl font-bold">{bookings.length}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {pharmacyBookings.length} orders, {appointmentBookings.length} appointments
+                  </p>
+                </div>
+                <Calendar className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Pharmacy Orders</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {pharmacyBookings.length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {pharmacyBookings.filter(b => b.service_type === 'delivery').length} delivery, {pharmacyBookings.filter(b => b.service_type === 'pickup').length} pickup
+                  </p>
+                </div>
+                <Package className="h-8 w-8 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Appointments</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {appointmentBookings.length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Consultations & checkups
+                  </p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-600" />
               </div>
@@ -186,36 +278,11 @@ export default function BookingsPage() {
                   <p className="text-2xl font-bold text-yellow-600">
                     {bookings.filter(b => b.status === 'pending').length}
                   </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Awaiting confirmation
+                  </p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Confirmed</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {bookings.filter(b => b.status === 'confirmed').length}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {bookings.filter(b => b.status === 'completed').length}
-                  </p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </CardContent>
           </Card>
@@ -263,17 +330,31 @@ export default function BookingsPage() {
           </CardContent>
         </Card>
 
-        {/* Bookings List */}
-        <div className="space-y-4">
-          {filteredBookings.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No bookings found</p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredBookings.map(booking => {
+        {/* Bookings Tabs */}
+        <Tabs defaultValue="pharmacy" className="space-y-6">
+          <TabsList className="bg-white">
+            <TabsTrigger value="pharmacy" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Pharmacy Orders ({pharmacyBookings.length})
+            </TabsTrigger>
+            <TabsTrigger value="appointments" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Appointments ({appointmentBookings.length})
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Pharmacy Orders Tab */}
+          <TabsContent value="pharmacy">
+            <div className="space-y-4">
+              {filteredPharmacyBookings.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No pharmacy orders found</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredPharmacyBookings.map(booking => {
               const questionnaire = getQuestionnaireForBooking(booking.id);
               
               return (
@@ -378,7 +459,117 @@ export default function BookingsPage() {
               );
             })
           )}
-        </div>
+            </div>
+          </TabsContent>
+
+          {/* Appointments Tab */}
+          <TabsContent value="appointments">
+            <div className="space-y-4">
+              {filteredAppointmentBookings.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">No appointments found</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                filteredAppointmentBookings.map(booking => {
+              const questionnaire = getQuestionnaireForBooking(booking.id);
+              
+              return (
+                <Card key={booking.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      {/* Left: Customer Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <User className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg">{booking.customer_name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <Phone className="h-3 w-3" />
+                              {booking.customer_phone}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-600" />
+                            {format(new Date(booking.date), "MMM dd, yyyy")}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-gray-600" />
+                            {booking.time}
+                          </div>
+
+                          <Badge className={getStatusColor(booking.status)}>
+                            {booking.status}
+                          </Badge>
+                        </div>
+
+                        {/* Appointment Details */}
+                        {questionnaire && (
+                          <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
+                            <p className="font-semibold mb-2 text-blue-900">Appointment Details:</p>
+                            <div className="space-y-1 text-gray-700">
+                              {questionnaire.customer_data.appointment_type && (
+                                <p><strong>Type:</strong> {questionnaire.customer_data.appointment_type}</p>
+                              )}
+                              {questionnaire.customer_data.reason && (
+                                <p><strong>Reason:</strong> {questionnaire.customer_data.reason}</p>
+                              )}
+                              {questionnaire.customer_data.notes && (
+                                <p><strong>Notes:</strong> {questionnaire.customer_data.notes}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {booking.notes && (
+                          <div className="mt-3 text-sm text-gray-600">
+                            <strong>Notes:</strong> {booking.notes}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Actions */}
+                      <div className="flex flex-col gap-2 min-w-[140px]">
+                        <Select
+                          value={booking.status}
+                          onValueChange={(value) => updateBookingStatus(booking.id, value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="confirmed">Confirmed</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedBooking(booking)}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

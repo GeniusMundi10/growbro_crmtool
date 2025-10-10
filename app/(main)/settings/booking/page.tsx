@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock, MapPin, Settings, Calendar, Truck, Save, Plus, X } from "lucide-react";
 
 interface BusinessHours {
@@ -27,6 +28,7 @@ interface BookingSettings {
   require_phone: boolean;
   require_email: boolean;
   auto_confirm: boolean;
+  use_calendar_link: boolean;  // NEW: Use external calendar
   delivery: {
     enabled: boolean;
     max_deliveries_per_day: number;
@@ -46,6 +48,7 @@ export default function BookingSettingsPage() {
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [aiList, setAiList] = useState<any[]>([]);
   const [aiId, setAiId] = useState<string | null>(null);
   const [businessHours, setBusinessHours] = useState<BusinessHours>({});
   const [bookingSettings, setBookingSettings] = useState<BookingSettings>({
@@ -55,6 +58,7 @@ export default function BookingSettingsPage() {
     require_phone: true,
     require_email: false,
     auto_confirm: false,
+    use_calendar_link: false,
     delivery: {
       enabled: true,
       max_deliveries_per_day: 50,
@@ -79,22 +83,34 @@ export default function BookingSettingsPage() {
     try {
       const { supabase } = await import("@/lib/supabase");
       
-      // Get user's AI
+      // Get all user's AIs
       const { data: aiData } = await supabase
         .from("business_info")
-        .select("id, business_hours, booking_settings")
-        .eq("user_id", user?.id)
-        .single();
+        .select("id, ai_name, business_hours, booking_settings")
+        .eq("user_id", user?.id);
 
-      if (aiData) {
-        setAiId(aiData.id);
-        setBusinessHours(aiData.business_hours || getDefaultBusinessHours());
-        setBookingSettings(aiData.booking_settings || bookingSettings);
+      if (aiData && aiData.length > 0) {
+        setAiList(aiData);
+        
+        // Select first AI by default
+        const selectedAi = aiData[0];
+        setAiId(selectedAi.id);
+        setBusinessHours(selectedAi.business_hours || getDefaultBusinessHours());
+        setBookingSettings(selectedAi.booking_settings || bookingSettings);
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAiChange = async (newAiId: string) => {
+    const selectedAi = aiList.find(ai => ai.id === newAiId);
+    if (selectedAi) {
+      setAiId(newAiId);
+      setBusinessHours(selectedAi.business_hours || getDefaultBusinessHours());
+      setBookingSettings(selectedAi.booking_settings || bookingSettings);
     }
   };
 
@@ -172,23 +188,46 @@ export default function BookingSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-        <Header />
+        <Header title="Booking Settings" description="Configure your booking system, business hours, and delivery settings" />
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Header />
+      <Header title="Booking Settings" description="Configure your booking system, business hours, and delivery settings" />
       
       <div className="container mx-auto px-4 py-8">
+        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Booking Settings</h1>
-          <p className="text-gray-600">Configure appointment booking and delivery options for your pharmacy</p>
+          <p className="text-gray-600">Configure your booking system, business hours, and delivery settings</p>
         </div>
+
+        {/* AI Selector */}
+        {aiList.length > 1 && (
+          <Card className="mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <Label className="text-sm font-medium min-w-[100px]">Select AI:</Label>
+                <Select value={aiId || undefined} onValueChange={handleAiChange}>
+                  <SelectTrigger className="w-[300px]">
+                    <SelectValue placeholder="Select an AI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiList.map((ai) => (
+                      <SelectItem key={ai.id} value={ai.id}>
+                        {ai.ai_name || "Untitled AI"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs defaultValue="general" className="space-y-6">
           <TabsList className="bg-white">
@@ -276,6 +315,24 @@ export default function BookingSettingsPage() {
                     <Switch
                       checked={bookingSettings.auto_confirm}
                       onCheckedChange={(checked) => setBookingSettings(prev => ({ ...prev, auto_confirm: checked }))}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div>
+                      <Label className="text-base font-semibold">Use Calendar Link for Appointments</Label>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Use your external calendar (Google Calendar, Calendly, etc.) for appointment bookings.
+                        {bookingSettings.use_calendar_link && (
+                          <span className="block mt-1 text-blue-600 font-medium">
+                            Calendar link from your profile will be used
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={bookingSettings.use_calendar_link}
+                      onCheckedChange={(checked) => setBookingSettings(prev => ({ ...prev, use_calendar_link: checked }))}
                     />
                   </div>
                 </div>
