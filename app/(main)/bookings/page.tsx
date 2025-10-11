@@ -58,8 +58,9 @@ export default function BookingsPage() {
     }
   }, [user?.id]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (aiIdOverride?: string) => {
     try {
+      setLoading(true);
       const { supabase } = await import("@/lib/supabase");
       
       // Get all user's AIs
@@ -72,9 +73,20 @@ export default function BookingsPage() {
 
       setAiList(aiData);
       
-      // Select first AI by default if none selected
-      const aiId = selectedAiId || aiData[0].id;
-      setSelectedAiId(aiId);
+      const defaultAiId = aiData[0]?.id;
+      const aiId = aiIdOverride || selectedAiId || defaultAiId;
+
+      if (!aiId) {
+        setSelectedAiId(null);
+        setBookings([]);
+        setQuestionnaires([]);
+        return;
+      }
+
+      // Update selected AI when first loading or when override supplied
+      if (!selectedAiId || aiIdOverride) {
+        setSelectedAiId(aiId);
+      }
 
       // Fetch bookings for selected AI
       const { data: bookingsData } = await supabase
@@ -198,9 +210,7 @@ export default function BookingsPage() {
                 <Select 
                   value={selectedAiId || undefined} 
                   onValueChange={(value) => {
-                    setSelectedAiId(value);
-                    setLoading(true);
-                    fetchBookings();
+                    fetchBookings(value);
                   }}
                 >
                   <SelectTrigger className="w-[300px]">
