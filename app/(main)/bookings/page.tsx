@@ -9,6 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Calendar, Clock, Phone, User, MapPin, FileText, Package, Truck, CheckCircle, XCircle, Search } from "lucide-react";
 import { format } from "date-fns";
 
@@ -484,102 +493,202 @@ export default function BookingsPage() {
                 </Card>
               ) : (
                 filteredAppointmentBookings.map(booking => {
-              const questionnaire = getQuestionnaireForBooking(booking.id);
-              
-              return (
-                <Card key={booking.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      {/* Left: Customer Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg">{booking.customer_name}</h3>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Phone className="h-3 w-3" />
-                              {booking.customer_phone}
+                  const questionnaire = getQuestionnaireForBooking(booking.id);
+                  
+                  return (
+                    <Card key={booking.id} className="hover:shadow-lg transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          {/* Left: Customer Info */}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <User className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-lg">{booking.customer_name}</h3>
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <Phone className="h-3 w-3" />
+                                  {booking.customer_phone}
+                                </div>
+                              </div>
                             </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                              <div className="flex items-center gap-2">
+                                {getServiceIcon(booking.service_type)}
+                                <span className="capitalize">{booking.service_type}</span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-gray-600" />
+                                {format(new Date(booking.date), "MMM dd, yyyy")}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-gray-600" />
+                                {booking.time}
+                              </div>
+
+                              <Badge className={getStatusColor(booking.status)}>
+                                {booking.status}
+                              </Badge>
+                            </div>
+
+                            {/* Appointment Details */}
+                            {questionnaire && (
+                              <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                                <p className="font-semibold mb-2">Appointment Details:</p>
+                                <div className="space-y-1 text-gray-700">
+                                  {questionnaire.customer_data.appointment_type && (
+                                    <p><strong>Type:</strong> {questionnaire.customer_data.appointment_type}</p>
+                                  )}
+                                  {questionnaire.customer_data.reason && (
+                                    <p><strong>Reason:</strong> {questionnaire.customer_data.reason}</p>
+                                  )}
+                                  {questionnaire.customer_data.notes && (
+                                    <p><strong>Notes:</strong> {questionnaire.customer_data.notes}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {booking.notes && (
+                              <div className="mt-3 text-sm text-gray-600">
+                                <strong>Notes:</strong> {booking.notes}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right: Actions */}
+                          <div className="flex flex-col gap-2 min-w-[140px]">
+                            <Select
+                              value={booking.status}
+                              onValueChange={(value) => updateBookingStatus(booking.id, value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedBooking(booking)}
+                            >
+                              View Details
+                            </Button>
                           </div>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-600" />
-                            {format(new Date(booking.date), "MMM dd, yyyy")}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-gray-600" />
-                            {booking.time}
-                          </div>
-
-                          <Badge className={getStatusColor(booking.status)}>
-                            {booking.status}
-                          </Badge>
-                        </div>
-
-                        {/* Appointment Details */}
-                        {questionnaire && (
-                          <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm">
-                            <p className="font-semibold mb-2 text-blue-900">Appointment Details:</p>
-                            <div className="space-y-1 text-gray-700">
-                              {questionnaire.customer_data.appointment_type && (
-                                <p><strong>Type:</strong> {questionnaire.customer_data.appointment_type}</p>
-                              )}
-                              {questionnaire.customer_data.reason && (
-                                <p><strong>Reason:</strong> {questionnaire.customer_data.reason}</p>
-                              )}
-                              {questionnaire.customer_data.notes && (
-                                <p><strong>Notes:</strong> {questionnaire.customer_data.notes}</p>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {booking.notes && (
-                          <div className="mt-3 text-sm text-gray-600">
-                            <strong>Notes:</strong> {booking.notes}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right: Actions */}
-                      <div className="flex flex-col gap-2 min-w-[140px]">
-                        <Select
-                          value={booking.status}
-                          onValueChange={(value) => updateBookingStatus(booking.id, value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedBooking(booking)}
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Details Drawer */}
+        <Drawer open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Booking Details</DrawerTitle>
+              <DrawerDescription>
+                Full appointment information and questionnaire responses.
+              </DrawerDescription>
+            </DrawerHeader>
+
+            {selectedBooking && (
+              <div className="px-6 py-4 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Customer</p>
+                    <p className="text-lg font-semibold">{selectedBooking.customer_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="text-lg font-medium">{selectedBooking.customer_phone}</p>
+                  </div>
+                  {selectedBooking.customer_email && (
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="text-lg font-medium">{selectedBooking.customer_email}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <Badge className={getStatusColor(selectedBooking.status)}>
+                      {selectedBooking.status}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-600" />
+                    {format(new Date(selectedBooking.date), "MMM dd, yyyy")}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-600" />
+                    {selectedBooking.time}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getServiceIcon(selectedBooking.service_type)}
+                    <span className="capitalize">{selectedBooking.service_type}</span>
+                  </div>
+                  {selectedBooking.notes && (
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-500">Notes</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedBooking.notes}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Questionnaire</p>
+                  {(() => {
+                    const questionnaire = getQuestionnaireForBooking(selectedBooking.id);
+                    if (!questionnaire) {
+                      return <p className="text-sm text-gray-500">No questionnaire data recorded for this booking.</p>;
+                    }
+
+                    const entries = Object.entries(questionnaire.customer_data || {}).filter(([key, value]) =>
+                      value !== null && value !== undefined && value !== ""
+                    );
+
+                    if (entries.length === 0) {
+                      return <p className="text-sm text-gray-500">No additional details available.</p>;
+                    }
+
+                    return (
+                      <div className="space-y-2">
+                        {entries.map(([key, value]) => (
+                          <div key={key} className="flex flex-col">
+                            <span className="text-xs uppercase text-gray-400">{key.replace(/_/g, " ")}</span>
+                            <span className="text-sm text-gray-700 whitespace-pre-wrap">{String(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
       </div>
     </div>
   );
