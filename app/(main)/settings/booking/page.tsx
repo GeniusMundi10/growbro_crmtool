@@ -91,6 +91,15 @@ const WORKFLOW_OPTIONS: { value: WorkflowType; label: string }[] = [
 
 const SERVICE_CHANNELS = ["web", "whatsapp", "phone", "email"];
 
+const LABEL_OPTIONS = [
+  { value: "healthcare", label: "Healthcare", dashboard_title: "Patient Bookings", scheduled_tab: "Appointments", request_tab: "Consultations" },
+  { value: "legal", label: "Legal Services", dashboard_title: "Client Bookings", scheduled_tab: "Scheduled Meetings", request_tab: "Consultations" },
+  { value: "real_estate", label: "Real Estate", dashboard_title: "Property Bookings", scheduled_tab: "Viewings", request_tab: "Inquiries" },
+  { value: "fitness", label: "Fitness & Wellness", dashboard_title: "Session Bookings", scheduled_tab: "Classes", request_tab: "Personal Training" },
+  { value: "education", label: "Education", dashboard_title: "Student Bookings", scheduled_tab: "Lectures", request_tab: "Tutoring" },
+  { value: "custom", label: "Custom" }
+];
+
 const FORM_FIELD_TYPES: FormFieldType[] = ["text", "textarea", "select", "number", "email", "phone"];
 
 const slugify = (value: string) =>
@@ -619,42 +628,86 @@ export default function BookingSettingsPage() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <Label>Dashboard Title</Label>
-                        <Input
-                          value={bookingConfig.labels.dashboard_title}
-                          onChange={(event) =>
-                            setBookingConfig((prev) => ({
-                              ...prev,
-                              labels: { ...prev.labels, dashboard_title: event.target.value },
-                            }))
-                          }
-                        />
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Labels</h3>
+                      <p className="text-sm text-gray-600">Customize the text labels used in the booking interface.</p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="label-preset">Label Preset</Label>
+                          <Select
+                            value={LABEL_OPTIONS.find(opt => opt.dashboard_title === bookingConfig.labels.dashboard_title && opt.scheduled_tab === bookingConfig.labels.scheduled_tab && opt.request_tab === bookingConfig.labels.request_tab)?.value || "custom"}
+                            onValueChange={(value) => {
+                              if (value === "custom") {
+                                // Keep current custom values
+                              } else {
+                                const preset = LABEL_OPTIONS.find(opt => opt.value === value);
+                                if (preset) {
+                                  setBookingConfig(prev => ({
+                                    ...prev,
+                                    labels: {
+                                      dashboard_title: preset.dashboard_title,
+                                      scheduled_tab: preset.scheduled_tab,
+                                      request_tab: preset.request_tab
+                                    }
+                                  }));
+                                }
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a label preset" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LABEL_OPTIONS.map(option => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div>
-                        <Label>Scheduled Tab Label</Label>
-                        <Input
-                          value={bookingConfig.labels.scheduled_tab}
-                          onChange={(event) =>
-                            setBookingConfig((prev) => ({
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="dashboard-title">Dashboard Title</Label>
+                          <Input
+                            id="dashboard-title"
+                            value={bookingConfig.labels.dashboard_title}
+                            onChange={(e) => setBookingConfig(prev => ({
                               ...prev,
-                              labels: { ...prev.labels, scheduled_tab: event.target.value },
-                            }))
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label>Request Tab Label</Label>
-                        <Input
-                          value={bookingConfig.labels.request_tab}
-                          onChange={(event) =>
-                            setBookingConfig((prev) => ({
+                              labels: { ...prev.labels, dashboard_title: e.target.value }
+                            }))}
+                            placeholder="e.g., Patient Bookings"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="scheduled-tab">Scheduled Tab Label</Label>
+                          <Input
+                            id="scheduled-tab"
+                            value={bookingConfig.labels.scheduled_tab}
+                            onChange={(e) => setBookingConfig(prev => ({
                               ...prev,
-                              labels: { ...prev.labels, request_tab: event.target.value },
-                            }))
-                          }
-                        />
+                              labels: { ...prev.labels, scheduled_tab: e.target.value }
+                            }))}
+                            placeholder="e.g., Appointments"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="request-tab">Request Tab Label</Label>
+                          <Input
+                            id="request-tab"
+                            value={bookingConfig.labels.request_tab}
+                            onChange={(e) => setBookingConfig(prev => ({
+                              ...prev,
+                              labels: { ...prev.labels, request_tab: e.target.value }
+                            }))}
+                            placeholder="e.g., Consultations"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
