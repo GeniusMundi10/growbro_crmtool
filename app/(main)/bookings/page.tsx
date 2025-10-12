@@ -28,10 +28,10 @@ interface Booking {
   customer_email?: string;
   service_key: string;
   workflow_type: 'scheduled' | 'request' | 'custom';
-  slot_date?: string;
-  slot_time?: string;
+  date?: string;
+  time?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  form_responses?: Record<string, any>;
+  metadata?: Record<string, any>;
   notes?: string;
   created_at: string;
 }
@@ -109,8 +109,8 @@ export default function BookingsPage() {
         .from("bookings")
         .select("*")
         .eq("ai_id", aiId)
-        .order("slot_date", { ascending: false })
-        .order("slot_time", { ascending: false });
+        .order("date", { ascending: false })
+        .order("time", { ascending: false });
 
       setBookings(bookingsData || []);
     } catch (error) {
@@ -204,12 +204,6 @@ export default function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Header 
-        title="Bookings & Orders" 
-        description="Manage prescription orders and appointments"
-        showTitleInHeader={false}
-      />
-      
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           {/* Header Section with Premium Styling */}
@@ -425,12 +419,12 @@ export default function BookingsPage() {
 
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-gray-600" />
-                                  {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
+                                  {format(new Date(booking.date || ''), "MMM dd, yyyy")}
                                 </div>
 
                                 <div className="flex items-center gap-2">
                                   <Clock className="h-4 w-4 text-gray-600" />
-                                  {booking.slot_time || 'TBD'}
+                                  {booking.time || 'TBD'}
                                 </div>
 
                                 <Badge className={getStatusColor(booking.status)}>
@@ -439,11 +433,11 @@ export default function BookingsPage() {
                               </div>
 
                               {/* Form Responses */}
-                              {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
+                              {booking.metadata && Object.keys(booking.metadata).length > 0 && (
                                 <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
                                   <p className="font-semibold mb-2">Form Responses:</p>
                                   <div className="space-y-1 text-gray-700">
-                                    {Object.entries(booking.form_responses).map(([key, value]) => (
+                                    {Object.entries(booking.metadata).map(([key, value]) => (
                                       <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
                                     ))}
                                   </div>
@@ -530,12 +524,12 @@ export default function BookingsPage() {
 
                                 <div className="flex items-center gap-2">
                                   <Calendar className="h-4 w-4 text-gray-600" />
-                                  {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
+                                  {format(new Date(booking.date || ''), "MMM dd, yyyy")}
                                 </div>
 
                                 <div className="flex items-center gap-2">
                                   <Clock className="h-4 w-4 text-gray-600" />
-                                  {booking.slot_time || 'TBD'}
+                                  {booking.time || 'TBD'}
                                 </div>
 
                                 <Badge className={getStatusColor(booking.status)}>
@@ -544,11 +538,11 @@ export default function BookingsPage() {
                               </div>
 
                               {/* Appointment Details */}
-                              {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
+                              {booking.metadata && Object.keys(booking.metadata).length > 0 && (
                                 <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
                                   <p className="font-semibold mb-2">Form Responses:</p>
                                   <div className="space-y-1 text-gray-700">
-                                    {Object.entries(booking.form_responses).map(([key, value]) => (
+                                    {Object.entries(booking.metadata).map(([key, value]) => (
                                       <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
                                     ))}
                                   </div>
@@ -635,11 +629,11 @@ export default function BookingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-600" />
-                      {format(new Date(selectedBooking.slot_date || ''), "MMM dd, yyyy")}
+                      {format(new Date(selectedBooking.date || ''), "MMM dd, yyyy")}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-600" />
-                      {selectedBooking.slot_time || 'TBD'}
+                      {selectedBooking.time || 'TBD'}
                     </div>
                     <div className="flex items-center gap-2">
                       {getServiceIcon(selectedBooking.service_key)}
@@ -656,7 +650,7 @@ export default function BookingsPage() {
                   <div className="border-t pt-4">
                     <p className="text-sm font-semibold text-gray-700 mb-2">Form Responses</p>
                     {(() => {
-                      const responses = selectedBooking.form_responses || {};
+                      const responses = selectedBooking.metadata || {};
                       const entries = Object.entries(responses).filter(([key, value]) =>
                         value !== null && value !== undefined && value !== ""
                       );
