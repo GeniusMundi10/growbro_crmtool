@@ -1,8 +1,6 @@
 "use client"
 
-// Add these export directives to prevent prerendering issues
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
+// Static export compatible
 
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
