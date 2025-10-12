@@ -62,9 +62,6 @@ interface BookingConfig {
   };
   slot_settings: {
     duration_minutes: number;
-    start_time: string;
-    end_time: string;
-    days_available: string[];
   };
   request_settings: Record<string, any>;
   confirmation_templates: {
@@ -150,9 +147,6 @@ const getDefaultBookingConfig = (): BookingConfig => ({
   },
   slot_settings: {
     duration_minutes: 30,
-    start_time: "09:00",
-    end_time: "18:00",
-    days_available: DAYS.filter((day) => day !== "sunday"),
   },
   request_settings: {},
   confirmation_templates: {
@@ -213,12 +207,7 @@ const normalizeBookingConfig = (config?: Partial<BookingConfig>): BookingConfig 
       ...(config?.labels || {}),
     },
     slot_settings: {
-      ...defaults.slot_settings,
-      ...(config?.slot_settings || {}),
-      days_available:
-        Array.isArray(config?.slot_settings?.days_available) && config!.slot_settings!.days_available.length > 0
-          ? config!.slot_settings!.days_available
-          : defaults.slot_settings.days_available,
+      duration_minutes: config?.slot_settings?.duration_minutes || defaults.slot_settings.duration_minutes,
     },
     request_settings: config?.request_settings ?? {},
     confirmation_templates: {
@@ -313,24 +302,7 @@ export default function BookingSettingsPage() {
     }));
   };
 
-  const toggleDayAvailability = (day: string) => {
-    setBookingConfig((prev) => {
-      const next = new Set(prev.slot_settings.days_available);
-      if (next.has(day)) {
-        next.delete(day);
-      } else {
-        next.add(day);
-      }
-      const ordered = DAYS.filter((value) => next.has(value));
-      return {
-        ...prev,
-        slot_settings: {
-          ...prev.slot_settings,
-          days_available: ordered.length > 0 ? ordered : prev.slot_settings.days_available,
-        },
-      };
-    });
-  };
+  // Removed toggleDayAvailability - days are now managed in Business Hours tab
 
   const updateService = (key: string, updates: Partial<BookingService>) => {
     setBookingConfig((prev) => ({
@@ -726,80 +698,7 @@ export default function BookingSettingsPage() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Slot Settings</CardTitle>
-                  <CardDescription>Define slot duration and availability window</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <Label>Duration (minutes)</Label>
-                      <Input
-                        type="number"
-                        min={5}
-                        step={5}
-                        value={bookingConfig.slot_settings.duration_minutes}
-                        onChange={(event) =>
-                          setBookingConfig((prev) => ({
-                            ...prev,
-                            slot_settings: {
-                              ...prev.slot_settings,
-                              duration_minutes: Math.max(5, Number(event.target.value) || 5),
-                            },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>Start Time</Label>
-                      <Input
-                        type="time"
-                        value={bookingConfig.slot_settings.start_time}
-                        onChange={(event) =>
-                          setBookingConfig((prev) => ({
-                            ...prev,
-                            slot_settings: { ...prev.slot_settings, start_time: event.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>End Time</Label>
-                      <Input
-                        type="time"
-                        value={bookingConfig.slot_settings.end_time}
-                        onChange={(event) =>
-                          setBookingConfig((prev) => ({
-                            ...prev,
-                            slot_settings: { ...prev.slot_settings, end_time: event.target.value },
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Days Available</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {DAYS.map((day) => {
-                        const selected = bookingConfig.slot_settings.days_available.includes(day);
-                        return (
-                          <Button
-                            key={day}
-                            type="button"
-                            variant={getButtonVariant(selected)}
-                            size="sm"
-                            onClick={() => toggleDayAvailability(day)}
-                          >
-                            {day.charAt(0).toUpperCase() + day.slice(1)}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Slot Settings card removed - duration moved to Hours tab */}
             </div>
           </TabsContent>
 
@@ -1239,11 +1138,43 @@ export default function BookingSettingsPage() {
           <TabsContent value="hours">
             <Card>
               <CardHeader>
-                <CardTitle>Business Hours</CardTitle>
-                <CardDescription>Set open and close times per day</CardDescription>
+                <CardTitle>Business Hours & Slot Duration</CardTitle>
+                <CardDescription>Configure operating hours and appointment duration</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {DAYS.map((day) => (
+              <CardContent className="space-y-6">
+                {/* Slot Duration Setting */}
+                <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Default Appointment Duration</Label>
+                    <div className="flex items-center gap-4">
+                      <Input
+                        type="number"
+                        min={5}
+                        step={5}
+                        value={bookingConfig.slot_settings.duration_minutes}
+                        onChange={(event) =>
+                          setBookingConfig((prev) => ({
+                            ...prev,
+                            slot_settings: {
+                              ...prev.slot_settings,
+                              duration_minutes: Math.max(5, Number(event.target.value) || 5),
+                            },
+                          }))
+                        }
+                        className="max-w-xs bg-white"
+                      />
+                      <span className="text-sm text-gray-600">minutes</span>
+                    </div>
+                    <p className="text-xs text-gray-600">
+                      Time slots will be generated based on this duration (e.g., 30 min slots: 09:00, 09:30, 10:00...)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Business Hours per Day */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-semibold">Operating Hours by Day</Label>
+                  {DAYS.map((day) => (
                   <div key={day} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 rounded-lg border p-4">
                     <div className="space-y-1">
                       <Label className="capitalize font-semibold">{day}</Label>
@@ -1280,7 +1211,8 @@ export default function BookingSettingsPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
