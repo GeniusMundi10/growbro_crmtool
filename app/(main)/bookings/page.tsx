@@ -204,28 +204,167 @@ export default function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Header title="Bookings & Orders" description="Manage prescription orders and appointments" />
+      <Header 
+        title="Bookings & Orders" 
+        description="Manage prescription orders and appointments"
+        showTitleInHeader={false}
+      />
       
       <div className="container mx-auto px-4 py-8">
-        {/* AI Selector */}
-        {aiList.length > 1 && (
+        <div className="space-y-6">
+          {/* Header Section with Premium Styling */}
+          <div className="text-center space-y-4">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
+                <Calendar className="h-10 w-10 text-blue-500" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <Package className="h-4 w-4 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
+                Bookings & Orders
+              </h1>
+              <p className="text-gray-600 leading-relaxed max-w-2xl mx-auto">
+                Manage prescription orders and appointments with ease. Filter, track, and update all your bookings in one place.
+              </p>
+            </div>
+          </div>
+
+          {/* AI Selector */}
+          {aiList.length > 1 && (
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium min-w-[100px]">Select AI:</label>
+                  <Select 
+                    value={selectedAiId || undefined} 
+                    onValueChange={(value) => {
+                      fetchBookings(value);
+                    }}
+                  >
+                    <SelectTrigger className="w-[300px]">
+                      <SelectValue placeholder="Select an AI" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aiList.map((ai) => (
+                        <SelectItem key={ai.id} value={ai.id}>
+                          {ai.ai_name || "Untitled AI"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Bookings</p>
+                    <p className="text-2xl font-bold">{bookings.length}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {pharmacyBookings.length} scheduled, {appointmentBookings.length} requests
+                    </p>
+                  </div>
+                  <Calendar className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Scheduled Bookings</p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {pharmacyBookings.length}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Scheduled services
+                    </p>
+                  </div>
+                  <Package className="h-8 w-8 text-purple-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Request Bookings</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {appointmentBookings.length}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      On-demand requests
+                    </p>
+                  </div>
+                  <Calendar className="h-8 w-8 text-blue-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {bookings.filter(b => b.status === 'pending').length}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Awaiting confirmation
+                    </p>
+                  </div>
+                  <Clock className="h-8 w-8 text-yellow-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <label className="text-sm font-medium min-w-[100px]">Select AI:</label>
-                <Select 
-                  value={selectedAiId || undefined} 
-                  onValueChange={(value) => {
-                    fetchBookings(value);
-                  }}
-                >
-                  <SelectTrigger className="w-[300px]">
-                    <SelectValue placeholder="Select an AI" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by name or phone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {aiList.map((ai) => (
-                      <SelectItem key={ai.id} value={ai.id}>
-                        {ai.ai_name || "Untitled AI"}
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={serviceFilter} onValueChange={setServiceFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Services</SelectItem>
+                    {services.map(service => (
+                      <SelectItem key={service.key} value={service.key}>
+                        {service.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -233,435 +372,322 @@ export default function BookingsPage() {
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Bookings</p>
-                  <p className="text-2xl font-bold">{bookings.length}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {pharmacyBookings.length} scheduled, {appointmentBookings.length} requests
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Bookings Tabs */}
+          <Tabs defaultValue="scheduled" className="space-y-6">
+            <TabsList className="bg-white">
+              <TabsTrigger value="scheduled" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Scheduled Services ({pharmacyBookings.length})
+              </TabsTrigger>
+              <TabsTrigger value="requests" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Request Services ({appointmentBookings.length})
+              </TabsTrigger>
+            </TabsList>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Scheduled Bookings</p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {pharmacyBookings.length}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Scheduled services
-                  </p>
-                </div>
-                <Package className="h-8 w-8 text-purple-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Request Bookings</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {appointmentBookings.length}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    On-demand requests
-                  </p>
-                </div>
-                <Calendar className="h-8 w-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {bookings.filter(b => b.status === 'pending').length}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Awaiting confirmation
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search by name or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={serviceFilter} onValueChange={setServiceFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by service" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Services</SelectItem>
-                  {services.map(service => (
-                    <SelectItem key={service.key} value={service.key}>
-                      {service.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bookings Tabs */}
-        <Tabs defaultValue="scheduled" className="space-y-6">
-          <TabsList className="bg-white">
-            <TabsTrigger value="scheduled" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Scheduled Services ({pharmacyBookings.length})
-            </TabsTrigger>
-            <TabsTrigger value="requests" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Request Services ({appointmentBookings.length})
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Scheduled Services Tab */}
-          <TabsContent value="scheduled">
-            <div className="space-y-4">
-              {filteredPharmacyBookings.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No scheduled services found</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredPharmacyBookings.map(booking => {
-              return (
-                <Card key={booking.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      {/* Left: Customer Info */}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg">{booking.customer_name}</h3>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Phone className="h-3 w-3" />
-                              {booking.customer_phone}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                          <div className="flex items-center gap-2">
-                            {getServiceIcon(booking.service_key)}
-                            <span>{getServiceName(booking.service_key)}</span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-600" />
-                            {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-gray-600" />
-                            {booking.slot_time || 'TBD'}
-                          </div>
-
-                          <Badge className={getStatusColor(booking.status)}>
-                            {booking.status}
-                          </Badge>
-                        </div>
-
-                        {/* Form Responses */}
-                        {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
-                          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
-                            <p className="font-semibold mb-2">Form Responses:</p>
-                            <div className="space-y-1 text-gray-700">
-                              {Object.entries(booking.form_responses).map(([key, value]) => (
-                                <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {booking.notes && (
-                          <div className="mt-3 text-sm text-gray-600">
-                            <strong>Notes:</strong> {booking.notes}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right: Actions */}
-                      <div className="flex flex-col gap-2 min-w-[140px]">
-                        <Select
-                          value={booking.status}
-                          onValueChange={(value) => updateBookingStatus(booking.id, value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="confirmed">Confirmed</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedBooking(booking)}
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-            </div>
-          </TabsContent>
-
-          {/* Request Services Tab */}
-          <TabsContent value="requests">
-            <div className="space-y-4">
-              {filteredAppointmentBookings.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No request services found</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                filteredAppointmentBookings.map(booking => {
-                  return (
-                    <Card key={booking.id} className="hover:shadow-lg transition-shadow">
-                      <CardContent className="pt-6">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                          {/* Left: Customer Info */}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <User className="h-5 w-5 text-blue-600" />
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-lg">{booking.customer_name}</h3>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <Phone className="h-3 w-3" />
-                                  {booking.customer_phone}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                              <div className="flex items-center gap-2">
-                                {getServiceIcon(booking.service_key)}
-                                <span>{getServiceName(booking.service_key)}</span>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-gray-600" />
-                                {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-gray-600" />
-                                {booking.slot_time || 'TBD'}
-                              </div>
-
-                              <Badge className={getStatusColor(booking.status)}>
-                                {booking.status}
-                              </Badge>
-                            </div>
-
-                            {/* Appointment Details */}
-                            {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
-                              <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
-                                <p className="font-semibold mb-2">Form Responses:</p>
-                                <div className="space-y-1 text-gray-700">
-                                  {Object.entries(booking.form_responses).map(([key, value]) => (
-                                    <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {booking.notes && (
-                              <div className="mt-3 text-sm text-gray-600">
-                                <strong>Notes:</strong> {booking.notes}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Right: Actions */}
-                          <div className="flex flex-col gap-2 min-w-[140px]">
-                            <Select
-                              value={booking.status}
-                              onValueChange={(value) => updateBookingStatus(booking.id, value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                              </SelectContent>
-                            </Select>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedBooking(booking)}
-                            >
-                              View Details
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Details Drawer */}
-        <Drawer open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>Booking Details</DrawerTitle>
-              <DrawerDescription>
-                Full appointment information and questionnaire responses.
-              </DrawerDescription>
-            </DrawerHeader>
-
-            {selectedBooking && (
-              <div className="px-6 py-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Customer</p>
-                    <p className="text-lg font-semibold">{selectedBooking.customer_name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="text-lg font-medium">{selectedBooking.customer_phone}</p>
-                  </div>
-                  {selectedBooking.customer_email && (
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="text-lg font-medium">{selectedBooking.customer_email}</p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <Badge className={getStatusColor(selectedBooking.status)}>
-                      {selectedBooking.status}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-gray-600" />
-                    {format(new Date(selectedBooking.slot_date || ''), "MMM dd, yyyy")}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-600" />
-                    {selectedBooking.slot_time || 'TBD'}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getServiceIcon(selectedBooking.service_key)}
-                    <span>{getServiceName(selectedBooking.service_key)}</span>
-                  </div>
-                  {selectedBooking.notes && (
-                    <div className="md:col-span-2">
-                      <p className="text-sm text-gray-500">Notes</p>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedBooking.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t pt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Form Responses</p>
-                  {(() => {
-                    const responses = selectedBooking.form_responses || {};
-                    const entries = Object.entries(responses).filter(([key, value]) =>
-                      value !== null && value !== undefined && value !== ""
-                    );
-
-                    if (entries.length === 0) {
-                      return <p className="text-sm text-gray-500">No form responses recorded for this booking.</p>;
-                    }
-
+            {/* Scheduled Services Tab */}
+            <TabsContent value="scheduled">
+              <div className="space-y-4">
+                {filteredPharmacyBookings.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">No scheduled services found</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredPharmacyBookings.map(booking => {
                     return (
-                      <div className="space-y-2">
-                        {entries.map(([key, value]) => (
-                          <div key={key} className="flex flex-col">
-                            <span className="text-xs uppercase text-gray-400">{key.replace(/_/g, " ")}</span>
-                            <span className="text-sm text-gray-700 whitespace-pre-wrap">{String(value)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
+                      <Card key={booking.id} className="hover:shadow-lg transition-shadow">
+                        <CardContent className="pt-6">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            {/* Left: Customer Info */}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <User className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-lg">{booking.customer_name}</h3>
+                                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <Phone className="h-3 w-3" />
+                                    {booking.customer_phone}
+                                  </div>
+                                </div>
+                              </div>
 
-            <DrawerFooter>
-              <DrawerClose asChild>
-                <Button variant="outline">Close</Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </DrawerContent>
-        </Drawer>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="flex items-center gap-2">
+                                  {getServiceIcon(booking.service_key)}
+                                  <span>{getServiceName(booking.service_key)}</span>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-gray-600" />
+                                  {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-gray-600" />
+                                  {booking.slot_time || 'TBD'}
+                                </div>
+
+                                <Badge className={getStatusColor(booking.status)}>
+                                  {booking.status}
+                                </Badge>
+                              </div>
+
+                              {/* Form Responses */}
+                              {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
+                                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                                  <p className="font-semibold mb-2">Form Responses:</p>
+                                  <div className="space-y-1 text-gray-700">
+                                    {Object.entries(booking.form_responses).map(([key, value]) => (
+                                      <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {booking.notes && (
+                                <div className="mt-3 text-sm text-gray-600">
+                                  <strong>Notes:</strong> {booking.notes}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div className="flex flex-col gap-2 min-w-[140px]">
+                              <Select
+                                value={booking.status}
+                                onValueChange={(value) => updateBookingStatus(booking.id, value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedBooking(booking)}
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Request Services Tab */}
+            <TabsContent value="requests">
+              <div className="space-y-4">
+                {filteredAppointmentBookings.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-600">No request services found</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredAppointmentBookings.map(booking => {
+                    return (
+                      <Card key={booking.id} className="hover:shadow-lg transition-shadow">
+                        <CardContent className="pt-6">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            {/* Left: Customer Info */}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <User className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-lg">{booking.customer_name}</h3>
+                                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <Phone className="h-3 w-3" />
+                                    {booking.customer_phone}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div className="flex items-center gap-2">
+                                  {getServiceIcon(booking.service_key)}
+                                  <span>{getServiceName(booking.service_key)}</span>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4 text-gray-600" />
+                                  {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-gray-600" />
+                                  {booking.slot_time || 'TBD'}
+                                </div>
+
+                                <Badge className={getStatusColor(booking.status)}>
+                                  {booking.status}
+                                </Badge>
+                              </div>
+
+                              {/* Appointment Details */}
+                              {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
+                                <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
+                                  <p className="font-semibold mb-2">Form Responses:</p>
+                                  <div className="space-y-1 text-gray-700">
+                                    {Object.entries(booking.form_responses).map(([key, value]) => (
+                                      <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {booking.notes && (
+                                <div className="mt-3 text-sm text-gray-600">
+                                  <strong>Notes:</strong> {booking.notes}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div className="flex flex-col gap-2 min-w-[140px]">
+                              <Select
+                                value={booking.status}
+                                onValueChange={(value) => updateBookingStatus(booking.id, value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedBooking(booking)}
+                              >
+                                View Details
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Details Drawer */}
+          <Drawer open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Booking Details</DrawerTitle>
+                <DrawerDescription>
+                  Full appointment information and questionnaire responses.
+                </DrawerDescription>
+              </DrawerHeader>
+
+              {selectedBooking && (
+                <div className="px-6 py-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Customer</p>
+                      <p className="text-lg font-semibold">{selectedBooking.customer_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Phone</p>
+                      <p className="text-lg font-medium">{selectedBooking.customer_phone}</p>
+                    </div>
+                    {selectedBooking.customer_email && (
+                      <div>
+                        <p className="text-sm text-gray-500">Email</p>
+                        <p className="text-lg font-medium">{selectedBooking.customer_email}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm text-gray-500">Status</p>
+                      <Badge className={getStatusColor(selectedBooking.status)}>
+                        {selectedBooking.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-600" />
+                      {format(new Date(selectedBooking.slot_date || ''), "MMM dd, yyyy")}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-600" />
+                      {selectedBooking.slot_time || 'TBD'}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getServiceIcon(selectedBooking.service_key)}
+                      <span>{getServiceName(selectedBooking.service_key)}</span>
+                    </div>
+                    {selectedBooking.notes && (
+                      <div className="md:col-span-2">
+                        <p className="text-sm text-gray-500">Notes</p>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedBooking.notes}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Form Responses</p>
+                    {(() => {
+                      const responses = selectedBooking.form_responses || {};
+                      const entries = Object.entries(responses).filter(([key, value]) =>
+                        value !== null && value !== undefined && value !== ""
+                      );
+
+                      if (entries.length === 0) {
+                        return <p className="text-sm text-gray-500">No form responses recorded for this booking.</p>;
+                      }
+
+                      return (
+                        <div className="space-y-2">
+                          {entries.map(([key, value]) => (
+                            <div key={key} className="flex flex-col">
+                              <span className="text-xs uppercase text-gray-400">{key.replace(/_/g, " ")}</span>
+                              <span className="text-sm text-gray-700 whitespace-pre-wrap">{String(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
+
+              <DrawerFooter>
+                <DrawerClose asChild>
+                  <Button variant="outline">Close</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
+        </div>
       </div>
     </div>
   );
