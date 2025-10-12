@@ -39,16 +39,7 @@ interface Booking {
 interface QuestionnaireResponse {
   id: string;
   questionnaire_type: string;
-  customer_data: {
-    prescription_details?: string;
-    doctor_name?: string;
-    medicine_duration?: string;
-    delivery_address?: string;
-    booking_id?: string;
-    appointment_type?: string;
-    reason?: string;
-    notes?: string;
-  };
+  customer_data: Record<string, any>;
 }
 
 export default function BookingsPage() {
@@ -142,11 +133,11 @@ export default function BookingsPage() {
 
 
   // Separate bookings by type
-  const pharmacyBookings = bookings.filter(b => 
+  const scheduledBookings = bookings.filter(b => 
     services.find(s => s.key === b.service_key)?.workflow_type === 'scheduled' || false
   );
   
-  const appointmentBookings = bookings.filter(b => 
+  const requestBookings = bookings.filter(b => 
     services.find(s => s.key === b.service_key)?.workflow_type === 'request' || false
   );
 
@@ -164,8 +155,8 @@ export default function BookingsPage() {
     });
   };
 
-  const filteredPharmacyBookings = filterBookings(pharmacyBookings);
-  const filteredAppointmentBookings = filterBookings(appointmentBookings);
+  const filteredScheduledBookings = filterBookings(scheduledBookings);
+  const filteredRequestBookings = filterBookings(requestBookings);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -196,7 +187,7 @@ export default function BookingsPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <Header 
           title="Bookings & Orders" 
-          description="Manage prescription orders and appointments"
+          description="Manage all your service bookings and appointments"
           showTitleInHeader={false}
         />
         <div className="flex items-center justify-center h-96">
@@ -210,7 +201,7 @@ export default function BookingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Header 
         title="Bookings & Orders" 
-        description="Manage prescription orders and appointments with ease. Filter, track, and update all your bookings in one place."
+        description="Manage all your service bookings and appointments with ease. Filter, track, and update in one place."
         showTitleInHeader={false}
       />
       <div className="container mx-auto px-4 py-8">
@@ -253,7 +244,7 @@ export default function BookingsPage() {
                     <p className="text-sm text-gray-600">Total Bookings</p>
                     <p className="text-2xl font-bold">{bookings.length}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {pharmacyBookings.length} scheduled, {appointmentBookings.length} requests
+                      {scheduledBookings.length} scheduled, {requestBookings.length} requests
                     </p>
                   </div>
                   <Calendar className="h-8 w-8 text-blue-600" />
@@ -267,7 +258,7 @@ export default function BookingsPage() {
                   <div>
                     <p className="text-sm text-gray-600">Scheduled Bookings</p>
                     <p className="text-2xl font-bold text-purple-600">
-                      {pharmacyBookings.length}
+                      {scheduledBookings.length}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       Scheduled services
@@ -284,7 +275,7 @@ export default function BookingsPage() {
                   <div>
                     <p className="text-sm text-gray-600">Request Bookings</p>
                     <p className="text-2xl font-bold text-blue-600">
-                      {appointmentBookings.length}
+                      {requestBookings.length}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
                       On-demand requests
@@ -362,18 +353,18 @@ export default function BookingsPage() {
             <TabsList className="bg-white">
               <TabsTrigger value="scheduled" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
-                Scheduled Services ({pharmacyBookings.length})
+                Scheduled Services ({scheduledBookings.length})
               </TabsTrigger>
               <TabsTrigger value="requests" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Request Services ({appointmentBookings.length})
+                Request Services ({requestBookings.length})
               </TabsTrigger>
             </TabsList>
 
             {/* Scheduled Services Tab */}
             <TabsContent value="scheduled">
               <div className="space-y-4">
-                {filteredPharmacyBookings.length === 0 ? (
+                {filteredScheduledBookings.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center">
                       <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -381,7 +372,7 @@ export default function BookingsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredPharmacyBookings.map(booking => {
+                  filteredScheduledBookings.map(booking => {
                     return (
                       <Card key={booking.id} className="hover:shadow-lg transition-shadow">
                         <CardContent className="pt-6">
@@ -478,7 +469,7 @@ export default function BookingsPage() {
             {/* Request Services Tab */}
             <TabsContent value="requests">
               <div className="space-y-4">
-                {filteredAppointmentBookings.length === 0 ? (
+                {filteredRequestBookings.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center">
                       <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -486,7 +477,7 @@ export default function BookingsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  filteredAppointmentBookings.map(booking => {
+                  filteredRequestBookings.map(booking => {
                     return (
                       <Card key={booking.id} className="hover:shadow-lg transition-shadow">
                         <CardContent className="pt-6">
