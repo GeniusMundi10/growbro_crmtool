@@ -223,6 +223,7 @@ export default function BookingSettingsPage() {
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [aiList, setAiList] = useState<any[]>([]);
   const [aiId, setAiId] = useState<string | null>(null);
   const [businessHours, setBusinessHours] = useState<BusinessHours>(() => getDefaultBusinessHours());
@@ -293,6 +294,7 @@ export default function BookingSettingsPage() {
   };
 
   const updateBusinessHours = (day: string, field: keyof BusinessHoursDay, value: string | boolean) => {
+    setHasUnsavedChanges(true);
     setBusinessHours((prev) => ({
       ...prev,
       [day]: {
@@ -305,6 +307,7 @@ export default function BookingSettingsPage() {
   // Removed toggleDayAvailability - days are now managed in Business Hours tab
 
   const updateService = (key: string, updates: Partial<BookingService>) => {
+    setHasUnsavedChanges(true);
     setBookingConfig((prev) => ({
       ...prev,
       services: prev.services.map((service) => (service.key === key ? { ...service, ...updates } : service)),
@@ -429,6 +432,7 @@ export default function BookingSettingsPage() {
   };
 
   const updateField = (id: string, updates: Partial<BookingFormField>) => {
+    setHasUnsavedChanges(true);
     setBookingConfig((prev) => ({
       ...prev,
       forms: prev.forms.map((field) => (field.id === id ? { ...field, ...updates } : field)),
@@ -503,6 +507,7 @@ export default function BookingSettingsPage() {
 
       if (error) throw error;
 
+      setHasUnsavedChanges(false);
       alert("Settings saved successfully");
     } catch (err) {
       console.error("Error saving booking settings", err);
@@ -537,8 +542,8 @@ export default function BookingSettingsPage() {
         showTitleInHeader={false}
       />
 
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        <div className="space-y-6">
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-6 pb-24">
 
           {/* AI Selector */}
           {aiList.length > 1 && (
@@ -584,12 +589,11 @@ export default function BookingSettingsPage() {
             </TabsList>
 
           <TabsContent value="general">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Platform Configuration</CardTitle>
-                  <CardDescription>Control global booking behaviour and labels</CardDescription>
-                </CardHeader>
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Configuration</CardTitle>
+                <CardDescription>Control global booking behaviour and labels</CardDescription>
+              </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -696,10 +700,7 @@ export default function BookingSettingsPage() {
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-
-              {/* Slot Settings card removed - duration moved to Hours tab */}
-            </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="services">
@@ -1217,27 +1218,40 @@ export default function BookingSettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
-
-        <div className="flex justify-end">
-          <Button
-            onClick={saveSettings}
-            disabled={saving}
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {saving ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-b-transparent"></span>
-                Saving...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Save className="h-4 w-4" />
-                Save Settings
-              </span>
-            )}
-          </Button>
         </div>
+
+        {/* Sticky Save Button Footer */}
+        <div className="sticky bottom-0 z-10 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-4 mt-8 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-gray-600">
+                Saving to <span className="font-semibold">{aiList.find(ai => ai.id === aiId)?.ai_name || 'this AI'}</span>
+              </p>
+              {hasUnsavedChanges && (
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                  Unsaved changes
+                </Badge>
+              )}
+            </div>
+            <Button
+              onClick={saveSettings}
+              disabled={saving}
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+            >
+              {saving ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-b-transparent"></span>
+                  Saving...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Save All Settings
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
