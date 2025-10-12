@@ -355,26 +355,26 @@ export default function BookingsPage() {
         </Card>
 
         {/* Bookings Tabs */}
-        <Tabs defaultValue="pharmacy" className="space-y-6">
+        <Tabs defaultValue="scheduled" className="space-y-6">
           <TabsList className="bg-white">
-            <TabsTrigger value="pharmacy" className="flex items-center gap-2">
+            <TabsTrigger value="scheduled" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Pharmacy Orders ({pharmacyBookings.length})
+              Scheduled Services ({pharmacyBookings.length})
             </TabsTrigger>
-            <TabsTrigger value="appointments" className="flex items-center gap-2">
+            <TabsTrigger value="requests" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Appointments ({appointmentBookings.length})
+              Request Services ({appointmentBookings.length})
             </TabsTrigger>
           </TabsList>
 
-          {/* Pharmacy Orders Tab */}
-          <TabsContent value="pharmacy">
+          {/* Scheduled Services Tab */}
+          <TabsContent value="scheduled">
             <div className="space-y-4">
               {filteredPharmacyBookings.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No pharmacy orders found</p>
+                    <p className="text-gray-600">No scheduled services found</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -472,14 +472,14 @@ export default function BookingsPage() {
             </div>
           </TabsContent>
 
-          {/* Appointments Tab */}
-          <TabsContent value="appointments">
+          {/* Request Services Tab */}
+          <TabsContent value="requests">
             <div className="space-y-4">
               {filteredAppointmentBookings.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No appointments found</p>
+                    <p className="text-gray-600">No request services found</p>
                   </CardContent>
                 </Card>
               ) : (
