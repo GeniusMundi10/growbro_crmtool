@@ -26,10 +26,12 @@ interface Booking {
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
-  service_type: 'delivery' | 'pickup' | 'consultation';
-  date: string;
-  time: string;
+  service_key: string;
+  workflow_type: 'scheduled' | 'request' | 'custom';
+  slot_date?: string;
+  slot_time?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  form_responses?: Record<string, any>;
   notes?: string;
   created_at: string;
 }
@@ -54,7 +56,7 @@ export default function BookingsPage() {
   const [aiList, setAiList] = useState<any[]>([]);
   const [selectedAiId, setSelectedAiId] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [questionnaires, setQuestionnaires] = useState<QuestionnaireResponse[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -75,7 +77,7 @@ export default function BookingsPage() {
       // Get all user's AIs
       const { data: aiData } = await supabase
         .from("business_info")
-        .select("id, ai_name")
+        .select("id, ai_name, booking_config")
         .eq("user_id", user?.id);
 
       if (!aiData || aiData.length === 0) return;
@@ -88,7 +90,7 @@ export default function BookingsPage() {
       if (!aiId) {
         setSelectedAiId(null);
         setBookings([]);
-        setQuestionnaires([]);
+        setServices([]);
         return;
       }
 
@@ -97,22 +99,20 @@ export default function BookingsPage() {
         setSelectedAiId(aiId);
       }
 
+      // Fetch services for the selected AI
+      const selectedAi = aiData.find(ai => ai.id === aiId);
+      const bookingConfig = selectedAi?.booking_config;
+      setServices(bookingConfig?.services || []);
+
       // Fetch bookings for selected AI
       const { data: bookingsData } = await supabase
         .from("bookings")
         .select("*")
         .eq("ai_id", aiId)
-        .order("date", { ascending: false })
-        .order("time", { ascending: false });
-
-      // Fetch questionnaire responses
-      const { data: questionnaireData } = await supabase
-        .from("questionnaire_responses")
-        .select("*")
-        .eq("ai_id", aiId);
+        .order("slot_date", { ascending: false })
+        .order("slot_time", { ascending: false });
 
       setBookings(bookingsData || []);
-      setQuestionnaires(questionnaireData || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
     } finally {
@@ -140,27 +140,25 @@ export default function BookingsPage() {
     }
   };
 
-  const getQuestionnaireForBooking = (bookingId: string) => {
-    return questionnaires.find(q => q.customer_data.booking_id === bookingId);
-  };
 
   // Separate bookings by type
   const pharmacyBookings = bookings.filter(b => 
-    b.service_type === 'delivery' || b.service_type === 'pickup'
+    services.find(s => s.key === b.service_key)?.workflow_type === 'scheduled' || false
   );
   
   const appointmentBookings = bookings.filter(b => 
-    b.service_type === 'consultation'
+    services.find(s => s.key === b.service_key)?.workflow_type === 'request' || false
   );
 
   const filterBookings = (bookingsList: Booking[]) => {
     return bookingsList.filter(booking => {
+      const service = services.find(s => s.key === booking.service_key);
       const matchesSearch = 
         booking.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         booking.customer_phone.includes(searchTerm);
       
       const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-      const matchesService = serviceFilter === "all" || booking.service_type === serviceFilter;
+      const matchesService = serviceFilter === "all" || booking.service_key === serviceFilter;
 
       return matchesSearch && matchesStatus && matchesService;
     });
@@ -179,13 +177,18 @@ export default function BookingsPage() {
     }
   };
 
-  const getServiceIcon = (service: string) => {
-    switch (service) {
-      case 'delivery': return <Truck className="h-4 w-4" />;
-      case 'pickup': return <Package className="h-4 w-4" />;
-      case 'consultation': return <FileText className="h-4 w-4" />;
+  const getServiceIcon = (serviceKey: string) => {
+    const service = services.find(s => s.key === serviceKey);
+    switch (service?.workflow_type) {
+      case 'scheduled': return <Truck className="h-4 w-4" />;
+      case 'request': return <Package className="h-4 w-4" />;
+      case 'custom': return <FileText className="h-4 w-4" />;
       default: return <Calendar className="h-4 w-4" />;
     }
+  };
+
+  const getServiceName = (serviceKey: string) => {
+    return services.find(s => s.key === serviceKey)?.name || 'Unknown Service';
   };
 
   if (loading) {
@@ -247,7 +250,7 @@ export default function BookingsPage() {
                   <p className="text-sm text-gray-600">Total Bookings</p>
                   <p className="text-2xl font-bold">{bookings.length}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {pharmacyBookings.length} orders, {appointmentBookings.length} appointments
+                    {pharmacyBookings.length} scheduled, {appointmentBookings.length} requests
                   </p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-600" />
@@ -259,12 +262,12 @@ export default function BookingsPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Pharmacy Orders</p>
+                  <p className="text-sm text-gray-600">Scheduled Bookings</p>
                   <p className="text-2xl font-bold text-purple-600">
                     {pharmacyBookings.length}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {pharmacyBookings.filter(b => b.service_type === 'delivery').length} delivery, {pharmacyBookings.filter(b => b.service_type === 'pickup').length} pickup
+                    Scheduled services
                   </p>
                 </div>
                 <Package className="h-8 w-8 text-purple-600" />
@@ -276,12 +279,12 @@ export default function BookingsPage() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Appointments</p>
+                  <p className="text-sm text-gray-600">Request Bookings</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {appointmentBookings.length}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Consultations & checkups
+                    On-demand requests
                   </p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-600" />
@@ -340,9 +343,11 @@ export default function BookingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Services</SelectItem>
-                  <SelectItem value="delivery">Delivery</SelectItem>
-                  <SelectItem value="pickup">Pickup</SelectItem>
-                  <SelectItem value="consultation">Consultation</SelectItem>
+                  {services.map(service => (
+                    <SelectItem key={service.key} value={service.key}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -374,8 +379,6 @@ export default function BookingsPage() {
                 </Card>
               ) : (
                 filteredPharmacyBookings.map(booking => {
-              const questionnaire = getQuestionnaireForBooking(booking.id);
-              
               return (
                 <Card key={booking.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="pt-6">
@@ -397,18 +400,18 @@ export default function BookingsPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                           <div className="flex items-center gap-2">
-                            {getServiceIcon(booking.service_type)}
-                            <span className="capitalize">{booking.service_type}</span>
+                            {getServiceIcon(booking.service_key)}
+                            <span>{getServiceName(booking.service_key)}</span>
                           </div>
 
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-gray-600" />
-                            {format(new Date(booking.date), "MMM dd, yyyy")}
+                            {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
                           </div>
 
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-gray-600" />
-                            {booking.time}
+                            {booking.slot_time || 'TBD'}
                           </div>
 
                           <Badge className={getStatusColor(booking.status)}>
@@ -416,26 +419,14 @@ export default function BookingsPage() {
                           </Badge>
                         </div>
 
-                        {/* Prescription Details */}
-                        {questionnaire && (
+                        {/* Form Responses */}
+                        {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
                           <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
-                            <p className="font-semibold mb-2">Prescription Details:</p>
+                            <p className="font-semibold mb-2">Form Responses:</p>
                             <div className="space-y-1 text-gray-700">
-                              {questionnaire.customer_data.doctor_name && (
-                                <p><strong>Doctor:</strong> {questionnaire.customer_data.doctor_name}</p>
-                              )}
-                              {questionnaire.customer_data.medicine_duration && (
-                                <p><strong>Duration:</strong> {questionnaire.customer_data.medicine_duration}</p>
-                              )}
-                              {questionnaire.customer_data.prescription_details && (
-                                <p><strong>Medicines:</strong> {questionnaire.customer_data.prescription_details}</p>
-                              )}
-                              {questionnaire.customer_data.delivery_address && (
-                                <p className="flex items-start gap-1">
-                                  <MapPin className="h-4 w-4 mt-0.5" />
-                                  <span>{questionnaire.customer_data.delivery_address}</span>
-                                </p>
-                              )}
+                              {Object.entries(booking.form_responses).map(([key, value]) => (
+                                <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
+                              ))}
                             </div>
                           </div>
                         )}
@@ -493,8 +484,6 @@ export default function BookingsPage() {
                 </Card>
               ) : (
                 filteredAppointmentBookings.map(booking => {
-                  const questionnaire = getQuestionnaireForBooking(booking.id);
-                  
                   return (
                     <Card key={booking.id} className="hover:shadow-lg transition-shadow">
                       <CardContent className="pt-6">
@@ -516,18 +505,18 @@ export default function BookingsPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                               <div className="flex items-center gap-2">
-                                {getServiceIcon(booking.service_type)}
-                                <span className="capitalize">{booking.service_type}</span>
+                                {getServiceIcon(booking.service_key)}
+                                <span>{getServiceName(booking.service_key)}</span>
                               </div>
 
                               <div className="flex items-center gap-2">
                                 <Calendar className="h-4 w-4 text-gray-600" />
-                                {format(new Date(booking.date), "MMM dd, yyyy")}
+                                {format(new Date(booking.slot_date || ''), "MMM dd, yyyy")}
                               </div>
 
                               <div className="flex items-center gap-2">
                                 <Clock className="h-4 w-4 text-gray-600" />
-                                {booking.time}
+                                {booking.slot_time || 'TBD'}
                               </div>
 
                               <Badge className={getStatusColor(booking.status)}>
@@ -536,19 +525,13 @@ export default function BookingsPage() {
                             </div>
 
                             {/* Appointment Details */}
-                            {questionnaire && (
+                            {booking.form_responses && Object.keys(booking.form_responses).length > 0 && (
                               <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm">
-                                <p className="font-semibold mb-2">Appointment Details:</p>
+                                <p className="font-semibold mb-2">Form Responses:</p>
                                 <div className="space-y-1 text-gray-700">
-                                  {questionnaire.customer_data.appointment_type && (
-                                    <p><strong>Type:</strong> {questionnaire.customer_data.appointment_type}</p>
-                                  )}
-                                  {questionnaire.customer_data.reason && (
-                                    <p><strong>Reason:</strong> {questionnaire.customer_data.reason}</p>
-                                  )}
-                                  {questionnaire.customer_data.notes && (
-                                    <p><strong>Notes:</strong> {questionnaire.customer_data.notes}</p>
-                                  )}
+                                  {Object.entries(booking.form_responses).map(([key, value]) => (
+                                    <p key={key}><strong>{key.replace(/_/g, " ")}:</strong> {String(value)}</p>
+                                  ))}
                                 </div>
                               </div>
                             )}
@@ -633,15 +616,15 @@ export default function BookingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-gray-600" />
-                    {format(new Date(selectedBooking.date), "MMM dd, yyyy")}
+                    {format(new Date(selectedBooking.slot_date || ''), "MMM dd, yyyy")}
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-gray-600" />
-                    {selectedBooking.time}
+                    {selectedBooking.slot_time || 'TBD'}
                   </div>
                   <div className="flex items-center gap-2">
-                    {getServiceIcon(selectedBooking.service_type)}
-                    <span className="capitalize">{selectedBooking.service_type}</span>
+                    {getServiceIcon(selectedBooking.service_key)}
+                    <span>{getServiceName(selectedBooking.service_key)}</span>
                   </div>
                   {selectedBooking.notes && (
                     <div className="md:col-span-2">
@@ -652,19 +635,15 @@ export default function BookingsPage() {
                 </div>
 
                 <div className="border-t pt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Questionnaire</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Form Responses</p>
                   {(() => {
-                    const questionnaire = getQuestionnaireForBooking(selectedBooking.id);
-                    if (!questionnaire) {
-                      return <p className="text-sm text-gray-500">No questionnaire data recorded for this booking.</p>;
-                    }
-
-                    const entries = Object.entries(questionnaire.customer_data || {}).filter(([key, value]) =>
+                    const responses = selectedBooking.form_responses || {};
+                    const entries = Object.entries(responses).filter(([key, value]) =>
                       value !== null && value !== undefined && value !== ""
                     );
 
                     if (entries.length === 0) {
-                      return <p className="text-sm text-gray-500">No additional details available.</p>;
+                      return <p className="text-sm text-gray-500">No form responses recorded for this booking.</p>;
                     }
 
                     return (
