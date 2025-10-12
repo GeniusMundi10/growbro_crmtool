@@ -91,13 +91,19 @@ const WORKFLOW_OPTIONS: { value: WorkflowType; label: string }[] = [
 
 const SERVICE_CHANNELS = ["web", "whatsapp", "phone", "email"];
 
-const LABEL_OPTIONS = [
+const LABEL_OPTIONS: Array<{
+  value: string;
+  label: string;
+  dashboard_title: string;
+  scheduled_tab: string;
+  request_tab: string;
+}> = [
   { value: "healthcare", label: "Healthcare", dashboard_title: "Patient Bookings", scheduled_tab: "Appointments", request_tab: "Consultations" },
   { value: "legal", label: "Legal Services", dashboard_title: "Client Bookings", scheduled_tab: "Scheduled Meetings", request_tab: "Consultations" },
   { value: "real_estate", label: "Real Estate", dashboard_title: "Property Bookings", scheduled_tab: "Viewings", request_tab: "Inquiries" },
   { value: "fitness", label: "Fitness & Wellness", dashboard_title: "Session Bookings", scheduled_tab: "Classes", request_tab: "Personal Training" },
   { value: "education", label: "Education", dashboard_title: "Student Bookings", scheduled_tab: "Lectures", request_tab: "Tutoring" },
-  { value: "custom", label: "Custom" }
+  { value: "custom", label: "Custom", dashboard_title: "Bookings", scheduled_tab: "Scheduled", request_tab: "Requests" }
 ];
 
 const FORM_FIELD_TYPES: FormFieldType[] = ["text", "textarea", "select", "number", "email", "phone"];
