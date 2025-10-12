@@ -558,11 +558,6 @@ export default function BookingSettingsPage() {
       <Header title="Booking Settings" description="Configure your booking system, services, and forms" />
 
       <div className="container mx-auto px-4 py-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Booking Settings</h1>
-          <p className="text-gray-600">Configure services, intake forms, and availability for every workflow</p>
-        </div>
-
         {aiList.length > 1 && (
           <Card>
             <CardContent className="pt-6">
