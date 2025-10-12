@@ -1317,6 +1317,7 @@ export default function BookingSettingsPage() {
             )}
           </Button>
         </div>
+        </div>
       </div>
     </div>
   );
