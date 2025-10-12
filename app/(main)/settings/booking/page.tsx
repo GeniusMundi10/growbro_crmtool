@@ -545,7 +545,11 @@ export default function BookingSettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-        <Header title="Booking Settings" description="Configure your booking system, services, and forms" />
+        <Header 
+          title="Booking Settings" 
+          description="Configure your booking system, services, and forms"
+          showTitleInHeader={false}
+        />
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -555,29 +559,14 @@ export default function BookingSettingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <Header title="Booking Settings" description="Configure your booking system, services, and forms" />
+      <Header 
+        title="Booking Settings" 
+        description="Configure services, intake forms, and availability for every workflow with ease."
+        showTitleInHeader={false}
+      />
 
       <div className="container mx-auto px-4 py-8 space-y-6">
         <div className="space-y-6">
-          {/* Header Section with Premium Styling */}
-          <div className="text-center space-y-4">
-            <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
-                <Settings className="h-10 w-10 text-blue-500" />
-              </div>
-              <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <Layers className="h-4 w-4 text-white" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-                Booking Settings
-              </h1>
-              <p className="text-gray-600 leading-relaxed max-w-2xl mx-auto">
-                Configure services, intake forms, and availability for every workflow with ease.
-              </p>
-            </div>
-          </div>
 
           {/* AI Selector */}
           {aiList.length > 1 && (
