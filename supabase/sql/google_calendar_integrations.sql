@@ -41,24 +41,32 @@ CREATE TABLE IF NOT EXISTS google_calendar_integrations (
 CREATE INDEX IF NOT EXISTS idx_gcal_user_id ON google_calendar_integrations(user_id);
 CREATE INDEX IF NOT EXISTS idx_gcal_ai_id ON google_calendar_integrations(ai_id);
 
+-- Grant permissions to authenticated users
+GRANT ALL ON google_calendar_integrations TO authenticated;
+GRANT ALL ON google_calendar_integrations TO service_role;
+
 -- Row Level Security
 ALTER TABLE google_calendar_integrations ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies for authenticated users
 CREATE POLICY "Users can view their own calendar integrations"
   ON google_calendar_integrations FOR SELECT
+  TO authenticated
   USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert their own calendar integrations"
   ON google_calendar_integrations FOR INSERT
+  TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users can update their own calendar integrations"
   ON google_calendar_integrations FOR UPDATE
+  TO authenticated
   USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete their own calendar integrations"
   ON google_calendar_integrations FOR DELETE
+  TO authenticated
   USING (auth.uid() = user_id);
 
 -- Function to auto-update updated_at timestamp
@@ -107,11 +115,16 @@ CREATE INDEX IF NOT EXISTS idx_calendar_mappings_booking_id ON calendar_event_ma
 CREATE INDEX IF NOT EXISTS idx_calendar_mappings_event_id ON calendar_event_mappings(event_id);
 CREATE INDEX IF NOT EXISTS idx_calendar_mappings_integration_id ON calendar_event_mappings(calendar_integration_id);
 
+-- Grant permissions to authenticated users
+GRANT ALL ON calendar_event_mappings TO authenticated;
+GRANT ALL ON calendar_event_mappings TO service_role;
+
 -- RLS for calendar_event_mappings
 ALTER TABLE calendar_event_mappings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view their calendar mappings"
   ON calendar_event_mappings FOR SELECT
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM bookings b
@@ -123,6 +136,7 @@ CREATE POLICY "Users can view their calendar mappings"
 
 CREATE POLICY "Users can insert their calendar mappings"
   ON calendar_event_mappings FOR INSERT
+  TO authenticated
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM bookings b
@@ -134,6 +148,7 @@ CREATE POLICY "Users can insert their calendar mappings"
 
 CREATE POLICY "Users can update their calendar mappings"
   ON calendar_event_mappings FOR UPDATE
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM bookings b
@@ -145,6 +160,7 @@ CREATE POLICY "Users can update their calendar mappings"
 
 CREATE POLICY "Users can delete their calendar mappings"
   ON calendar_event_mappings FOR DELETE
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM bookings b
