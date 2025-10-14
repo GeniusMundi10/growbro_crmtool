@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/UserContext";
-import { CheckCircle2, Trash2, ExternalLink, ArrowRight, Settings } from "lucide-react";
+import { CheckCircle2, Trash2, ExternalLink, ArrowRight, Settings, Calendar } from "lucide-react";
 import { siHubspot, siWhatsapp } from 'simple-icons';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,9 @@ export default function IntegrationsForm() {
   const [waList, setWaList] = useState<Array<any>>([]);
   const [selectedAiId, setSelectedAiId] = useState<string | null>(null);
   const [hubspotAiId, setHubspotAiId] = useState<string | null>(null);
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState<boolean>(false);
+  const [googleCalendarInfo, setGoogleCalendarInfo] = useState<any>(null);
+  const [googleCalendarAiId, setGoogleCalendarAiId] = useState<string | null>(null);
   const [aiList, setAiList] = useState<Array<any>>([]);
   const [loading, setLoading] = useState(true);
   const [testTo, setTestTo] = useState("");
@@ -59,6 +62,16 @@ export default function IntegrationsForm() {
         setHubspotConnected(false);
       }
       try {
+        // Check Google Calendar status
+        const gcalRes = await fetch("/api/google-calendar/status");
+        const gcalData = await gcalRes.json();
+        setGoogleCalendarConnected(!!gcalData.connected);
+        setGoogleCalendarInfo(gcalData.info || null);
+      } catch {
+        setGoogleCalendarConnected(false);
+        setGoogleCalendarInfo(null);
+      }
+      try {
         const res = await fetch("/api/whatsapp/status");
         const data = await res.json();
         setWhatsappConnected(!!data.connected);
@@ -80,10 +93,17 @@ export default function IntegrationsForm() {
           || null;
         setSelectedAiId(defaultAi);
         setHubspotAiId(defaultAi);
+        setGoogleCalendarAiId(defaultAi);
         // Now that we know the default AI, refresh HubSpot status for it if available
         try {
           const st = await fetch(`/api/hubspot/status${defaultAi ? `?ai_id=${encodeURIComponent(defaultAi)}` : ""}`).then(r=>r.json());
           setHubspotConnected(!!st.connected);
+        } catch {}
+        // Refresh Google Calendar status for default AI
+        try {
+          const gcalSt = await fetch(`/api/google-calendar/status${defaultAi ? `?ai_id=${encodeURIComponent(defaultAi)}` : ""}`).then(r=>r.json());
+          setGoogleCalendarConnected(!!gcalSt.connected);
+          setGoogleCalendarInfo(gcalSt.info || null);
         } catch {}
       } catch {
         setWhatsappConnected(false);
@@ -91,6 +111,8 @@ export default function IntegrationsForm() {
         setWaList([]);
         setAiList([]);
         setSelectedAiId(null);
+        setHubspotAiId(null);
+        setGoogleCalendarAiId(null);
       }
       setLoading(false);
     };
@@ -101,7 +123,13 @@ export default function IntegrationsForm() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("status") === "connected") {
         toast.success("HubSpot connected!");
-        window.history.replaceState({}, document.title, window.location.pathname); // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (params.get("status") === "gcal_connected") {
+        toast.success("Google Calendar connected!");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (params.get("error")?.startsWith("gcal_")) {
+        toast.error("Failed to connect Google Calendar");
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
   }, []);
@@ -115,6 +143,17 @@ export default function IntegrationsForm() {
       } catch {}
     })();
   }, [hubspotAiId]);
+
+  // Re-check Google Calendar connection when AI selection changes
+  useEffect(() => {
+    (async () => {
+      try {
+        const st = await fetch(`/api/google-calendar/status${googleCalendarAiId ? `?ai_id=${encodeURIComponent(googleCalendarAiId)}` : ""}`).then(r=>r.json());
+        setGoogleCalendarConnected(!!st.connected);
+        setGoogleCalendarInfo(st.info || null);
+      } catch {}
+    })();
+  }, [googleCalendarAiId]);
 
   const handleConnectHubspot = async () => {
     try {
@@ -162,6 +201,44 @@ export default function IntegrationsForm() {
       }
     } catch (e) {
       toast.error("Failed to disconnect HubSpot");
+    }
+  };
+
+  const handleConnectGoogleCalendar = async () => {
+    try {
+      const qs = googleCalendarAiId ? `?ai_id=${encodeURIComponent(googleCalendarAiId)}` : "";
+      const popup = window.open(
+        `/api/google-calendar/oauth-url${qs}`,
+        "google-calendar-oauth",
+        "width=600,height=700"
+      );
+      if (!popup) {
+        toast.error("Popup blocked. Please allow popups and try again.");
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Unable to initiate Google Calendar connection");
+    }
+  };
+
+  const handleDisconnectGoogleCalendar = async () => {
+    try {
+      const res = await fetch("/api/google-calendar/disconnect", { 
+        method: "POST", 
+        headers: {"Content-Type":"application/json"}, 
+        body: JSON.stringify({ ai_id: googleCalendarAiId || null }) 
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGoogleCalendarConnected(false);
+        setGoogleCalendarInfo(null);
+        toast.success("Google Calendar disconnected");
+      } else {
+        toast.error(data.error || "Failed to disconnect Google Calendar");
+      }
+    } catch (e) {
+      toast.error("Failed to disconnect Google Calendar");
     }
   };
 
@@ -635,7 +712,92 @@ export default function IntegrationsForm() {
           )}
         </CardContent>
       </Card>
-        {/* Future integrations can be added here */}
+
+      {/* Google Calendar Integration */}
+      <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-6 w-6 text-blue-600" />
+              <CardTitle className="text-lg">Google Calendar</CardTitle>
+            </div>
+            <Badge
+              variant={googleCalendarConnected ? "default" : "secondary"}
+              className={googleCalendarConnected ? "bg-green-500 hover:bg-green-600" : ""}
+            >
+              {googleCalendarConnected && <CheckCircle2 className="h-3 w-3 mr-1" />}
+              {googleCalendarConnected ? "Connected" : "Not connected"}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {googleCalendarConnected
+              ? `Connected to ${googleCalendarInfo?.calendar_name || "your calendar"}. Bookings will automatically sync.`
+              : "Connect your Google Calendar to automatically sync confirmed bookings as calendar events."}
+          </p>
+          {googleCalendarConnected ? (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Calendar</span>
+                  <span className="text-sm font-semibold text-gray-900">{googleCalendarInfo?.calendar_name || "Primary"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Timezone</span>
+                  <span className="text-sm font-semibold text-gray-900">{googleCalendarInfo?.timezone || "UTC"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Auto-Sync</span>
+                  <span className="text-sm font-semibold text-green-600">{googleCalendarInfo?.sync_enabled ? "Enabled" : "Disabled"}</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleDisconnectGoogleCalendar}
+                >
+                  Disconnect
+                </Button>
+              </div>
+              <div className="rounded-md bg-blue-50/50 border border-blue-200/50 p-3">
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  <span className="font-medium">Note:</span> Only confirmed bookings with date and time will be synced to your calendar.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {aiList.length > 0 ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Select AI to connect</Label>
+                    <Select value={googleCalendarAiId ?? undefined} onValueChange={(v) => setGoogleCalendarAiId(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an AI" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {aiList.map((ai) => (
+                          <SelectItem key={ai.ai_id} value={ai.ai_id}>
+                            {ai.ai_name || 'AI'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleConnectGoogleCalendar} size="sm" disabled={!googleCalendarAiId}>
+                    Connect
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect Google Calendar.</p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
       </div>
     </section>
   );
