@@ -15,13 +15,13 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error('OAuth error:', error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/integrations?error=gcal_${error}`
+      `${process.env.NEXT_PUBLIC_APP_URL}/google-calendar-callback?error=gcal_${error}`
     );
   }
 
   if (!code || !state) {
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/integrations?error=gcal_missing_params`
+      `${process.env.NEXT_PUBLIC_APP_URL}/google-calendar-callback?error=gcal_missing_params`
     );
   }
 
@@ -86,14 +86,14 @@ export async function GET(request: NextRequest) {
       throw dbError;
     }
 
-    // Redirect back to integrations page with success message
+    // Redirect to popup callback page that will close itself and notify the opener
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/integrations?status=gcal_connected`
+      `${process.env.NEXT_PUBLIC_APP_URL}/google-calendar-callback?status=gcal_connected`
     );
   } catch (error) {
     console.error('Google Calendar OAuth callback error:', error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/integrations?error=gcal_oauth_failed`
+      `${process.env.NEXT_PUBLIC_APP_URL}/google-calendar-callback?error=gcal_oauth_failed`
     );
   }
 }

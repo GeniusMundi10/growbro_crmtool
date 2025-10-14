@@ -216,6 +216,22 @@ export default function IntegrationsForm() {
         toast.error("Popup blocked. Please allow popups and try again.");
         return;
       }
+      // Listen for postMessage from popup
+      const listener = async (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        if (event.data.status === "gcal_connected") {
+          setGoogleCalendarConnected(true);
+          toast.success("Google Calendar connected!");
+          window.removeEventListener("message", listener);
+          // Refresh status for this AI specifically
+          try {
+            const st = await fetch(`/api/google-calendar/status${googleCalendarAiId ? `?ai_id=${encodeURIComponent(googleCalendarAiId)}` : ""}`).then(r=>r.json());
+            setGoogleCalendarConnected(!!st.connected);
+            setGoogleCalendarInfo(st.info || null);
+          } catch {}
+        }
+      };
+      window.addEventListener("message", listener);
     } catch (e) {
       console.error(e);
       toast.error("Unable to initiate Google Calendar connection");
