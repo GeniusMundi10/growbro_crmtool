@@ -102,10 +102,18 @@ export default function BookingsPage() {
         .eq("ai_id", aiId)
         .order("created_at", { ascending: false });
 
+      // DEBUG: Fetch ALL bookings to see what's in the database
+      const { data: allBookings } = await supabase
+        .from("bookings")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
       console.log('=== BOOKINGS DEBUG ===');
       console.log('Selected AI ID:', aiId);
       console.log('Selected AI Name:', selectedAi?.ai_name);
       console.log('Fetched bookings count:', bookingsData?.length || 0);
+      console.log('ALL bookings in database (last 10):', allBookings);
       console.log('Services in config:', bookingConfig?.services || []);
       if (bookingsData && bookingsData.length > 0) {
         bookingsData.forEach((b, i) => {
