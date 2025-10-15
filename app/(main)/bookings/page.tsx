@@ -133,13 +133,18 @@ export default function BookingsPage() {
 
 
   // Separate bookings by type
-  const scheduledBookings = bookings.filter(b => 
-    services.find(s => s.key === b.service_key)?.workflow_type === 'scheduled' || false
-  );
+  // First check the booking's own workflow_type, then fall back to service config
+  const scheduledBookings = bookings.filter(b => {
+    if (b.workflow_type === 'scheduled') return true;
+    const service = services.find(s => s.key === b.service_key);
+    return service?.workflow_type === 'scheduled';
+  });
   
-  const requestBookings = bookings.filter(b => 
-    services.find(s => s.key === b.service_key)?.workflow_type === 'request' || false
-  );
+  const requestBookings = bookings.filter(b => {
+    if (b.workflow_type === 'request') return true;
+    const service = services.find(s => s.key === b.service_key);
+    return service?.workflow_type === 'request';
+  });
 
   const filterBookings = (bookingsList: Booking[]) => {
     return bookingsList.filter(booking => {
