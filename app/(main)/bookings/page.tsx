@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import Header from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +64,7 @@ export default function BookingsPage() {
   const fetchBookings = async (aiIdOverride?: string) => {
     try {
       setLoading(true);
-      const { supabase } = await import("@/lib/supabase");
+      const supabase = createClientComponentClient();
       
       // Get all user's AIs
       const { data: aiData } = await supabase
@@ -102,33 +103,6 @@ export default function BookingsPage() {
         .eq("ai_id", aiId)
         .order("created_at", { ascending: false });
 
-      // DEBUG: Fetch ALL bookings to see what's in the database
-      const { data: allBookings } = await supabase
-        .from("bookings")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      console.log('=== BOOKINGS DEBUG ===');
-      console.log('Selected AI ID:', aiId);
-      console.log('Selected AI Name:', selectedAi?.ai_name);
-      console.log('Fetched bookings count:', bookingsData?.length || 0);
-      console.log('ALL bookings in database (last 10):', allBookings);
-      console.log('Services in config:', bookingConfig?.services || []);
-      if (bookingsData && bookingsData.length > 0) {
-        bookingsData.forEach((b, i) => {
-          console.log(`Booking ${i + 1}:`, {
-            id: b.id,
-            customer_name: b.customer_name,
-            service_key: b.service_key,
-            workflow_type: b.workflow_type,
-            date: b.date,
-            time: b.time,
-            status: b.status
-          });
-        });
-      }
-
       setBookings(bookingsData || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
@@ -139,7 +113,7 @@ export default function BookingsPage() {
 
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
-      const { supabase } = await import("@/lib/supabase");
+      const supabase = createClientComponentClient();
       
       const { error } = await supabase
         .from("bookings")
@@ -161,21 +135,9 @@ export default function BookingsPage() {
   // Separate bookings by type
   // First check the booking's own workflow_type, then fall back to service config
   const scheduledBookings = bookings.filter(b => {
-    const hasScheduledType = b.workflow_type === 'scheduled';
+    if (b.workflow_type === 'scheduled') return true;
     const service = services.find(s => s.key === b.service_key);
-    const serviceIsScheduled = service?.workflow_type === 'scheduled';
-    
-    console.log(`Booking ${b.id} filter check:`, {
-      service_key: b.service_key,
-      booking_workflow_type: b.workflow_type,
-      hasScheduledType,
-      foundService: !!service,
-      serviceIsScheduled,
-      willInclude: hasScheduledType || serviceIsScheduled
-    });
-    
-    if (hasScheduledType) return true;
-    return serviceIsScheduled;
+    return service?.workflow_type === 'scheduled';
   });
   
   const requestBookings = bookings.filter(b => {
@@ -183,11 +145,6 @@ export default function BookingsPage() {
     const service = services.find(s => s.key === b.service_key);
     return service?.workflow_type === 'request';
   });
-
-  console.log('=== FILTERING RESULTS ===');
-  console.log('Total bookings:', bookings.length);
-  console.log('Scheduled bookings:', scheduledBookings.length);
-  console.log('Request bookings:', requestBookings.length);
 
   const filterBookings = (bookingsList: Booking[]) => {
     return bookingsList.filter(booking => {
