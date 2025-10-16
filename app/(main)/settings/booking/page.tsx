@@ -772,25 +772,30 @@ export default function BookingSettingsPage() {
                         <SelectContent>
                           {WORKFLOW_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                              <div className="flex flex-col py-1">
-                                <span className="font-medium text-sm">{option.label}</span>
-                                <span className="text-xs text-gray-600 mt-0.5">{option.description}</span>
-                                <span className="text-xs text-gray-400 mt-0.5 italic">e.g., {option.examples}</span>
-                              </div>
+                              {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-100">
-                        <p className="text-xs text-blue-900">
-                          <strong>{WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.label}</strong>
-                        </p>
-                        <p className="text-xs text-blue-700 mt-1">
-                          {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.description}
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          Examples: {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.examples}
-                        </p>
+                      <div className="mt-2 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start gap-2">
+                          <div className="text-2xl">
+                            {newService.booking_type === 'appointment' && '📅'}
+                            {newService.booking_type === 'on_demand' && '📦'}
+                            {newService.booking_type === 'event' && '🎟️'}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.label}
+                            </p>
+                            <p className="text-xs text-gray-700 mt-1">
+                              {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.description}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1.5 italic">
+                              💡 Examples: {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.examples}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div>
