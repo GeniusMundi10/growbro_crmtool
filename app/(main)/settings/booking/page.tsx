@@ -81,10 +81,25 @@ const DAYS = [
   "sunday",
 ];
 
-const WORKFLOW_OPTIONS: { value: WorkflowType; label: string; description: string }[] = [
-  { value: "appointment", label: "Appointment", description: "Time-specific bookings (e.g., consultations, meetings)" },
-  { value: "on_demand", label: "On-Demand", description: "Flexible timing (e.g., delivery, service requests)" },
-  { value: "event", label: "Event", description: "Group bookings (e.g., classes, webinars)" },
+const WORKFLOW_OPTIONS: { value: WorkflowType; label: string; description: string; examples: string }[] = [
+  { 
+    value: "appointment", 
+    label: "📅 Scheduled Appointments", 
+    description: "Customers book a specific date and time slot",
+    examples: "Doctor visits, consultations, haircuts, meetings"
+  },
+  { 
+    value: "on_demand", 
+    label: "📦 On-Demand Requests", 
+    description: "Customers request service, you schedule it later",
+    examples: "Delivery orders, repair requests, quote inquiries"
+  },
+  { 
+    value: "event", 
+    label: "🎟️ Group Events", 
+    description: "Multiple customers book the same time slot",
+    examples: "Fitness classes, webinars, workshops, tours"
+  },
 ];
 
 const SERVICE_CHANNELS = ["web", "whatsapp", "phone", "email"];
@@ -96,12 +111,17 @@ const LABEL_OPTIONS: Array<{
   scheduled_tab: string;
   request_tab: string;
 }> = [
-  { value: "healthcare", label: "Healthcare", dashboard_title: "Patient Bookings", scheduled_tab: "Appointments", request_tab: "Consultations" },
-  { value: "legal", label: "Legal Services", dashboard_title: "Client Bookings", scheduled_tab: "Scheduled Meetings", request_tab: "Consultations" },
-  { value: "real_estate", label: "Real Estate", dashboard_title: "Property Bookings", scheduled_tab: "Viewings", request_tab: "Inquiries" },
-  { value: "fitness", label: "Fitness & Wellness", dashboard_title: "Session Bookings", scheduled_tab: "Classes", request_tab: "Personal Training" },
-  { value: "education", label: "Education", dashboard_title: "Student Bookings", scheduled_tab: "Lectures", request_tab: "Tutoring" },
-  { value: "custom", label: "Custom", dashboard_title: "Bookings", scheduled_tab: "Scheduled", request_tab: "Requests" }
+  { value: "healthcare", label: "Healthcare", dashboard_title: "Patient Bookings", scheduled_tab: "Appointments", request_tab: "Walk-ins & Consultations" },
+  { value: "legal", label: "Legal Services", dashboard_title: "Client Bookings", scheduled_tab: "Scheduled Consultations", request_tab: "Inquiry Requests" },
+  { value: "real_estate", label: "Real Estate", dashboard_title: "Property Bookings", scheduled_tab: "Scheduled Viewings", request_tab: "Property Inquiries" },
+  { value: "fitness", label: "Fitness & Wellness", dashboard_title: "Class & Session Bookings", scheduled_tab: "Scheduled Classes", request_tab: "Personal Training Requests" },
+  { value: "education", label: "Education & Training", dashboard_title: "Student Bookings", scheduled_tab: "Scheduled Sessions", request_tab: "Tutoring Requests" },
+  { value: "home_services", label: "Home Services", dashboard_title: "Service Bookings", scheduled_tab: "Scheduled Appointments", request_tab: "Service Requests" },
+  { value: "beauty_salon", label: "Beauty & Salon", dashboard_title: "Client Appointments", scheduled_tab: "Scheduled Appointments", request_tab: "Walk-in Requests" },
+  { value: "restaurant", label: "Restaurant & Dining", dashboard_title: "Reservations", scheduled_tab: "Table Reservations", request_tab: "Waitlist & Inquiries" },
+  { value: "automotive", label: "Automotive Services", dashboard_title: "Service Bookings", scheduled_tab: "Scheduled Services", request_tab: "Quote Requests" },
+  { value: "professional", label: "Professional Services", dashboard_title: "Client Meetings", scheduled_tab: "Scheduled Meetings", request_tab: "Consultation Requests" },
+  { value: "custom", label: "Custom / Other", dashboard_title: "Bookings", scheduled_tab: "Scheduled Bookings", request_tab: "Booking Requests" }
 ];
 
 const FORM_FIELD_TYPES: FormFieldType[] = ["text", "textarea", "select", "number", "email", "phone"];
@@ -752,17 +772,26 @@ export default function BookingSettingsPage() {
                         <SelectContent>
                           {WORKFLOW_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{option.label}</span>
-                                <span className="text-xs text-gray-500">{option.description}</span>
+                              <div className="flex flex-col py-1">
+                                <span className="font-medium text-sm">{option.label}</span>
+                                <span className="text-xs text-gray-600 mt-0.5">{option.description}</span>
+                                <span className="text-xs text-gray-400 mt-0.5 italic">e.g., {option.examples}</span>
                               </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.description}
-                      </p>
+                      <div className="mt-2 p-2 bg-blue-50 rounded-md border border-blue-100">
+                        <p className="text-xs text-blue-900">
+                          <strong>{WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.label}</strong>
+                        </p>
+                        <p className="text-xs text-blue-700 mt-1">
+                          {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.description}
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Examples: {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.examples}
+                        </p>
+                      </div>
                     </div>
                     <div>
                       <Label>Default Duration</Label>
