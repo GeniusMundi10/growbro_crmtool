@@ -28,12 +28,14 @@ interface Booking {
   customer_phone: string;
   customer_email?: string;
   service_key: string;
-  workflow_type: 'scheduled' | 'request' | 'custom';
+  booking_type?: 'appointment' | 'on_demand' | 'event' | 'scheduled' | 'request' | 'custom';
+  workflow_type?: 'appointment' | 'on_demand' | 'event' | 'scheduled' | 'request' | 'custom';
   date?: string;
   time?: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  metadata?: Record<string, any>;
+  duration_minutes?: number;
+  status: string;
   notes?: string;
+  metadata?: any;
   created_at: string;
 }
 
@@ -49,11 +51,19 @@ export default function BookingsPage() {
   const [selectedAiId, setSelectedAiId] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [bookingConfig, setBookingConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  
+  // Get industry-specific labels
+  const labels = bookingConfig?.labels || {
+    dashboard_title: "Bookings & Orders",
+    scheduled_tab: "Appointments",
+    request_tab: "On-Demand Requests"
+  };
 
   useEffect(() => {
     if (user?.id) {
@@ -93,8 +103,9 @@ export default function BookingsPage() {
 
       // Fetch services for the selected AI
       const selectedAi = aiData.find(ai => ai.id === aiId);
-      const bookingConfig = selectedAi?.booking_config;
-      setServices(bookingConfig?.services || []);
+      const config = selectedAi?.booking_config;
+      setBookingConfig(config);
+      setServices(config?.services || []);
 
       // Fetch bookings for selected AI
       const { data: bookingsData } = await supabase
@@ -132,18 +143,34 @@ export default function BookingsPage() {
   };
 
 
+  // Helper to get booking type (supports both new and legacy fields)
+  const getBookingType = (booking: Booking) => {
+    // Priority: booking_type > workflow_type > service config
+    const bookingType = booking.booking_type || booking.workflow_type;
+    if (bookingType) {
+      // Map legacy values to new values
+      if (bookingType === 'scheduled') return 'appointment';
+      if (bookingType === 'request') return 'on_demand';
+      return bookingType;
+    }
+    
+    // Fall back to service config
+    const service = services.find(s => s.key === booking.service_key);
+    const serviceType = service?.booking_type || service?.workflow_type;
+    if (serviceType === 'scheduled') return 'appointment';
+    if (serviceType === 'request') return 'on_demand';
+    return serviceType || 'appointment';
+  };
+  
   // Separate bookings by type
-  // First check the booking's own workflow_type, then fall back to service config
   const scheduledBookings = bookings.filter(b => {
-    if (b.workflow_type === 'scheduled') return true;
-    const service = services.find(s => s.key === b.service_key);
-    return service?.workflow_type === 'scheduled';
+    const type = getBookingType(b);
+    return type === 'appointment' || type === 'scheduled';
   });
   
   const requestBookings = bookings.filter(b => {
-    if (b.workflow_type === 'request') return true;
-    const service = services.find(s => s.key === b.service_key);
-    return service?.workflow_type === 'request';
+    const type = getBookingType(b);
+    return type === 'on_demand' || type === 'request';
   });
 
   const filterBookings = (bookingsList: Booking[]) => {
@@ -191,8 +218,8 @@ export default function BookingsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <Header 
-          title="Bookings & Orders" 
-          description="Manage all your service bookings and appointments"
+          title={labels.dashboard_title} 
+          description={labels.dashboard_description || "Manage all your service bookings and appointments"}
           showTitleInHeader={false}
         />
         <div className="flex items-center justify-center h-96">
@@ -205,7 +232,7 @@ export default function BookingsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Header 
-        title="Bookings & Orders" 
+        title={labels.dashboard_title} 
         description="Manage all your service bookings and appointments with ease. Filter, track, and update in one place."
         showTitleInHeader={false}
       />
@@ -261,12 +288,12 @@ export default function BookingsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Scheduled Bookings</p>
+                    <p className="text-sm text-gray-600">{labels.scheduled_tab}</p>
                     <p className="text-2xl font-bold text-purple-600">
                       {scheduledBookings.length}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      Scheduled services
+                      Time-specific bookings
                     </p>
                   </div>
                   <Package className="h-8 w-8 text-purple-600" />
@@ -278,7 +305,7 @@ export default function BookingsPage() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Request Bookings</p>
+                    <p className="text-sm text-gray-600">{labels.request_tab}</p>
                     <p className="text-2xl font-bold text-blue-600">
                       {requestBookings.length}
                     </p>
@@ -358,11 +385,11 @@ export default function BookingsPage() {
             <TabsList className="bg-white">
               <TabsTrigger value="scheduled" className="flex items-center gap-2">
                 <Package className="h-4 w-4" />
-                Scheduled Services ({scheduledBookings.length})
+                {labels.scheduled_tab} ({scheduledBookings.length})
               </TabsTrigger>
               <TabsTrigger value="requests" className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Request Services ({requestBookings.length})
+                {labels.request_tab} ({requestBookings.length})
               </TabsTrigger>
             </TabsList>
 

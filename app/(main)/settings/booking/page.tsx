@@ -24,14 +24,15 @@ interface BusinessHours {
   [key: string]: BusinessHoursDay;
 }
 
-type WorkflowType = "scheduled" | "request" | "custom";
+type WorkflowType = "appointment" | "on_demand" | "event" | "scheduled" | "request" | "custom";
 
 type FormFieldType = "text" | "textarea" | "select" | "number" | "email" | "phone";
 
 interface BookingService {
   key: string;
   name: string;
-  workflow_type: WorkflowType;
+  booking_type?: WorkflowType;  // New field
+  workflow_type?: WorkflowType;  // Legacy field for backward compatibility
   description?: string;
   active: boolean;
   channels: string[];
@@ -80,10 +81,10 @@ const DAYS = [
   "sunday",
 ];
 
-const WORKFLOW_OPTIONS: { value: WorkflowType; label: string }[] = [
-  { value: "scheduled", label: "Scheduled" },
-  { value: "request", label: "Request" },
-  { value: "custom", label: "Custom" },
+const WORKFLOW_OPTIONS: { value: WorkflowType; label: string; description: string }[] = [
+  { value: "appointment", label: "Appointment", description: "Time-specific bookings (e.g., consultations, meetings)" },
+  { value: "on_demand", label: "On-Demand", description: "Flexible timing (e.g., delivery, service requests)" },
+  { value: "event", label: "Event", description: "Group bookings (e.g., classes, webinars)" },
 ];
 
 const SERVICE_CHANNELS = ["web", "whatsapp", "phone", "email"];
@@ -164,10 +165,17 @@ const normalizeBookingConfig = (config?: Partial<BookingConfig>): BookingConfig 
     ? config!.services.map((service) => {
         const key = service.key || generateServiceKey(service.name || "Service");
         const channels = Array.isArray(service.channels) && service.channels.length > 0 ? Array.from(new Set(service.channels)) : ["web"];
+        const workflowType = (service.booking_type || service.workflow_type) as WorkflowType;
+        // Map legacy values to new values
+        let bookingType: WorkflowType = workflowType || "appointment";
+        if (workflowType === "scheduled") bookingType = "appointment";
+        if (workflowType === "request") bookingType = "on_demand";
+        
         return {
           key,
           name: service.name || "Untitled Service",
-          workflow_type: (service.workflow_type as WorkflowType) || "scheduled",
+          booking_type: bookingType,
+          workflow_type: bookingType,  // Keep both for compatibility
           description: service.description || "",
           active: service.active ?? true,
           channels,
@@ -231,7 +239,8 @@ export default function BookingSettingsPage() {
   const [newService, setNewService] = useState({
     name: "",
     description: "",
-    workflow_type: "scheduled" as WorkflowType,
+    booking_type: "appointment" as WorkflowType,
+    workflow_type: "appointment" as WorkflowType,  // Keep both for compatibility
     channels: ["web", "whatsapp"],
     duration_minutes: 30 as number | undefined,
     active: true,
@@ -359,7 +368,8 @@ export default function BookingSettingsPage() {
       const service: BookingService = {
         key,
         name: trimmed,
-        workflow_type: newService.workflow_type,
+        booking_type: newService.booking_type,
+        workflow_type: newService.booking_type,  // Keep both for compatibility
         description: newService.description.trim(),
         active: newService.active,
         channels: Array.from(new Set(newService.channels)),
@@ -375,7 +385,8 @@ export default function BookingSettingsPage() {
     setNewService({
       name: "",
       description: "",
-      workflow_type: "scheduled",
+      booking_type: "appointment",
+      workflow_type: "appointment",  // Keep both for compatibility
       channels: ["web", "whatsapp"],
       duration_minutes: 30,
       active: true,
@@ -730,22 +741,28 @@ export default function BookingSettingsPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label>Workflow</Label>
+                      <Label>Booking Type</Label>
                       <Select
-                        value={newService.workflow_type}
-                        onValueChange={(value: WorkflowType) => setNewService((prev) => ({ ...prev, workflow_type: value }))}
+                        value={newService.booking_type}
+                        onValueChange={(value: WorkflowType) => setNewService((prev) => ({ ...prev, booking_type: value, workflow_type: value }))}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Choose workflow" />
+                          <SelectValue placeholder="Choose booking type" />
                         </SelectTrigger>
                         <SelectContent>
                           {WORKFLOW_OPTIONS.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                              {option.label}
+                              <div className="flex flex-col">
+                                <span className="font-medium">{option.label}</span>
+                                <span className="text-xs text-gray-500">{option.description}</span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.description}
+                      </p>
                     </div>
                     <div>
                       <Label>Default Duration</Label>
@@ -833,8 +850,8 @@ export default function BookingSettingsPage() {
                           <div>
                             <Label className="text-xs text-gray-500">Workflow</Label>
                             <Select
-                              value={service.workflow_type}
-                              onValueChange={(value: WorkflowType) => updateService(service.key, { workflow_type: value })}
+                              value={service.booking_type || service.workflow_type}
+                              onValueChange={(value: WorkflowType) => updateService(service.key, { booking_type: value, workflow_type: value })}
                             >
                               <SelectTrigger>
                                 <SelectValue />
