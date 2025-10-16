@@ -63,7 +63,7 @@ export default function AccountPasswordSettings() {
   return (
     <>
       <Header title="Account Settings" />
-      <div className="bg-white rounded-lg p-6 shadow-sm border max-w-md mx-auto mt-10">
+      <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border max-w-md mx-4 sm:mx-auto mt-6 sm:mt-10">
       <h2 className="text-xl font-bold mb-4">Change Password</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">

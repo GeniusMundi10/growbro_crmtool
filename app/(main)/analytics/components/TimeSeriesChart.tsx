@@ -2,7 +2,7 @@ import React from "react";
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 export interface TimeSeriesChartProps {
-  data: Array<{ day: string; [key: string]: number }>; // e.g. [{ day: '2025-06-10', messages: 22, conversations: 4 }]
+  data: Array<{ day: string; [key: string]: string | number }>; // e.g. [{ day: '2025-06-10', messages: 22, conversations: 4 }]
   series: Array<{ key: string; label: string; color: string }>;
   title?: string;
   description?: string;

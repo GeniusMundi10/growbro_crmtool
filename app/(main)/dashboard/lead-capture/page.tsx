@@ -11,9 +11,9 @@ export default function LeadCapturePage() {
   return (
     <div className="min-h-screen bg-white">
       <Header title="Dashboard" />
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <DashboardTabs activeTab="lead-capture" />
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <Suspense fallback={<div>Loading Lead Capture...</div>}>
             <LeadCaptureForm />
           </Suspense>

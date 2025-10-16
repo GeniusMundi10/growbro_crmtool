@@ -207,8 +207,8 @@ export default function SalesLeadsPage() {
         showTitleInHeader={false}
       />
       <TooltipProvider>
-        <div className="container mx-auto px-4 py-8">
-          <div className="space-y-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+          <div className="space-y-4 sm:space-y-6">
             {hubspotConnected === false && (
               <Card className="border-yellow-200 bg-yellow-50/70">
                 <CardContent className="py-4 flex flex-col md:flex-row items-center justify-between gap-3">
@@ -224,7 +224,7 @@ export default function SalesLeadsPage() {
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>Total Leads</CardDescription>
@@ -250,10 +250,10 @@ export default function SalesLeadsPage() {
               <CardContent className="py-4">
                 <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
                   <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">Filter by AI:</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">Filter by AI:</span>
                       <Select value={aiFilter} onValueChange={(v) => setAIFilter(v)}>
-                        <SelectTrigger className="w-[200px]">
+                        <SelectTrigger className="w-full sm:w-[200px]">
                           <SelectValue placeholder="All AI" />
                         </SelectTrigger>
                         <SelectContent>
@@ -263,16 +263,16 @@ export default function SalesLeadsPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                       <Input
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search name, email, phone, AI"
-                        className="w-[260px]"
+                        className="w-full sm:w-[260px]"
                       />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button

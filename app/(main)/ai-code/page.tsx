@@ -9,7 +9,7 @@ export default function AiCodePage() {
         description="Add GrowBro to your site in minutes. Copy a single script for a floating widget or use an inline iframe. Instantly preview and test the experience—no deploys needed."
         showTitleInHeader={false} 
       />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         <EmbedCode />
       </div>
     </div>

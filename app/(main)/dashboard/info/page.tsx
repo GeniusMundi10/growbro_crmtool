@@ -79,6 +79,11 @@ function BusinessInfoPageContent() {
   
   // Fetch the most recent AI for the current user
   async function fetchMostRecentAI() {
+    if (!user?.id) {
+      setLoadingAI(false);
+      return;
+    }
+    
     try {
       const { data: aiRows, error } = await supabase
         .from('business_info')
@@ -146,14 +151,14 @@ function BusinessInfoPageContent() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <Header title="Dashboard" />
       <motion.div 
-        className="container mx-auto px-4 py-6"
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         <motion.div variants={itemVariants}>
-          <h1 className="text-3xl font-bold mb-6 text-slate-800">Welcome to GrowBro.ai</h1>
-          <p className="text-slate-600 mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-slate-800">Welcome to GrowBro.ai</h1>
+          <p className="text-sm sm:text-base text-slate-600 mb-6 sm:mb-8">
             Configure your AI assistant to match your business needs. Start by filling out the business information below.
           </p>
           <DashboardTabs activeTab="info" />
@@ -161,7 +166,7 @@ function BusinessInfoPageContent() {
         
         <motion.div 
           variants={itemVariants}
-          className="mt-8"
+          className="mt-6 sm:mt-8"
         >
           {loadingAI ? (
             <div className="flex justify-center py-10">
@@ -188,9 +193,9 @@ export default function BusinessInfoPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
         <Header title="Dashboard" />
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold mb-6 text-slate-800">Welcome to GrowBro.ai</h1>
-          <p className="text-slate-600 mb-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-slate-800">Welcome to GrowBro.ai</h1>
+          <p className="text-sm sm:text-base text-slate-600 mb-6 sm:mb-8">
             Configure your AI assistant to match your business needs. Start by filling out the business information below.
           </p>
           <div className="flex justify-center py-10">

@@ -573,17 +573,17 @@ export default function BookingSettingsPage() {
         showTitleInHeader={false}
       />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6 pb-24">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="space-y-4 sm:space-y-6 pb-16 sm:pb-24">
 
           {/* AI Selector */}
           {aiList.length > 1 && (
-            <Card className="mb-6">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium min-w-[110px]">Select AI:</label>
+            <Card className="mb-4 sm:mb-6">
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                  <label className="text-sm font-medium sm:min-w-[110px]">Select AI:</label>
                   <Select value={aiId ?? undefined} onValueChange={handleAiChange}>
-                    <SelectTrigger className="w-[260px]">
+                    <SelectTrigger className="w-full sm:w-[260px]">
                       <SelectValue placeholder="Choose an AI" />
                     </SelectTrigger>
                     <SelectContent>
@@ -599,22 +599,22 @@ export default function BookingSettingsPage() {
             </Card>
           )}
 
-          <Tabs defaultValue="general" className="space-y-6">
-            <TabsList className="bg-white">
-              <TabsTrigger value="general" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
+          <Tabs defaultValue="general" className="space-y-4 sm:space-y-6">
+            <TabsList className="bg-white w-full justify-start overflow-x-auto">
+              <TabsTrigger value="general" className="flex items-center gap-1.5 sm:gap-2 text-sm whitespace-nowrap">
+                <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 General
               </TabsTrigger>
-              <TabsTrigger value="services" className="flex items-center gap-2">
-                <Layers className="h-4 w-4" />
+              <TabsTrigger value="services" className="flex items-center gap-1.5 sm:gap-2 text-sm whitespace-nowrap">
+                <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Services
               </TabsTrigger>
-              <TabsTrigger value="forms" className="flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" />
+              <TabsTrigger value="forms" className="flex items-center gap-1.5 sm:gap-2 text-sm whitespace-nowrap">
+                <ClipboardList className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Forms
               </TabsTrigger>
-              <TabsTrigger value="hours" className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
+              <TabsTrigger value="hours" className="flex items-center gap-1.5 sm:gap-2 text-sm whitespace-nowrap">
+                <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 Hours
               </TabsTrigger>
             </TabsList>
@@ -625,7 +625,7 @@ export default function BookingSettingsPage() {
                 <CardTitle>Platform Configuration</CardTitle>
                 <CardDescription>Control global booking behaviour and labels</CardDescription>
               </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-4 sm:space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <Label className="text-base font-semibold">Enable Booking System</Label>
@@ -637,7 +637,7 @@ export default function BookingSettingsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 gap-3 sm:gap-4">
                     <div>
                       <Label>Industry Type</Label>
                       <Input
@@ -651,7 +651,7 @@ export default function BookingSettingsPage() {
                       <h3 className="text-lg font-semibold">Labels</h3>
                       <p className="text-sm text-gray-600">Customize the text labels used in the booking interface.</p>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <Label htmlFor="label-preset">Label Preset</Label>
                           <Select
@@ -688,7 +688,7 @@ export default function BookingSettingsPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         <div>
                           <Label htmlFor="dashboard-title">Dashboard Title</Label>
                           <Input
@@ -735,13 +735,13 @@ export default function BookingSettingsPage() {
           </TabsContent>
 
           <TabsContent value="services">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Create Service</CardTitle>
                   <CardDescription>Services define what customers can schedule or request</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   <div>
                     <Label>Name</Label>
                     <Input
@@ -777,21 +777,21 @@ export default function BookingSettingsPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <div className="mt-2 p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                      <div className="mt-2 p-2.5 sm:p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
                         <div className="flex items-start gap-2">
-                          <div className="text-2xl">
+                          <div className="text-xl sm:text-2xl flex-shrink-0">
                             {newService.booking_type === 'appointment' && '📅'}
                             {newService.booking_type === 'on_demand' && '📦'}
                             {newService.booking_type === 'event' && '🎟️'}
                           </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs sm:text-sm font-semibold text-gray-900">
                               {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.label}
                             </p>
-                            <p className="text-xs text-gray-700 mt-1">
+                            <p className="text-[10px] sm:text-xs text-gray-700 mt-0.5 sm:mt-1">
                               {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.description}
                             </p>
-                            <p className="text-xs text-gray-600 mt-1.5 italic">
+                            <p className="text-[10px] sm:text-xs text-gray-600 mt-1 sm:mt-1.5 italic">
                               💡 Examples: {WORKFLOW_OPTIONS.find(o => o.value === newService.booking_type)?.examples}
                             </p>
                           </div>
@@ -852,7 +852,7 @@ export default function BookingSettingsPage() {
                   <CardTitle>Configured Services</CardTitle>
                   <CardDescription>Update workflow types, channels, and metadata</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   {bookingConfig.services.length === 0 && (
                     <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
                       No services configured yet.
@@ -958,7 +958,7 @@ export default function BookingSettingsPage() {
                   <CardTitle>Create Form Field</CardTitle>
                   <CardDescription>Attach fields to services for questionnaires</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   <div>
                     <Label>Field Label</Label>
                     <Input
@@ -1073,7 +1073,7 @@ export default function BookingSettingsPage() {
                   <CardTitle>Configured Fields</CardTitle>
                   <CardDescription>Manage dynamic questionnaire structure</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   {bookingConfig.forms.length === 0 && (
                     <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
                       No fields configured yet.
@@ -1269,39 +1269,40 @@ export default function BookingSettingsPage() {
             </Card>
           </TabsContent>
         </Tabs>
-        </div>
 
-        {/* Sticky Save Button Footer */}
-        <div className="sticky bottom-0 z-10 bg-gradient-to-t from-white via-white to-transparent pt-6 pb-4 mt-8 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-gray-600">
-                Saving to <span className="font-semibold">{aiList.find(ai => ai.id === aiId)?.ai_name || 'this AI'}</span>
-              </p>
-              {hasUnsavedChanges && (
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                  Unsaved changes
-                </Badge>
-              )}
+          {/* Sticky Save Button Footer */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-10">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <p className="text-xs sm:text-sm text-gray-600">
+                  Saving to <strong>Grow AI</strong>
+                </p>
+                {hasUnsavedChanges && (
+                  <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 text-xs">
+                    Unsaved changes
+                  </Badge>
+                )}
+              </div>
+              <Button
+                onClick={saveSettings}
+                disabled={saving}
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 shadow-lg w-full sm:w-auto"
+              >
+                {saving ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-b-transparent"></span>
+                    Saving...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Save className="h-4 w-4" />
+                    <span className="hidden sm:inline">Save All Settings</span>
+                    <span className="sm:hidden">Save</span>
+                  </span>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={saveSettings}
-              disabled={saving}
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700 shadow-lg"
-            >
-              {saving ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-b-transparent"></span>
-                  Saving...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Save className="h-4 w-4" />
-                  Save All Settings
-                </span>
-              )}
-            </Button>
           </div>
         </div>
       </div>

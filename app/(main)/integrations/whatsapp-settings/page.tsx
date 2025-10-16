@@ -294,7 +294,7 @@ export default function WhatsAppSettingsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
         <div className="flex items-center gap-2 mb-6">
           <Button variant="ghost" size="sm" onClick={() => router.push("/integrations")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -307,7 +307,7 @@ export default function WhatsAppSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 max-w-4xl">
       <div className="flex items-center gap-2 mb-6">
         <Button variant="ghost" size="sm" onClick={() => router.push("/integrations")}>
           <ArrowLeft className="h-4 w-4 mr-2" />

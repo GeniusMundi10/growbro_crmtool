@@ -13,7 +13,7 @@ export default function IntegrationsPage() {
         description="Connect third-party tools to super-charge your AI assistant workflow."
         showTitleInHeader={false} 
       />
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <IntegrationsForm />
       </div>
     </div>

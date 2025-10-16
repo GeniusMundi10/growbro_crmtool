@@ -107,11 +107,11 @@ export default function TourPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header title="Product Tour" />
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h1 className="text-2xl font-bold">{currentTourStep.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">{currentTourStep.title}</h1>
               <div className="text-sm text-gray-500">
                 Step {currentStep + 1} of {tourSteps.length}
               </div>
@@ -193,7 +193,7 @@ export default function TourPage() {
             </motion.div>
           </AnimatePresence>
 
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
             <Button
               variant="outline"
               onClick={handlePrevious}
@@ -214,7 +214,7 @@ export default function TourPage() {
               ))}
             </div>
 
-            <div className="space-x-2">
+            <div className="flex gap-2">
               <Button variant="ghost" onClick={handleSkip}>
                 Skip Tour
               </Button>

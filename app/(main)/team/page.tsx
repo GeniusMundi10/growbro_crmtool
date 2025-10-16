@@ -13,7 +13,7 @@ export default function TeamPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header title="Manage Team" />
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {loading ? (
           <div className="flex justify-center items-center min-h-[300px] text-gray-400">Loading...</div>
         ) : blockedPlans.includes(plan || "") ? (

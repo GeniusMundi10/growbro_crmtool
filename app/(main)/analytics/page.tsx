@@ -47,7 +47,8 @@ function groupByWeekday(rows: DashboardMessageSummary[], valueKey: keyof Dashboa
     let weekdayIdx = date.getDay();
     weekdayIdx = (weekdayIdx + 6) % 7; // Monday=0, Sunday=6
     const weekday = WEEKDAYS[weekdayIdx];
-    weekdayTotals[weekday] += row[valueKey] ?? 0;
+    const value = row[valueKey];
+    weekdayTotals[weekday] += (typeof value === 'number' ? value : 0);
   });
   return WEEKDAYS.map(day => ({
     weekday: day,
@@ -372,10 +373,10 @@ export default function AnalyticsPage() {
         showTitleInHeader={false}
       />
       {/* Filter Bar: AI Selector + Period Tabs */}
-      <div className="flex flex-wrap justify-center items-center gap-4 bg-white rounded-lg shadow px-4 py-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center items-center gap-3 sm:gap-4 bg-white rounded-lg shadow px-4 py-3 mb-4 sm:mb-6">
         {ais.length > 0 && (
           <select
-            className="border rounded px-3 py-2 text-sm"
+            className="w-full sm:w-auto border rounded px-3 py-2 text-sm"
             value={selectedAIId}
             onChange={e => setSelectedAIId(e.target.value)}
           >
@@ -393,7 +394,7 @@ export default function AnalyticsPage() {
           </TabsList>
         </Tabs>
       </div>
-      <div className="mx-auto py-8 max-w-2xl md:max-w-3xl xl:max-w-5xl 2xl:max-w-7xl">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-2xl md:max-w-3xl xl:max-w-5xl 2xl:max-w-7xl">
         <KPISection
           totalMessages={kpiStats?.totalMessages || 0}
           totalConversations={kpiStats?.totalConversations || 0}
@@ -409,7 +410,7 @@ export default function AnalyticsPage() {
         />
 
         {/* --- Crawl Analytics Card (after KPIs) --- */}
-        <div className="my-8">
+        <div className="my-4 sm:my-6 lg:my-8">
         <CrawlAnalyticsCard
           totalPagesCrawled={crawlAnalytics.totalPagesCrawled}
           filesIndexed={crawlAnalytics.filesIndexed}
@@ -489,8 +490,8 @@ export default function AnalyticsPage() {
       </div>
         
         {/* Pie Charts Side by Side */}
-        <div className="flex flex-col lg:flex-row gap-8 justify-center items-stretch mb-8">
-          <div className="flex-1 min-w-[280px]">
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 justify-center items-stretch mb-4 sm:mb-6 lg:mb-8">
+          <div className="flex-1 min-w-0 sm:min-w-[280px]">
             <ConversationDurationPieChart
               durations={summaryRows
                 .map(row => row.avg_conversation_duration)
@@ -498,7 +499,7 @@ export default function AnalyticsPage() {
               }
             />
           </div>
-          <div className="flex-1 min-w-[280px]">
+          <div className="flex-1 min-w-0 sm:min-w-[280px]">
             {userSegment && (
               <UserSegmentPieChart
                 data={[
@@ -555,7 +556,7 @@ export default function AnalyticsPage() {
         extra2Label="Leads"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6 lg:mb-8">
         {/* Conversations by Weekday */}
         <Card>
           <CardHeader>

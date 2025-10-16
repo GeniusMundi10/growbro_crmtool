@@ -160,10 +160,10 @@ export default function HelpPage() {
         showTitleInHeader={false}
       />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         
         <Tabs defaultValue="guides">
-          <TabsList className="mb-6">
+          <TabsList className="mb-4 sm:mb-6 w-full justify-start overflow-x-auto">
             <TabsTrigger value="guides">Guides</TabsTrigger>
             <TabsTrigger value="faqs">FAQs</TabsTrigger>
             <TabsTrigger value="videos">Videos</TabsTrigger>
@@ -172,7 +172,7 @@ export default function HelpPage() {
           
           <TabsContent value="guides">
             {/* Quick resources */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <Link href="/ai-code">
                 <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardHeader className="pb-3">
@@ -219,7 +219,7 @@ export default function HelpPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <Book className="h-6 w-6 text-green-600 mb-2" />
@@ -411,7 +411,7 @@ export default function HelpPage() {
 </TabsContent>
           
           <TabsContent value="contact">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <Card>
                 <CardHeader>
                   <MessageSquare className="h-6 w-6 text-green-600 mb-2" />
