@@ -322,21 +322,21 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
 
   return (
     <Card className="overflow-hidden border-none shadow-md">
-      <CardHeader className="bg-gradient-to-r from-emerald-900 to-green-800 text-white">
-        <CardTitle className="flex items-center text-2xl">
-          <Info className="mr-2 h-5 w-5" />
+      <CardHeader className="bg-gradient-to-r from-emerald-900 to-green-800 text-white p-4 sm:p-6">
+        <CardTitle className="flex items-center text-lg sm:text-2xl">
+          <Info className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
           Business Information
         </CardTitle>
-        <CardDescription className="text-emerald-100">
+        <CardDescription className="text-emerald-100 text-sm">
           Configure your AI assistant settings to match your business needs
         </CardDescription>
       </CardHeader>
       
       <Tabs defaultValue="ai" value={activeSection} onValueChange={(v) => setActiveSection(v as keyof typeof formSections)}>
-        <div className="px-6 pt-6">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/20">
+        <div className="px-3 sm:px-6 pt-4 sm:pt-6">
+          <TabsList className="grid w-full grid-cols-3 bg-muted/20 h-auto">
             {Object.entries(formSections).map(([key, label]) => (
-              <TabsTrigger key={key} value={key} className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <TabsTrigger key={key} value={key} className="data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm py-2">
                 {label}
               </TabsTrigger>
             ))}
@@ -344,7 +344,7 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
         </div>
         
         <form onBlurCapture={handleBlur} onSubmit={handleSubmit}>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             <TabsContent value="ai" className="mt-0 space-y-4">
               <motion.div 
                 className="space-y-4"
@@ -352,9 +352,9 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                 animate="visible"
                 variants={formAnimations}
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="ai_name">
+                    <Label htmlFor="ai_name" className="text-sm">
                       AI Assistant Name <Badge variant="outline" className="ml-2 text-[10px]">Required</Badge>
                     </Label>
                     <Input 
@@ -368,7 +368,7 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="agent_type">AI Agent Type</Label>
+                    <Label htmlFor="agent_type" className="text-sm">AI Agent Type</Label>
                     <Select 
                       value={businessInfo.agent_type} 
                       onValueChange={handleSelectChange}
@@ -385,8 +385,8 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                     </Select>
                     <p className="text-xs text-gray-500">Determines how your AI interacts with visitors</p>
                   </div>
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="session_cookie">
+                  <div className="col-span-1 lg:col-span-2 space-y-2">
+                    <Label htmlFor="session_cookie" className="text-sm">
                       Session Cookie for Authenticated Crawling
                       <TooltipProvider>
                         <Tooltip>
@@ -440,9 +440,9 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                 animate="visible"
                 variants={formAnimations}
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="company_name">
+                    <Label htmlFor="company_name" className="text-sm">
                       Company Name <Badge variant="outline" className="ml-2 text-[10px]">Required</Badge>
                     </Label>
                     <Input 
@@ -456,10 +456,10 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="website">
+                    <Label htmlFor="website" className="text-sm">
                       Website <span className="text-gray-400 text-xs ml-1">(Used for AI training)</span>
                     </Label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <Input 
                         id="website" 
                         name="website" 
@@ -474,7 +474,8 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                             <Button 
                               type="button" 
                               variant="outline" 
-                              className="gap-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                              size="sm"
+                              className="gap-1 border-emerald-200 text-emerald-700 hover:bg-emerald-50 w-full sm:w-auto"
                               disabled={isRetraining || !businessInfo.website}
                               onClick={handleRetrainWebsite}
                             >
@@ -505,9 +506,9 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                 animate="visible"
                 variants={formAnimations}
               >
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email for Conversation Summaries</Label>
+                    <Label htmlFor="email" className="text-sm">Email for Conversation Summaries</Label>
                     <Input
                       id="email"
                       name="email"
@@ -520,7 +521,7 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="phone_number">Business Phone</Label>
+                    <Label htmlFor="phone_number" className="text-sm">Business Phone</Label>
                     <Input
                       id="phone_number"
                       name="phone_number"
@@ -530,8 +531,8 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
                     />
                   </div>
                   
-                  <div className="col-span-2 space-y-2">
-                    <Label htmlFor="calendar_link">Calendar Link</Label>
+                  <div className="col-span-1 lg:col-span-2 space-y-2">
+                    <Label htmlFor="calendar_link" className="text-sm">Calendar Link</Label>
                     <Input
                       id="calendar_link"
                       name="calendar_link"
@@ -546,8 +547,8 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
             </TabsContent>
           </CardContent>
           
-          <CardFooter className="flex justify-between border-t bg-muted/10 px-6 py-4">
-            <div className="flex items-center text-sm text-muted-foreground">
+          <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 border-t bg-muted/10 px-3 sm:px-6 py-4">
+            <div className="flex items-center text-xs sm:text-sm text-muted-foreground">
               {saveStatus === 'idle' && (
                 <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse mr-2 mt-0.5"></span>
               )}
@@ -562,11 +563,12 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
               )}
               Changes saved automatically
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
               {mode === 'create' && activeSection === 'ai' && (
                 <Button
                   type="submit"
-                  className="bg-gradient-to-r from-emerald-600 to-green-500 text-white hover:from-emerald-700 hover:to-green-600"
+                  size="sm"
+                  className="bg-gradient-to-r from-emerald-600 to-green-500 text-white hover:from-emerald-700 hover:to-green-600 flex-1 sm:flex-none"
                   disabled={saving}
                 >
                   {saving ? (
@@ -580,7 +582,8 @@ export default function BusinessInfoForm({ aiId, initialData, mode, userId, onSa
               <Button
                 type="button"
                 variant="outline"
-                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                size="sm"
+                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 flex-1 sm:flex-none"
                 onClick={() => {
                   if (activeSection === "ai") setActiveSection("company")
                   else if (activeSection === "company") setActiveSection("contact") 

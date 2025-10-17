@@ -16,6 +16,28 @@ import { format, parseISO } from "date-fns";
 import { siWhatsapp } from 'simple-icons';
 import { useConversationPolling } from "@/hooks/useConversationPolling";
 
+// Chat type definition
+interface Chat {
+  chat_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  ai_name: string;
+  ai_id?: string;
+  aiId?: string;
+  aiID?: string;
+  date: string;
+  messages_count: number;
+  duration: string;
+  intervention_enabled?: boolean;
+  intervention_started_at?: string;
+  last_intervention_activity?: string;
+  intervened_by?: string;
+  unread_count?: number;
+  last_customer_message_at?: string;
+  [key: string]: any; // Allow additional properties
+}
+
 // WhatsApp brand icon component
 const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" role="img" xmlns="http://www.w3.org/2000/svg">
@@ -24,7 +46,7 @@ const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
 );
 
 // Helper to check if conversation is from WhatsApp
-const isWhatsAppConversation = (chat: any, messages: any[] = []) => {
+const isWhatsAppConversation = (chat: Chat | null, messages: any[] = []) => {
   // Check if any message has message_type === 'whatsapp'
   if (messages.length > 0 && messages.some((m: any) => m.message_type === 'whatsapp')) {
     return true;
@@ -36,7 +58,7 @@ const isWhatsAppConversation = (chat: any, messages: any[] = []) => {
   return false;
 };
 
-function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, onInterventionToggle }: { chat: any; onBack?: () => void; onEmailSummary?: (chat: any) => void; sendingSummaryId?: string | null; onInterventionToggle?: (chatId: string, enabled: boolean) => void }) {
+function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, onInterventionToggle }: { chat: Chat | null; onBack?: () => void; onEmailSummary?: (chat: Chat) => void; sendingSummaryId?: string | null; onInterventionToggle?: (chatId: string, enabled: boolean) => void }) {
   const { user } = useUser();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,7 +139,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
     setInterventionEnabled(chat?.intervention_enabled || false);
     
     // Mark conversation as read when opened
-    if (chat?.chat_id && chat?.unread_count > 0) {
+    if (chat?.chat_id && (chat?.unread_count ?? 0) > 0) {
       markAsRead();
     }
   }, [chat?.chat_id, user?.id]); // ← Changed from 'chat' to 'chat?.chat_id'
@@ -139,7 +161,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
         // Update parent to remove badge immediately
         if (onInterventionToggle) {
           // Reuse the callback to update unread_count
-          onInterventionToggle(chat.chat_id, chat.intervention_enabled);
+          onInterventionToggle(chat.chat_id, chat.intervention_enabled ?? false);
         }
       }
     } catch (error) {
@@ -622,7 +644,7 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
 }
 
 function ChatListItem({ chat, isSelected, onClick, onDownload, onEmailSummary, sendingSummaryId }: {
-  chat: any;
+  chat: Chat;
   isSelected: boolean;
   onClick: () => void;
   onDownload: () => void;
@@ -849,11 +871,11 @@ export default function ChatHistoryPage() {
   const { user, loading: userLoading } = useUser();
   const [sendingSummaryId, setSendingSummaryId] = useState<string | null>(null);
   const [aiOptions, setAIOptions] = useState<{ value: string; label: string }[]>([{ value: "all", label: "All AI" }]);
-  const [chats, setChats] = useState<any[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
   const [aiFilter, setAIFilter] = useState("all");
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const [loading, setLoading] = useState(false);
-  const [selectedChat, setSelectedChat] = useState<any | null>(null);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const searchParams = useSearchParams();
   const deepLinkChatId = searchParams.get('chatId');
 
@@ -901,11 +923,11 @@ export default function ChatHistoryPage() {
         console.log('[Chat History] Received updates:', data.updated_conversations.length);
         
         // Merge updates into existing chats (preserve original data, update intervention fields)
-        setChats(prevChats => {
-          const updatedChatsMap = new Map(data.updated_conversations.map((c: any) => [c.chat_id, c]));
+        setChats((prevChats: Chat[]): Chat[] => {
+          const updatedChatsMap = new Map<string, Chat>(data.updated_conversations.map((c: any) => [c.chat_id, c as Chat]));
           
           // Update existing chats or add new ones
-          const mergedChats = prevChats.map(chat => {
+          const mergedChats: Chat[] = prevChats.map((chat: Chat): Chat => {
             const updated = updatedChatsMap.get(chat.chat_id);
             if (updated) {
               updatedChatsMap.delete(chat.chat_id);
@@ -924,10 +946,11 @@ export default function ChatHistoryPage() {
           });
           
           // Add any new conversations
-          const newChats = Array.from(updatedChatsMap.values());
-          return [...newChats, ...mergedChats].sort((a, b) => 
+          const newChats: Chat[] = Array.from(updatedChatsMap.values());
+          const result: Chat[] = [...newChats, ...mergedChats].sort((a: Chat, b: Chat) => 
             new Date(b.date).getTime() - new Date(a.date).getTime()
           );
+          return result;
         });
         
         // Update selected chat if it was updated (preserve selection and merge data)
@@ -1008,7 +1031,7 @@ export default function ChatHistoryPage() {
     fetchAIs();
   }, [user]);
 
-  const sendSummaryEmail = async (chat: any) => {
+  const sendSummaryEmail = async (chat: Chat) => {
     setSendingSummaryId(chat.chat_id);
     try {
       const response = await fetch("https://growbro-backend.fly.dev/api/conversation/summary-email", {
