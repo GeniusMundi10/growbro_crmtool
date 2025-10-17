@@ -259,9 +259,81 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
 
   return (
     <div className="flex-1 flex flex-col bg-white/95 backdrop-blur-sm rounded-tr-2xl shadow-xl border border-gray-200/50 overflow-hidden">
-      {/* Premium Conversation Header */}
-      <div className={`border-b border-gray-100 p-3 sm:p-6 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'} overflow-x-auto`}>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      {/* Mobile Conversation Header - Compact */}
+      <div className={`lg:hidden border-b border-gray-100 p-3 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'}`}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {onBack && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-2 rounded-lg"
+                onClick={onBack}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <Avatar className="h-9 w-9 flex-shrink-0 shadow-md ring-2 ring-white/50">
+              <AvatarFallback className={`text-white font-semibold text-sm ${isWhatsApp ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-blue-500 to-purple-600'}`}>
+                {chat.name && chat.name !== "Anonymous" ? chat.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h2 className="font-bold text-sm truncate">{chat.name || "Anonymous"}</h2>
+                {isWhatsApp ? (
+                  <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5 flex items-center gap-0.5">
+                    <WhatsAppIcon className="h-2.5 w-2.5" />
+                    WA
+                  </Badge>
+                ) : (
+                  <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5 flex items-center gap-0.5">
+                    <MessageCircle className="h-2.5 w-2.5" />
+                    Web
+                  </Badge>
+                )}
+                {interventionEnabled && (
+                  <Badge className="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 animate-pulse">
+                    You
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-gray-600 mt-0.5">
+                <span className="flex items-center truncate">
+                  <Bot className="h-2.5 w-2.5 mr-0.5" />
+                  {chat.ai_name}
+                </span>
+                <span className="text-gray-400">•</span>
+                <span>{chat.messages_count} msgs</span>
+              </div>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={toggleIntervention} disabled={togglingIntervention}>
+                {interventionEnabled ? (
+                  <><UserCheck className="h-4 w-4 mr-2 text-orange-600" />Stop Intervening</>
+                ) : (
+                  <><Bot className="h-4 w-4 mr-2 text-blue-600" />Start Intervening</>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEmailSummary && onEmailSummary(chat)} disabled={sendingSummaryId === chat.chat_id}>
+                <Mail className="h-4 w-4 mr-2 text-emerald-600" />
+                Email Summary
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Desktop Conversation Header - Full */}
+      <div className={`hidden lg:block border-b border-gray-100 p-6 ${isWhatsApp ? 'bg-gradient-to-r from-green-50/50 to-emerald-50/30' : 'bg-gradient-to-r from-white to-blue-50/30'} overflow-x-auto`}>
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Mobile back button */}
             {onBack && (
@@ -442,11 +514,12 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
 
       {/* Message Input (shown only when intervening) */}
       {interventionEnabled && (
-        <div className="border-t-2 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 p-4">
-          <div className="flex gap-2 items-center">
-            <div className="flex-1 relative">
+        <div className="border-t-2 border-orange-200 bg-gradient-to-r from-orange-50 to-red-50 p-3 lg:p-4">
+          {/* Mobile Input - Compact */}
+          <div className="lg:hidden">
+            <div className="flex gap-2 items-center mb-2">
               <Input
-                placeholder="Type your message to the customer..."
+                placeholder="Type message..."
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyPress={(e) => {
@@ -455,37 +528,74 @@ function ConversationViewer({ chat, onBack, onEmailSummary, sendingSummaryId, on
                     sendMessage();
                   }
                 }}
-                className="pr-12 border-orange-300 focus:ring-orange-500 focus:border-orange-500"
+                className="flex-1 text-sm border-orange-300 focus:ring-orange-500 focus:border-orange-500"
                 disabled={sendingMessage}
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
-                Press Enter
-              </div>
+              <Button
+                onClick={sendMessage}
+                disabled={!messageInput.trim() || sendingMessage}
+                size="icon"
+                className="bg-orange-600 hover:bg-orange-700 text-white h-9 w-9"
+              >
+                {sendingMessage ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-white/60 border-t-white rounded-full" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={sendMessage}
-              disabled={!messageInput.trim() || sendingMessage}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              {sendingMessage ? (
-                <div className="animate-spin h-4 w-4 border-2 border-white/60 border-t-white rounded-full" />
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Send
-                </>
-              )}
-            </Button>
+            <p className="text-[10px] text-orange-600 flex items-center">
+              <UserCheck className="h-3 w-3 mr-1" />
+              You're responding - AI paused
+            </p>
           </div>
-          <p className="text-xs text-orange-600 mt-2 flex items-center">
-            <UserCheck className="h-3 w-3 mr-1" />
-            You are intervening - AI will not respond to new messages
-          </p>
+          
+          {/* Desktop Input - Full */}
+          <div className="hidden lg:block">
+            <div className="flex gap-2 items-center">
+              <div className="flex-1 relative">
+                <Input
+                  placeholder="Type your message to the customer..."
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  className="pr-12 border-orange-300 focus:ring-orange-500 focus:border-orange-500"
+                  disabled={sendingMessage}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                  Press Enter
+                </div>
+              </div>
+              <Button
+                onClick={sendMessage}
+                disabled={!messageInput.trim() || sendingMessage}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {sendingMessage ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-white/60 border-t-white rounded-full" />
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Send
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-orange-600 mt-2 flex items-center">
+              <UserCheck className="h-3 w-3 mr-1" />
+              You are intervening - AI will not respond to new messages
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Premium Conversation Info Footer */}
-      <div className="border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4">
+      {/* Premium Conversation Info Footer - Desktop Only */}
+      <div className="hidden lg:block border-t border-gray-100 bg-gradient-to-r from-gray-50 to-blue-50 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-2">
@@ -968,12 +1078,48 @@ export default function ChatHistoryPage() {
         showTitleInHeader={false}
       />
       
-      {/* Smooth Filters Section */}
-      <div className="bg-white px-3 sm:px-6 py-4 sm:py-8 border-b border-slate-100">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
+      {/* Mobile Filters - Compact Horizontal */}
+      <div className="lg:hidden bg-white px-3 py-3 border-b border-slate-100">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <Select value={aiFilter} onValueChange={setAIFilter}>
+            <SelectTrigger className="w-[130px] h-8 text-xs bg-white border-gray-200 shadow-sm">
+              <SelectValue placeholder="All AIs" />
+            </SelectTrigger>
+            <SelectContent>
+              {aiOptions.map((ai) => (
+                <SelectItem key={ai.value} value={ai.value} className="text-xs">{ai.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Input
+            type="date"
+            value={dateRange.from}
+            onChange={e => setDateRange({ ...dateRange, from: e.target.value })}
+            className="w-[110px] h-8 text-xs bg-white border-gray-200 shadow-sm"
+          />
+          
+          <span className="text-xs text-gray-400">to</span>
+          
+          <Input
+            type="date"
+            value={dateRange.to}
+            onChange={e => setDateRange({ ...dateRange, to: e.target.value })}
+            className="w-[110px] h-8 text-xs bg-white border-gray-200 shadow-sm"
+          />
+          
+          <Badge className="ml-auto bg-blue-100 text-blue-700 text-xs whitespace-nowrap">
+            {chats.length}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Desktop Filters - Full */}
+      <div className="hidden lg:block bg-white px-6 py-8 border-b border-slate-100">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-              <span className="text-xs sm:text-sm font-medium text-blue-700">
+            <div className="px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+              <span className="text-sm font-medium text-blue-700">
                 {chats.length} conversations
               </span>
             </div>
@@ -981,7 +1127,7 @@ export default function ChatHistoryPage() {
         </div>
 
         {/* Smooth Filters */}
-        <div className="flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 bg-slate-50/50 rounded-2xl border border-slate-200/50">
+        <div className="flex flex-col gap-6 p-6 bg-slate-50/50 rounded-2xl border border-slate-200/50">
           {/* AI Filter */}
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 bg-blue-100 rounded-lg">
