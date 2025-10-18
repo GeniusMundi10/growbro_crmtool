@@ -23,6 +23,8 @@ export default function IntegrationsForm() {
   const { user } = useUser();
   const router = useRouter();
   const [hubspotConnected, setHubspotConnected] = useState<boolean>(false);
+  const [hubspotInfo, setHubspotInfo] = useState<any>(null);
+  const [hubspotList, setHubspotList] = useState<Array<any>>([]);
   const [whatsappConnected, setWhatsappConnected] = useState<boolean>(false);
   const [whatsappInfo, setWhatsappInfo] = useState<any>(null);
   const [waList, setWaList] = useState<Array<any>>([]);
@@ -58,8 +60,16 @@ export default function IntegrationsForm() {
         const res = await fetch("/api/hubspot/status");
         const data = await res.json();
         setHubspotConnected(!!data.connected);
+        setHubspotInfo(data.info || null);
+        // Fetch list of all HubSpot integrations
+        const listRes = await fetch("/api/hubspot/list");
+        const listData = await listRes.json();
+        const hubspotItems = Array.isArray(listData?.items) ? listData.items : [];
+        setHubspotList(hubspotItems);
       } catch {
         setHubspotConnected(false);
+        setHubspotInfo(null);
+        setHubspotList([]);
       }
       try {
         // Check Google Calendar status
@@ -98,6 +108,7 @@ export default function IntegrationsForm() {
         try {
           const st = await fetch(`/api/hubspot/status${defaultAi ? `?ai_id=${encodeURIComponent(defaultAi)}` : ""}`).then(r=>r.json());
           setHubspotConnected(!!st.connected);
+          setHubspotInfo(st.info || null);
         } catch {}
         // Refresh Google Calendar status for default AI
         try {
@@ -140,6 +151,7 @@ export default function IntegrationsForm() {
       try {
         const st = await fetch(`/api/hubspot/status${hubspotAiId ? `?ai_id=${encodeURIComponent(hubspotAiId)}` : ""}`).then(r=>r.json());
         setHubspotConnected(!!st.connected);
+        setHubspotInfo(st.info || null);
       } catch {}
     })();
   }, [hubspotAiId]);
@@ -174,10 +186,14 @@ export default function IntegrationsForm() {
           setHubspotConnected(true);
           toast.success("HubSpot connected!");
           window.removeEventListener("message", listener);
-          // Refresh status for this AI specifically
+          // Refresh status and list for this AI specifically
           try {
             const st = await fetch(`/api/hubspot/status${hubspotAiId ? `?ai_id=${encodeURIComponent(hubspotAiId)}` : ""}`).then(r=>r.json());
             setHubspotConnected(!!st.connected);
+            setHubspotInfo(st.info || null);
+            const listRes = await fetch("/api/hubspot/list");
+            const listData = await listRes.json();
+            setHubspotList(Array.isArray(listData?.items) ? listData.items : []);
           } catch {}
         }
       };
@@ -195,7 +211,15 @@ export default function IntegrationsForm() {
       const data = await res.json();
       if (data.success) {
         setHubspotConnected(false);
+        setHubspotInfo(null);
         toast.success("HubSpot disconnected");
+        // Refresh list
+        const listRes = await fetch("/api/hubspot/list");
+        const listData = await listRes.json();
+        const items = Array.isArray(listData?.items) ? listData.items : [];
+        setHubspotList(items);
+        // Select next available AI
+        setHubspotAiId(items[0]?.ai_id || aiList[0]?.ai_id || null);
       } else {
         toast.error(data.error || "Failed to disconnect HubSpot");
       }
@@ -533,42 +557,100 @@ export default function IntegrationsForm() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">Sync leads you capture in GrowBro directly into your HubSpot CRM.</p>
-          {aiList.length > 0 ? (
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {hubspotConnected
+              ? `Connected${hubspotInfo?.portal_id ? ` to portal ${hubspotInfo.portal_id}` : ""}.`
+              : "Sync leads you capture in GrowBro directly into your HubSpot CRM."}
+          </p>
+          {hubspotConnected ? (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Select AI</Label>
-                <Select value={hubspotAiId ?? undefined} onValueChange={(v) => setHubspotAiId(v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an AI" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {aiList.map((ai) => (
-                      <SelectItem key={ai.ai_id} value={ai.ai_id}>
-                        {ai.ai_name || 'AI'} {ai.connected ? '— connected' : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {hubspotConnected ? (
-                <Button variant="destructive" onClick={handleDisconnectHubspot} size="sm">Disconnect</Button>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Button onClick={handleConnectHubspot} size="sm" disabled={!hubspotAiId}>Connect</Button>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <a href="https://app.hubspot.com/" target="_blank" rel="noreferrer" className="text-xs text-slate-500 hover:underline inline-flex items-center gap-1">
-                        Docs <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </TooltipTrigger>
-                    <TooltipContent>Open HubSpot to verify the connection</TooltipContent>
-                  </Tooltip>
+              {hubspotList.length > 1 && (
+                <div className="space-y-2">
+                  <Label>Select AI / HubSpot Portal</Label>
+                  <Select value={hubspotAiId ?? undefined} onValueChange={(v) => setHubspotAiId(v)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose an integration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hubspotList.map((item) => (
+                        <SelectItem key={item.ai_id} value={item.ai_id}>
+                          {(item.ai_name || 'AI') + (item.portal_id ? ` — Portal ${item.portal_id}` : '')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
+              <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
+                  <span className="text-sm font-semibold text-gray-900">Connected</span>
+                </div>
+                {hubspotInfo?.portal_id && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Portal ID</span>
+                    <span className="text-sm font-mono font-semibold text-gray-900">{hubspotInfo.portal_id}</span>
+                  </div>
+                )}
+                {hubspotInfo?.hub_domain && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Hub Domain</span>
+                    <span className="text-sm font-mono text-gray-600">{hubspotInfo.hub_domain}</span>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="destructive" onClick={handleDisconnectHubspot} size="sm" className="flex-1">
+                  Disconnect
+                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => window.open(`https://${hubspotInfo?.hub_domain || 'app.hubspot.com'}`, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-1.5" />
+                      Open HubSpot
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View your HubSpot portal</TooltipContent>
+                </Tooltip>
+              </div>
+              <div className="rounded-md bg-blue-50/50 border border-blue-200/50 p-3">
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  <span className="font-medium">Note:</span> Leads captured in your AI conversations will automatically sync to HubSpot.
+                </p>
+              </div>
             </div>
           ) : (
-            <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect HubSpot.</p>
+            <div className="space-y-4">
+              {aiList.length > 0 ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Select AI to connect</Label>
+                    <Select value={hubspotAiId ?? undefined} onValueChange={(v) => setHubspotAiId(v)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an AI" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {aiList.map((ai) => (
+                          <SelectItem key={ai.ai_id} value={ai.ai_id}>
+                            {ai.ai_name || 'AI'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleConnectHubspot} size="sm" disabled={!hubspotAiId}>
+                    Connect
+                  </Button>
+                </>
+              ) : (
+                <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect HubSpot.</p>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
