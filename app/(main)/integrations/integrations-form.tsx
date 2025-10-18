@@ -167,6 +167,17 @@ export default function IntegrationsForm() {
     })();
   }, [googleCalendarAiId]);
 
+  // Re-check WhatsApp connection when AI selection changes
+  useEffect(() => {
+    (async () => {
+      try {
+        const st = await fetch(`/api/whatsapp/status${selectedAiId ? `?ai_id=${encodeURIComponent(selectedAiId)}` : ""}`).then(r=>r.json());
+        setWhatsappConnected(!!st.connected);
+        setWhatsappInfo(st.info || null);
+      } catch {}
+    })();
+  }, [selectedAiId]);
+
   const handleConnectHubspot = async () => {
     try {
       const qs = hubspotAiId ? `?ai_id=${encodeURIComponent(hubspotAiId)}` : "";
