@@ -13,7 +13,7 @@ export async function GET() {
   // Get all HubSpot connections for this user
   const { data: connections, error } = await supabase
     .from("hubspot_tokens")
-    .select("id, ai_id, portal_id, hub_domain, created_at")
+    .select("id, ai_id, portal_id, created_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -34,8 +34,7 @@ export async function GET() {
   const items = connections.map(conn => ({
     ai_id: conn.ai_id,
     ai_name: aiMap.get(conn.ai_id) || 'AI',
-    portal_id: conn.portal_id,
-    hub_domain: conn.hub_domain,
+    portal_id: conn.portal_id || null,
     connected_at: conn.created_at,
     connected: true
   }));

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   if (ai_id) {
     const { data: rowByAi } = await supabase
       .from("hubspot_tokens")
-      .select("id, ai_id, portal_id, hub_domain, created_at")
+      .select("id, ai_id, portal_id, created_at")
       .eq("user_id", user.id)
       .eq("ai_id", ai_id)
       .maybeSingle();
@@ -36,8 +36,7 @@ export async function GET(req: NextRequest) {
       info: {
         ai_id: rowByAi.ai_id,
         ai_name: aiData?.ai_name || 'AI',
-        portal_id: rowByAi.portal_id,
-        hub_domain: rowByAi.hub_domain,
+        portal_id: rowByAi.portal_id || null,
         connected_at: rowByAi.created_at
       }
     });
@@ -46,7 +45,7 @@ export async function GET(req: NextRequest) {
   // No ai_id provided: return first connection found with details
   const { data: anyRow } = await supabase
     .from("hubspot_tokens")
-    .select("id, ai_id, portal_id, hub_domain, created_at")
+    .select("id, ai_id, portal_id, created_at")
     .eq("user_id", user.id)
     .maybeSingle();
   
@@ -66,8 +65,7 @@ export async function GET(req: NextRequest) {
     info: {
       ai_id: anyRow.ai_id,
       ai_name: aiData?.ai_name || 'AI',
-      portal_id: anyRow.portal_id,
-      hub_domain: anyRow.hub_domain,
+      portal_id: anyRow.portal_id || null,
       connected_at: anyRow.created_at
     }
   });

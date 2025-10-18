@@ -592,10 +592,10 @@ export default function IntegrationsForm() {
                     <span className="text-sm font-mono font-semibold text-gray-900">{hubspotInfo.portal_id}</span>
                   </div>
                 )}
-                {hubspotInfo?.hub_domain && (
+                {hubspotInfo?.ai_name && (
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Hub Domain</span>
-                    <span className="text-sm font-mono text-gray-600">{hubspotInfo.hub_domain}</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Name</span>
+                    <span className="text-sm font-semibold text-gray-900">{hubspotInfo.ai_name}</span>
                   </div>
                 )}
               </div>
@@ -609,7 +609,7 @@ export default function IntegrationsForm() {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => window.open(`https://${hubspotInfo?.hub_domain || 'app.hubspot.com'}`, '_blank')}
+                      onClick={() => window.open('https://app.hubspot.com', '_blank')}
                     >
                       <ExternalLink className="h-4 w-4 mr-1.5" />
                       Open HubSpot
