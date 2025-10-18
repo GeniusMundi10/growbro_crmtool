@@ -562,25 +562,32 @@ export default function IntegrationsForm() {
               ? `Connected${hubspotInfo?.portal_id ? ` to portal ${hubspotInfo.portal_id}` : ""}.`
               : "Sync leads you capture in GrowBro directly into your HubSpot CRM."}
           </p>
-          {hubspotConnected ? (
-            <div className="space-y-4">
-              {hubspotList.length > 1 && (
-                <div className="space-y-2">
-                  <Label>Select AI / HubSpot Portal</Label>
-                  <Select value={hubspotAiId ?? undefined} onValueChange={(v) => setHubspotAiId(v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose an integration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hubspotList.map((item) => (
-                        <SelectItem key={item.ai_id} value={item.ai_id}>
-                          {(item.ai_name || 'AI') + (item.portal_id ? ` — Portal ${item.portal_id}` : '')}
+          <div className="space-y-4">
+            {/* AI Selection Dropdown - Always show to allow connecting multiple AIs */}
+            {aiList.length > 0 && (
+              <div className="space-y-2">
+                <Label>{hubspotConnected ? 'Select AI / HubSpot Portal' : 'Select AI to connect'}</Label>
+                <Select value={hubspotAiId ?? undefined} onValueChange={(v) => setHubspotAiId(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an AI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiList.map((ai) => {
+                      const isConnected = hubspotList.some(item => item.ai_id === ai.ai_id);
+                      const connectedItem = hubspotList.find(item => item.ai_id === ai.ai_id);
+                      return (
+                        <SelectItem key={ai.ai_id} value={ai.ai_id}>
+                          {ai.ai_name || 'AI'}{isConnected ? ` — Portal ${connectedItem?.portal_id || 'Connected'}` : ''}
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Show connection details if current AI is connected */}
+            {hubspotConnected && hubspotInfo && (
               <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
@@ -599,59 +606,50 @@ export default function IntegrationsForm() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Action buttons */}
+            {aiList.length > 0 ? (
               <div className="flex gap-2">
-                <Button variant="destructive" onClick={handleDisconnectHubspot} size="sm" className="flex-1">
-                  Disconnect
-                </Button>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => window.open('https://app.hubspot.com', '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-1.5" />
-                      Open HubSpot
+                {hubspotConnected ? (
+                  <>
+                    <Button variant="destructive" onClick={handleDisconnectHubspot} size="sm" className="flex-1">
+                      Disconnect
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>View your HubSpot portal</TooltipContent>
-                </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => window.open('https://app.hubspot.com', '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1.5" />
+                          Open HubSpot
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>View your HubSpot portal</TooltipContent>
+                    </Tooltip>
+                  </>
+                ) : (
+                  <Button onClick={handleConnectHubspot} size="sm" disabled={!hubspotAiId} className="flex-1">
+                    Connect
+                  </Button>
+                )}
               </div>
+            ) : (
+              <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect HubSpot.</p>
+            )}
+
+            {/* Info note */}
+            {hubspotConnected && (
               <div className="rounded-md bg-blue-50/50 border border-blue-200/50 p-3">
                 <p className="text-xs text-blue-700 leading-relaxed">
                   <span className="font-medium">Note:</span> Leads captured in your AI conversations will automatically sync to HubSpot.
                 </p>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {aiList.length > 0 ? (
-                <>
-                  <div className="space-y-2">
-                    <Label>Select AI to connect</Label>
-                    <Select value={hubspotAiId ?? undefined} onValueChange={(v) => setHubspotAiId(v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose an AI" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {aiList.map((ai) => (
-                          <SelectItem key={ai.ai_id} value={ai.ai_id}>
-                            {ai.ai_name || 'AI'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button onClick={handleConnectHubspot} size="sm" disabled={!hubspotAiId}>
-                    Connect
-                  </Button>
-                </>
-              ) : (
-                <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect HubSpot.</p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
       <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200/60 bg-white/50 backdrop-blur">
@@ -681,25 +679,32 @@ export default function IntegrationsForm() {
               ? `Connected${whatsappInfo?.phone_number ? ` to +${whatsappInfo.phone_number}` : ""}.`
               : "Connect your WhatsApp Business number via Meta Embedded Signup."}
           </p>
-          {whatsappConnected ? (
-            <div className="space-y-4">
-              {waList.length > 1 && (
-                <div className="space-y-2">
-                  <Label>Select AI / WhatsApp number</Label>
-                  <Select value={selectedAiId ?? undefined} onValueChange={(v) => setSelectedAiId(v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose an integration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {waList.map((item) => (
-                        <SelectItem key={item.ai_id} value={item.ai_id}>
-                          {(item.ai_name || 'AI') + (item.phone_number ? ` — +${item.phone_number}` : '')}
+          <div className="space-y-4">
+            {/* AI Selection Dropdown - Always show to allow connecting multiple AIs */}
+            {aiList.length > 0 && (
+              <div className="space-y-2">
+                <Label>{whatsappConnected ? 'Select AI / WhatsApp number' : 'Select AI to connect'}</Label>
+                <Select value={selectedAiId ?? undefined} onValueChange={(v) => setSelectedAiId(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an AI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiList.map((ai) => {
+                      const isConnected = waList.some(item => item.ai_id === ai.ai_id);
+                      const connectedItem = waList.find(item => item.ai_id === ai.ai_id);
+                      return (
+                        <SelectItem key={ai.ai_id} value={ai.ai_id}>
+                          {ai.ai_name || 'AI'}{isConnected ? ` — +${connectedItem?.phone_number || 'Connected'}` : ''}
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Show connection details if current AI is connected */}
+            {whatsappConnected && whatsappInfo && (
               <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</span>
@@ -718,96 +723,90 @@ export default function IntegrationsForm() {
                   </div>
                 )}
               </div>
+            )}
 
-              <div className="space-y-2">
-                <Label htmlFor="to">Test send to (E.164)</Label>
-                <Input id="to" placeholder="+15551234567" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="msg">Message</Label>
-                <Input id="msg" placeholder="Hello from GrowBro" value={testMsg} onChange={(e) => setTestMsg(e.target.value)} />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={handleTestSend} size="sm" disabled={testSending} className="flex-1 min-w-[100px]">
-                  Send Test
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/integrations/whatsapp-settings?ai_id=${encodeURIComponent(selectedAiId || whatsappInfo?.ai_id || '')}`)}
-                  size="sm"
-                  disabled={!selectedAiId && !whatsappInfo?.ai_id}
-                  className="flex-1 min-w-[100px]"
-                >
-                  <Settings className="h-4 w-4 mr-1.5" />
-                  Settings
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="flex-1 min-w-[100px]"
-                  onClick={async () => {
-                    try {
-                      const resp = await fetch("/api/whatsapp/disconnect", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ai_id: selectedAiId || whatsappInfo?.ai_id })
-                      });
-                      const data = await resp.json();
-                      if (!resp.ok || !data?.success) {
-                        toast.error(data?.error || "Failed to disconnect WhatsApp");
-                        return;
-                      }
-                      toast.success("WhatsApp disconnected");
-                      // Refresh status/list
-                      const s = await fetch("/api/whatsapp/status").then(r=>r.json());
-                      setWhatsappConnected(!!s.connected);
-                      setWhatsappInfo(s.info || null);
-                      const l = await fetch("/api/whatsapp/list").then(r=>r.json());
-                      const items = Array.isArray(l?.items) ? l.items : [];
-                      setWaList(items);
-                      setSelectedAiId(items[0]?.ai_id || null);
-                    } catch (e) {
-                      toast.error("Failed to disconnect WhatsApp");
-                    }
-                  }}
-                >
-                  Disconnect
-                </Button>
-              </div>
-              <div className="rounded-md bg-blue-50/50 border border-blue-200/50 p-3">
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  <span className="font-medium">Note:</span> Test numbers require recipients to be verified in Meta's API Setup, or start a session by messaging your number first.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {aiList.length > 0 ? (
-                <>
-                  <div className="space-y-2">
-                    <Label>Select AI to connect</Label>
-                    <Select value={selectedAiId ?? undefined} onValueChange={(v) => setSelectedAiId(v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose an AI" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {aiList.map((ai) => (
-                          <SelectItem key={ai.ai_id} value={ai.ai_id}>
-                            {ai.ai_name || 'AI'} {ai.connected ? '— connected' : ''}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+            {/* Test messaging and action buttons */}
+            {aiList.length > 0 ? (
+              <>
+                {whatsappConnected && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="to">Test send to (E.164)</Label>
+                      <Input id="to" placeholder="+15551234567" value={testTo} onChange={(e) => setTestTo(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="msg">Message</Label>
+                      <Input id="msg" placeholder="Hello from GrowBro" value={testMsg} onChange={(e) => setTestMsg(e.target.value)} />
+                    </div>
+                  </>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {whatsappConnected ? (
+                    <>
+                      <Button onClick={handleTestSend} size="sm" disabled={testSending} className="flex-1 min-w-[100px]">
+                        Send Test
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => router.push(`/integrations/whatsapp-settings?ai_id=${encodeURIComponent(selectedAiId || whatsappInfo?.ai_id || '')}`)}
+                        size="sm"
+                        disabled={!selectedAiId && !whatsappInfo?.ai_id}
+                        className="flex-1 min-w-[100px]"
+                      >
+                        <Settings className="h-4 w-4 mr-1.5" />
+                        Settings
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex-1 min-w-[100px]"
+                        onClick={async () => {
+                          try {
+                            const resp = await fetch("/api/whatsapp/disconnect", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ ai_id: selectedAiId || whatsappInfo?.ai_id })
+                            });
+                            const data = await resp.json();
+                            if (!resp.ok || !data?.success) {
+                              toast.error(data?.error || "Failed to disconnect WhatsApp");
+                              return;
+                            }
+                            toast.success("WhatsApp disconnected");
+                            // Refresh status/list
+                            const s = await fetch("/api/whatsapp/status").then(r=>r.json());
+                            setWhatsappConnected(!!s.connected);
+                            setWhatsappInfo(s.info || null);
+                            const l = await fetch("/api/whatsapp/list").then(r=>r.json());
+                            const items = Array.isArray(l?.items) ? l.items : [];
+                            setWaList(items);
+                            setSelectedAiId(items[0]?.ai_id || null);
+                          } catch (e) {
+                            toast.error("Failed to disconnect WhatsApp");
+                          }
+                        }}
+                      >
+                        Disconnect
+                      </Button>
+                    </>
+                  ) : (
+                    <Button onClick={handleConnectWhatsApp} size="sm" disabled={!selectedAiId || whatsappConnecting} className="flex-1">
+                      {whatsappConnecting ? "Connecting..." : "Connect"}
+                    </Button>
+                  )}
+                </div>
+                {whatsappConnected && (
+                  <div className="rounded-md bg-blue-50/50 border border-blue-200/50 p-3">
+                    <p className="text-xs text-blue-700 leading-relaxed">
+                      <span className="font-medium">Note:</span> Test numbers require recipients to be verified in Meta's API Setup, or start a session by messaging your number first.
+                    </p>
                   </div>
-                  <Button onClick={handleConnectWhatsApp} size="sm" disabled={!selectedAiId || whatsappConnecting}>
-                    {whatsappConnecting ? "Connecting..." : "Connect"}
-                  </Button>
-                </>
-              ) : (
-                <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect WhatsApp.</p>
-              )}
-            </div>
-          )}
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect WhatsApp.</p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -834,8 +833,28 @@ export default function IntegrationsForm() {
               ? `Connected to ${googleCalendarInfo?.calendar_name || "your calendar"}. Bookings will automatically sync.`
               : "Connect your Google Calendar to automatically sync confirmed bookings as calendar events."}
           </p>
-          {googleCalendarConnected ? (
-            <div className="space-y-4">
+          <div className="space-y-4">
+            {/* AI Selection Dropdown - Always show to allow connecting multiple AIs */}
+            {aiList.length > 0 && (
+              <div className="space-y-2">
+                <Label>{googleCalendarConnected ? 'Select AI / Google Calendar' : 'Select AI to connect'}</Label>
+                <Select value={googleCalendarAiId ?? undefined} onValueChange={(v) => setGoogleCalendarAiId(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an AI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiList.map((ai) => (
+                      <SelectItem key={ai.ai_id} value={ai.ai_id}>
+                        {ai.ai_name || 'AI'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Show connection details if current AI is connected */}
+            {googleCalendarConnected && googleCalendarInfo && (
               <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-50 border border-gray-200/60 p-4 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Calendar</span>
@@ -850,50 +869,39 @@ export default function IntegrationsForm() {
                   <span className="text-sm font-semibold text-green-600">{googleCalendarInfo?.sync_enabled ? "Enabled" : "Disabled"}</span>
                 </div>
               </div>
+            )}
+
+            {/* Action buttons */}
+            {aiList.length > 0 ? (
               <div className="flex gap-2">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="flex-1"
-                  onClick={handleDisconnectGoogleCalendar}
-                >
-                  Disconnect
-                </Button>
+                {googleCalendarConnected ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="flex-1"
+                    onClick={handleDisconnectGoogleCalendar}
+                  >
+                    Disconnect
+                  </Button>
+                ) : (
+                  <Button onClick={handleConnectGoogleCalendar} size="sm" disabled={!googleCalendarAiId} className="flex-1">
+                    Connect
+                  </Button>
+                )}
               </div>
+            ) : (
+              <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect Google Calendar.</p>
+            )}
+
+            {/* Info note */}
+            {googleCalendarConnected && (
               <div className="rounded-md bg-blue-50/50 border border-blue-200/50 p-3">
                 <p className="text-xs text-blue-700 leading-relaxed">
                   <span className="font-medium">Note:</span> Only confirmed bookings with date and time will be synced to your calendar.
                 </p>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {aiList.length > 0 ? (
-                <>
-                  <div className="space-y-2">
-                    <Label>Select AI to connect</Label>
-                    <Select value={googleCalendarAiId ?? undefined} onValueChange={(v) => setGoogleCalendarAiId(v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose an AI" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {aiList.map((ai) => (
-                          <SelectItem key={ai.ai_id} value={ai.ai_id}>
-                            {ai.ai_name || 'AI'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button onClick={handleConnectGoogleCalendar} size="sm" disabled={!googleCalendarAiId}>
-                    Connect
-                  </Button>
-                </>
-              ) : (
-                <p className="text-sm text-slate-600">No AIs found. Please create an AI first in your dashboard, then return to connect Google Calendar.</p>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
       </div>
