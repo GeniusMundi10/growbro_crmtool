@@ -545,8 +545,8 @@ export default function IntegrationsForm() {
 
   return (
     <section className="w-full max-w-6xl">
-      <div className="grid gap-6 md:grid-cols-2">
-      <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200/60 bg-white/50 backdrop-blur">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200/60 bg-white/50 backdrop-blur flex flex-col">
         <CardHeader className="space-y-0 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -567,7 +567,7 @@ export default function IntegrationsForm() {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 flex-1">
           <p className="text-sm text-muted-foreground leading-relaxed">
             {hubspotConnected
               ? `Connected${hubspotInfo?.portal_id ? ` to portal ${hubspotInfo.portal_id}` : ""}.`
@@ -663,7 +663,7 @@ export default function IntegrationsForm() {
           </div>
         </CardContent>
       </Card>
-      <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200/60 bg-white/50 backdrop-blur">
+      <Card className="group hover:shadow-lg transition-all duration-200 border border-gray-200/60 bg-white/50 backdrop-blur flex flex-col">
         <CardHeader className="space-y-0 pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -684,7 +684,7 @@ export default function IntegrationsForm() {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 flex-1">
           <p className="text-sm text-muted-foreground leading-relaxed">
             {whatsappConnected
               ? `Connected${whatsappInfo?.phone_number ? ` to +${whatsappInfo.phone_number}` : ""}.`
@@ -822,7 +822,7 @@ export default function IntegrationsForm() {
       </Card>
 
       {/* Google Calendar Integration */}
-      <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+      <Card className="shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -838,7 +838,7 @@ export default function IntegrationsForm() {
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 flex-1">
           <p className="text-sm text-muted-foreground leading-relaxed">
             {googleCalendarConnected
               ? `Connected to ${googleCalendarInfo?.calendar_name || "your calendar"}. Bookings will automatically sync.`
